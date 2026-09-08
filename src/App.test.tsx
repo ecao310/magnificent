@@ -635,15 +635,35 @@ describe('the step flow', () => {
   });
 
   /**
-   * The steps still number themselves, which is the whole of what the nav was
-   * telling anyone: two of them, in this order. A kicker over each heading
-   * says it without asking to be clicked.
+   * The steps no longer number themselves either. A "Step 1 of 2" kicker
+   * stood over each heading after the nav went, until the restyle took the
+   * kickers off too: two sections side by side are not a sequence a reader
+   * needs counting through. The headings are the whole of the signposting.
    */
-  it('still numbers both steps where each one starts', () => {
+  it('numbers neither step', () => {
     const { container } = render(<App />);
-    expect(
-      Array.from(container.querySelectorAll('.step-kicker')).map((el) => el.textContent),
-    ).toEqual(['Step 1 of 2', 'Step 2 of 2']);
+    expect(container.querySelector('.step-kicker')).toBeNull();
+    expect(container.textContent).not.toMatch(/step \d+ of \d+/i);
+  });
+
+  /**
+   * The notes are the working, and they sit under the figures rather than
+   * inside the chart's step: a section of their own, last in the main, with
+   * every explainer in it and none left behind in the step.
+   */
+  it('keeps the notes in a section of their own, after the figures', () => {
+    const { container } = render(<App />);
+    const notes = container.querySelector('.notes-section') as HTMLElement;
+    expect(notes).not.toBeNull();
+    expect(notes.tagName).toBe('SECTION');
+    expect(notes).toHaveAttribute('aria-label', 'Notes');
+    expect(notes.previousElementSibling).toHaveClass('flow');
+    expect(notes.parentElement).toHaveClass('shell');
+    expect(notes.querySelectorAll('.explainer').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.explainer')).toHaveLength(
+      notes.querySelectorAll('.explainer').length,
+    );
+    expect(container.querySelector('#step-torpedo .explainer')).toBeNull();
   });
 
   /**
@@ -668,11 +688,12 @@ describe('the step flow', () => {
 /**
  * Every step is laid out the same way, and this is the test of it.
  *
- * chart \u2192 the one control that says where on that chart you are \u2192 the
- * collapsed explainers. Step 1 has no curve of its own, so it starts at the
- * control. A control above its chart reads as an input to the chart, which
- * is exactly what it is not \u2014 the chart already prices every value the
- * control can take.
+ * chart \u2192 the one control that says where on that chart you are. Step 1
+ * has no curve of its own, so it starts at the control. A control above its
+ * chart reads as an input to the chart, which is exactly what it is not
+ * \u2014 the chart already prices every value the control can take. The
+ * collapsed explainers used to close the charted step; they are a section
+ * of their own now, under the figures, so neither step ends on one.
  */
 describe('the shape every step shares', () => {
   /** The step's own landmarks in DOM order, runs of a kind collapsed. */
@@ -694,9 +715,9 @@ describe('the shape every step shares', () => {
     return kinds.filter((kind, i) => kind !== kinds[i - 1]);
   };
 
-  it('lays the charted step out chart, control, explainers', () => {
+  it('lays the charted step out chart, control, and nothing after', () => {
     render(<App />);
-    expect(landmarks('step-torpedo')).toEqual(['chart', 'control', 'details']);
+    expect(landmarks('step-torpedo')).toEqual(['chart', 'control']);
   });
 
   /**

@@ -455,19 +455,19 @@ const fontSizes = (css: string): string[] =>
   Array.from(css.matchAll(/font-size:\s*([^;}]+)/g)).map(([, size]) => size.trim());
 
 /**
- * Nine steps, and no tenth.
+ * Ten steps, and no eleventh.
  *
- * They are FI Calc's own, read off its stylesheet: .9375rem body copy, a
- * 1.75rem page title at weight 900, 1.35rem section headings, 1.125rem under
- * those. Before this the page ran a 2.5rem hero and 1.75rem step headings —
- * a register above everything FI Calc uses — and the sizes in between had
- * arrived one rule at a time.
+ * They are the Subsidy Slope's, read off its stylesheet: a 2.75rem page
+ * title, 2.125rem section headings and closing figures, 1.125rem note
+ * headings, 1.0625rem body copy. Before this the page ran a 5.75rem title
+ * and 2.75rem step headings — a register above everything its sibling uses —
+ * and the sizes in between had arrived one rule at a time.
  *
- * It was ten until the controls pass: 1rem was set by a generic `input` rule
- * painting a text field this page has never rendered, and by the one menu
- * this page had, which copied it. Both are gone, and the second `it` below is
- * what caught the step going unspent rather than lingering as a size nothing
- * sets.
+ * It was once ten for a different reason: 1rem was set by a generic `input`
+ * rule painting a text field this page has never rendered, and by the one
+ * menu this page had, which copied it. Both are gone, and the second `it`
+ * below is what caught the step going unspent rather than lingering as a
+ * size nothing sets.
  *
  * That is the failure this closes. A scale does not drift by someone
  * rewriting it; it drifts by a 1.05rem typed into the one rule being edited,
@@ -480,16 +480,13 @@ describe('the type scale', () => {
     '0.75rem',
     '0.8125rem',
     '0.875rem',
-    '1rem',
     '1.0625rem',
+    '1.125rem',
     '1.25rem',
-    '1.375rem',
     '1.5rem',
-    '1.75rem',
+    '2rem',
     '2.125rem',
     '2.75rem',
-    '2.875rem',
-    '5.75rem',
   ];
 
   it('sets every size from one closed list of steps', () => {

@@ -25,17 +25,16 @@ export interface AnswerProps {
 }
 
 /**
- * The close: the reader's own answer, in one place.
+ * The six figures the page is for, at the income the marker is standing on:
+ * the total, the tax, the two rates, how much of the benefit is taxable, and
+ * the Medicare tier.
  *
- * The mirror of the recap that closes step 1. That one names what was set;
+ * The mirror of the recap that closes the rail. That one names what was set;
  * this one says what came of it — and it is the first place the six figures a
- * reader actually leaves with sit together rather than one per step.
- *
- * Outside step 2 rather than at the foot of it, because it summarises both
- * steps and belongs to neither, and last before the disclaimer because it is
- * the thing a reader would screenshot. That is also why it restates the return
- * above the figures: a screenshot of an answer with no question in it is worth
- * nothing.
+ * reader actually leaves with sit together. Under the chart and over the
+ * notes, because it is the thing a reader would screenshot, which is also why
+ * it restates the return in a status line above the figures: a screenshot of
+ * an answer with no question in it is worth nothing.
  */
 export const Answer: React.FC<AnswerProps> = ({
   year,
@@ -54,28 +53,23 @@ export const Answer: React.FC<AnswerProps> = ({
   onCopy,
 }) => (
   <section className="answer" id="answer" aria-labelledby="answer-heading">
-    <p className="answer-kicker">The answer</p>
     <h2 className="answer-heading" id="answer-heading">
       What this return costs
     </h2>
-    <p className="answer-intro">
-      Priced for {year}: {FILING_STATUS_PROSE[filingStatus]}, {ageProse},
-      with{' '}
+    <p className="answer-subline">
+      {year} return · {FILING_STATUS_PROSE[filingStatus]} · {ageProse} ·{' '}
       {ssBenefit > 0
         ? `${formatCurrency(ssBenefit)} of Social Security`
         : 'no Social Security'}{' '}
-      and {formatCurrency(ordinaryIncome)} of other income
+      · {formatCurrency(ordinaryIncome)} of other income
       {muniInterest > 0
-        ? `, plus ${formatCurrency(muniInterest)} of tax-exempt interest`
+        ? ` · ${formatCurrency(muniInterest)} of tax-exempt interest`
         : ''}
-      .
     </p>
 
     <dl className="answer-figures">
       <div className="answer-figure">
-        <dt>
-          Total income<span className="answer-line">Line 9</span>
-        </dt>
+        <dt>Total income</dt>
         <dd>
           <strong>{formatCurrency(totalIncome)}</strong>
           <span className="answer-gloss">
@@ -89,9 +83,7 @@ export const Answer: React.FC<AnswerProps> = ({
       </div>
 
       <div className="answer-figure">
-        <dt>
-          Federal tax<span className="answer-line">Line 16</span>
-        </dt>
+        <dt>Federal tax</dt>
         <dd>
           <strong>{formatCurrency(tax)}</strong>
           <span className="answer-gloss">
@@ -125,9 +117,7 @@ export const Answer: React.FC<AnswerProps> = ({
       </div>
 
       <div className="answer-figure">
-        <dt>
-          Taxable social security<span className="answer-line">Line 6b</span>
-        </dt>
+        <dt>Taxable social security</dt>
         <dd>
           <strong>{ssBenefit > 0 ? formatCurrency(taxableSS) : 'None'}</strong>
           {ssBenefit > 0 && (
@@ -150,8 +140,8 @@ export const Answer: React.FC<AnswerProps> = ({
           <strong>{irmaa.tier > 0 ? `Tier ${irmaa.tier} of 5` : 'None'}</strong>{' '}
           <span className="answer-of">
             {irmaa.tier > 0
-              ? `— ${formatCurrency(irmaa.annualSurcharge)}/yr`
-              : '— the standard premium'}
+              ? `${formatCurrency(irmaa.annualSurcharge)}/yr`
+              : 'the standard premium'}
           </span>
           <span className="answer-gloss">
             Billed on a {IRMAA_LOOKBACK_YEARS}-year lag, so this is what{' '}

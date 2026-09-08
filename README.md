@@ -13,10 +13,11 @@ stepping around.
 
 ## The two steps
 
-Both steps have the same shape: the chart first, then the one control that
-moves the reader along it, then collapsed explainers. Step 1 is the exception
-that sets the rule — it has no curve of its own, so the return itself stands
-where the chart stands below it.
+The return in a column that stays put, and the curve, the figures and the
+notes in a column that scrolls past it. Both steps have the same shape: the
+chart first, then the one control that moves the reader along it. Step 1 is
+the exception that sets the rule — it has no curve of its own, so the return
+itself stands where the chart stands beside it.
 
 1. **Your Social Security benefit** — the return everything after it prices:
    who files it, who on it has reached 65, and how much Social Security it
@@ -36,9 +37,13 @@ where the chart stands below it.
    start; the 400% line only when the **Breakpoints** button in the corner of
    the plot is asked for it. Every figure under it is a federal one.
 
-The page closes on the six figures the whole walk was for: total income,
+Six figures follow the chart, the ones the whole walk was for: total income,
 federal tax, effective rate, the rate on the next dollar, the taxable share of
-the benefit, and the Medicare surcharge that MAGI buys. Under the footer's
+the benefit, and the Medicare surcharge that MAGI buys. Below them, the notes:
+four or five collapsed explainers, numbered — the torpedo, how to mitigate it,
+the IRMAA cliffs, the 400% line when the return has one, and the senior
+deduction's phaseout. On a narrow screen the order is the chart and the
+figures first, the return second and the notes last. Under the footer's
 rule, one more note, closed like the rest: three links to read on — a
 Fidelity piece on the torpedo and the cliffs around it, Kitces on the
 benefit's taxation as a marginal rate, and IRS Publication 915, whose
@@ -146,7 +151,7 @@ npm run build    # tsc -b && vite build
 | Path | What it is |
 | --- | --- |
 | `src/App.tsx` | The composition root: the return in state, the figures derived from it, and the three sections it hands them to. |
-| `src/components/` | What the page is made of — the two steps, the chart and its tooltip, the Breakpoints panel, the five explainers, the close, the reading list. |
+| `src/components/` | What the page is made of — the two steps, the chart and its tooltip, the Breakpoints panel, the figures, the notes and the five explainers in them, the reading list. |
 | `src/hooks/` | The three pieces of behaviour that are not markup: the live region's debounce, the address bar, and dismissing a panel. |
 | `src/lib/tax/` | Every figure on the page, and the only place a rate or a threshold is written down. One module per chapter of the code, behind `index.ts`. |
 | `src/lib/scenarioUrl.ts` | The return, encoded into the address bar and clamped back out of it. |
