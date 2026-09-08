@@ -16,15 +16,14 @@ export interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => (
   <header className="masthead">
     <div className="masthead-body">
-      <h1>Income Taxes in Early Retirement</h1>
+      <h1>The ACA Subsidy Slope</h1>
       <p className="subtitle">
-        Before 65, the next dollar of income rarely costs what its bracket
-        says either. A household buying its coverage on the Marketplace gives
-        back a slice of its premium tax credit with every dollar it adds
-        &mdash; around 17 cents for a couple in the middle of the table &mdash;
-        and the whole credit on the dollar that crosses 400% of the poverty
-        line. Use this tool to price a Roth conversion or a harvested gain
-        against the subsidy it costs.
+        A household that buys its coverage on the Marketplace gives back a
+        slice of its premium tax credit with every dollar of income it adds
+        &mdash; around 17 cents for a couple in the middle of the table,
+        whatever its tax bracket says &mdash; and the whole credit on the
+        dollar that crosses 400% of the poverty line. Use this tool to price a
+        Roth conversion or a harvested gain against the subsidy it costs.
       </p>
     </div>
 

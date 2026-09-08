@@ -21,7 +21,7 @@ pinPageYear();
 describe('the page', () => {
   it('leads with what the page is for rather than with the settings', () => {
     render(<App />);
-    const hero = screen.getByRole('heading', { name: /income taxes in early retirement/i, level: 1 });
+    const hero = screen.getByRole('heading', { name: /the aca subsidy slope/i, level: 1 });
     const subtitle = hero.nextElementSibling as HTMLElement;
     expect(subtitle).toHaveClass('subtitle');
     expect(subtitle).toHaveTextContent(/premium tax credit/);

@@ -11,7 +11,7 @@ import type { AddedKind, FilingStatus, TaxYear } from './types';
 import { defaultTaxYear, filingParams } from './params';
 import type { FilingYearParams } from './params';
 
-/** The age the page opens on: an early retiree, some way short of Medicare. */
+/** The age the page opens on: some way short of Medicare, where the credit ends. */
 export const DEFAULT_AGE = 50;
 
 /**

@@ -1,8 +1,9 @@
-# How Much Can You Add This Year?
+# How Much Subsidy Does the Next Dollar Cost?
 
-One more dollar of income before 65 — a Roth conversion, a harvested gain —
-gives back a slice of the premium tax credit that pays for a Marketplace
-plan. What that dollar actually costs is nothing like the bracket it lands in:
+One more dollar of income for a household that buys its coverage on the
+Marketplace — a Roth conversion, a harvested gain — gives back a slice of the
+premium tax credit that pays for the plan. What that dollar actually costs is
+nothing like the bracket it lands in:
 a couple whose federal tax is $0 pays 17 cents of it in credit, the rate
 climbs in a sawtooth to 19, drops to 10, and then the dollar that crosses 400%
 of the poverty line costs the whole credit at once.
@@ -14,10 +15,10 @@ the block the reader is thinking of adding.
 **Live:** https://ecao310.github.io/super-duper-broccoli/
 
 It follows [How Much Can You Take Out This Year?](https://ecao310.github.io/congenial-octo-spork/),
-which draws the same dollar after 65 — Social Security's tax torpedo, the
-IRMAA cliffs, the senior deduction's phaseout — and which drew the 400% line
-and left the loss blank, because the loss is the benchmark premium and that
-page never asked for one. This one asks, and prices the slope under the line
+which draws the same dollar once Social Security and Medicare are in the
+picture — the tax torpedo, the IRMAA cliffs, the senior deduction's phaseout —
+and which drew the 400% line and left the loss blank, because the loss is the
+benchmark premium and that page never asked for one. This one asks, and prices the slope under the line
 as well as the dollar over it. It began as an answer to a thread on
 r/financialindependence: a couple taking household income from $50,000 to
 $60,000 by harvesting a gain loses about $1,716 of credit, a 17% cost against

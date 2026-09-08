@@ -20,8 +20,7 @@ export interface Reading {
 export const FURTHER_READING: readonly Reading[] = [
   {
     href: 'https://www.reddit.com/r/financialindependence/comments/1w8a2nz/tax_optimization_in_early_retirement_maximizing/',
-    title:
-      'Tax optimization in early retirement: maximizing ACA subsidies vs. tax-gain harvesting or Roth conversions',
+    title: 'Maximizing ACA subsidies vs. tax-gain harvesting or Roth conversions',
     source: 'r/financialindependence',
   },
   {

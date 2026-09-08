@@ -24,7 +24,7 @@ const meta = (attr: 'name' | 'property', key: string): string | undefined =>
 describe('the link preview', () => {
   it('names itself, describes itself and carries a card', () => {
     expect(meta('property', 'og:site_name')).toBe('Subsidy Slope');
-    expect(meta('property', 'og:title')).toBe('How Much Can You Add This Year?');
+    expect(meta('property', 'og:title')).toBe('How Much Subsidy Does the Next Dollar Cost?');
     expect(meta('property', 'og:description')).toMatch(/400% of the poverty line/);
     expect(meta('property', 'og:image')).toMatch(/og-cover\.png$/);
     expect(meta('property', 'og:image:width')).toBe('1200');

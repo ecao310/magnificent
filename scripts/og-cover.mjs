@@ -174,13 +174,13 @@ function cover(curve, hook) {
   <rect width="${WIDTH}" height="8" fill="${INK}"/>
 
   <text x="72" y="52" fill="${INK}" font-family="${MONO}" font-size="15" letter-spacing="3">SUBSIDY SLOPE</text>
-  <text x="1128" y="52" fill="${INK_MUTED}" font-family="${MONO}" font-size="15" letter-spacing="3" text-anchor="end">TAX YEAR ${hook.year} · BEFORE 65</text>
+  <text x="1128" y="52" fill="${INK_MUTED}" font-family="${MONO}" font-size="15" letter-spacing="3" text-anchor="end">TAX YEAR ${hook.year} · MARKETPLACE COVERAGE</text>
   <line x1="72" y1="64" x2="1128" y2="64" stroke="${INK}" stroke-width="1"/>
 
-  <text x="72" y="140" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">How much can you</text>
-  <text x="72" y="204" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">add this year?</text>
-  <text x="72" y="250" fill="${INK_SOFT}" font-size="21">What a Roth conversion or a harvested gain costs before 65, with the</text>
-  <text x="72" y="279" fill="${INK_SOFT}" font-size="21">Marketplace credit it gives back — drawn across every income level.</text>
+  <text x="72" y="140" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">How much subsidy does</text>
+  <text x="72" y="204" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">the next dollar cost?</text>
+  <text x="72" y="250" fill="${INK_SOFT}" font-size="21">What a Roth conversion or a harvested gain costs a household on a</text>
+  <text x="72" y="279" fill="${INK_SOFT}" font-size="21">Marketplace plan, credit included — drawn across every income level.</text>
 
   <text x="1128" y="112" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">FEDERAL TAX ON THE GAIN</text>
   <text x="1128" y="172" fill="${INK_MUTED}" font-size="62" text-anchor="end" style="font-variation-settings: 'opsz' 72">${hook.taxRate}</text>
