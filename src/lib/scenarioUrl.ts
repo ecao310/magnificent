@@ -1,7 +1,7 @@
 /**
  * The household, written into the address bar and read back out of it.
  *
- * Every figure on the page is derived from eight values, and the address bar
+ * Every figure on the page is derived from seven values, and the address bar
  * is already the share surface every reader knows how to use: a refresh keeps
  * the household, and the link can go to a spouse or a navigator. Every value
  * it carries prices something. The step is a fragment (`#step-cost`), not a
@@ -26,16 +26,14 @@ export interface PageScenario {
   spouseAge: number;
   income: number;
   dependents: number;
-  /** The household's state, or null for the national average. */
+  /**
+   * The household's state, or null for the national average. The state
+   * answers whether Medicaid expanded, and so where the subsidy starts; with
+   * no state it is taken to have, as forty states and DC did.
+   */
   state: StateCode | null;
   /** The reader's own monthly benchmark, or null for the state's average, or the national one. */
   benchmarkPremium: number | null;
-  /**
-   * Whether the subsidy starts at 138% of the poverty line or at 100%. The
-   * page sets it from the state when the state changes, and the reader can
-   * move it after; see `encodeScenario` for what that means for the link.
-   */
-  expansionState: boolean;
 }
 
 /**
@@ -73,7 +71,6 @@ export function defaultScenario(): PageScenario {
     dependents: 0,
     state: null,
     benchmarkPremium: null,
-    expansionState: true,
   };
 }
 
@@ -82,10 +79,7 @@ export function defaultScenario(): PageScenario {
  *
  * A value is written only when it differs from what the page opens with, so an
  * untouched page reads as the empty string, and every key that is present is
- * something the reader did. The second age is written only for a couple, and
- * the expansion switch only when it disagrees with the state — its default
- * moves with the state, so a link that names Texas and nothing else opens
- * with the switch off, and `expansion=1` is Texas with the switch put back.
+ * something the reader did. The second age is written only for a couple.
  */
 export function encodeScenario(scenario: PageScenario): string {
   const opening = defaultScenario();
@@ -99,9 +93,6 @@ export function encodeScenario(scenario: PageScenario): string {
   if (scenario.dependents !== opening.dependents) params.set('deps', String(scenario.dependents));
   if (scenario.state !== null) params.set('state', scenario.state);
   if (scenario.benchmarkPremium !== null) params.set('premium', String(scenario.benchmarkPremium));
-  if (scenario.expansionState !== expansionFor(scenario.state)) {
-    params.set('expansion', scenario.expansionState ? '1' : '0');
-  }
   return params.toString();
 }
 
@@ -253,17 +244,13 @@ export function decodeScenario(search: string): DecodedScenario {
           format: formatCurrency,
         });
 
-  const rawExpansion = params.get('expansion');
-  const expansionState =
-    rawExpansion === '0' ? false : rawExpansion === '1' ? true : expansionFor(state);
-
   return {
-    scenario: { adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState },
+    scenario: { adults, age, spouseAge, income, dependents, state, benchmarkPremium },
     notes,
   };
 }
 
-/** The engine's view of the page's household: ages as a list, nothing else renamed. */
+/** The engine's view of the page's household: ages as a list, and the state's own Medicaid answer. */
 export function engineScenario(scenario: PageScenario) {
   return {
     adults: scenario.adults,
@@ -272,6 +259,6 @@ export function engineScenario(scenario: PageScenario) {
     dependents: scenario.dependents,
     state: scenario.state,
     benchmarkPremium: scenario.benchmarkPremium,
-    expansionState: scenario.expansionState,
+    expansionState: expansionFor(scenario.state),
   };
 }

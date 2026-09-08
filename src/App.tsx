@@ -10,7 +10,6 @@ import {
   subsidyLines,
 } from './lib/aca';
 import type { Adults, Scenario, StateCode } from './lib/aca';
-import { expansionFor } from './lib/aca';
 import { decodeScenario, engineScenario } from './lib/scenarioUrl';
 import type { PageScenario } from './lib/scenarioUrl';
 import { formatCurrency } from './lib/format';
@@ -55,7 +54,6 @@ const App: React.FC = () => {
   const [dependents, setDependents] = useState<number>(opening.dependents);
   const [state, setState] = useState<StateCode | null>(opening.state);
   const [benchmarkPremium, setBenchmarkPremium] = useState<number | null>(opening.benchmarkPremium);
-  const [expansionState, setExpansionState] = useState<boolean>(opening.expansionState);
 
   /**
    * Whose reading the live region is carrying, or null before the reader has
@@ -66,23 +64,14 @@ const App: React.FC = () => {
 
   /** The household as the page holds it: what the address bar carries. */
   const pageScenario: PageScenario = useMemo(
-    () => ({ adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState }),
-    [adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState],
+    () => ({ adults, age, spouseAge, income, dependents, state, benchmarkPremium }),
+    [adults, age, spouseAge, income, dependents, state, benchmarkPremium],
   );
   const address = useScenarioAddress(pageScenario);
 
   const household = (setter: () => void): void => {
     setter();
     announce('household');
-  };
-
-  /**
-   * A state brings its Medicaid answer with it: the switch moves to the
-   * state's status, visibly, and stays the reader's to move back.
-   */
-  const chooseState = (next: StateCode | null): void => {
-    setState(next);
-    setExpansionState(expansionFor(next));
   };
 
   /** The household in the shape the engine reads it: one object everything below prices off. */
@@ -152,11 +141,9 @@ const App: React.FC = () => {
           dependents={dependents}
           onDependents={(next) => household(() => setDependents(next))}
           state={state}
-          onState={(next) => household(() => chooseState(next))}
+          onState={(next) => household(() => setState(next))}
           benchmarkPremium={benchmarkPremium}
           onBenchmarkPremium={(next) => household(() => setBenchmarkPremium(next))}
-          expansionState={expansionState}
-          onExpansionState={(next) => household(() => setExpansionState(next))}
         />
 
         <div className="flow">

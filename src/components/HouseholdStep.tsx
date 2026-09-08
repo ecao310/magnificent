@@ -1,15 +1,17 @@
 import {
+  EXPANSION_FLOOR_MULTIPLE,
   MAX_ADULT_AGE,
   MIN_ADULT_AGE,
   STATES,
   STATE_CODES,
+  STATUTORY_FLOOR_MULTIPLE,
   averageBenchmarkMonthly,
   isStateCode,
   perAdditionalPersonFor,
 } from '../lib/aca';
 import type { Adults, CoverageYear, StateCode } from '../lib/aca';
 import { ADULT_COUNTS, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
-import { formatCurrency } from '../lib/format';
+import { formatCurrency, formatFpl } from '../lib/format';
 import { ADULTS_LABELS } from '../lib/householdProse';
 import { MoneyField } from './MoneyField';
 
@@ -29,8 +31,6 @@ export interface HouseholdStepProps {
   /** Your own monthly benchmark, or null for the state's average, or the national one. */
   benchmarkPremium: number | null;
   onBenchmarkPremium: (next: number | null) => void;
-  expansionState: boolean;
-  onExpansionState: (next: boolean) => void;
 }
 
 /** The counts the strip of children offers. */
@@ -41,8 +41,9 @@ const NATIONAL = '';
 
 /**
  * The household every figure on the page is priced for: who is on the plan,
- * how old they are, where they live, what the benchmark costs and where the
- * subsidy starts.
+ * how old they are, where they live, and what the benchmark costs. Where the
+ * subsidy starts is the state's answer, not the reader's: the note under the
+ * state says which line it is.
  *
  * Everything is visible. Nothing here is advanced — each control moves a
  * figure the reader can see move — and a control behind a disclosure is a
@@ -63,8 +64,6 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   onState,
   benchmarkPremium,
   onBenchmarkPremium,
-  expansionState,
-  onExpansionState,
 }) => {
   const couple = adults === 2;
   const ages = couple ? [age, spouseAge] : [age];
@@ -72,6 +71,8 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   const benchmark = benchmarkPremium ?? average;
   const here = state === null ? null : STATES[state];
   const perChild = perAdditionalPersonFor({ state, year });
+  const expansionLine = formatFpl(EXPANSION_FLOOR_MULTIPLE);
+  const statutoryLine = formatFpl(STATUTORY_FLOOR_MULTIPLE);
 
   return (
     <section
@@ -186,8 +187,14 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           </select>
         </span>
         <p className="field-note" id="state-note">
-          Sets the average premium and the Medicaid line for your state, and the poverty
-          line in Alaska and Hawaii.
+          {here === null
+            ? `Sets the average premium and where the subsidy starts. Forty states and DC expanded Medicaid, and the average follows them: the subsidy starts at ${expansionLine} of the poverty line.`
+            : here.expandedMedicaid
+              ? `${here.name} expanded Medicaid: the subsidy starts at ${expansionLine} of the poverty line.`
+              : `${here.name} did not expand Medicaid: the subsidy starts at ${statutoryLine} of the poverty line, and under it there is no Medicaid either.`}
+          {here !== null && here.guidelineRegion !== 'contiguous' && (
+            <> {here.name} has a poverty line of its own, and the figures use it.</>
+          )}
         </p>
       </div>
 
@@ -223,25 +230,6 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
             </button>
           </p>
         )}
-      </div>
-
-      <div className="input-group">
-        <div className="checkbox-group">
-          <label className="checkbox-option">
-            <input
-              type="checkbox"
-              checked={expansionState}
-              onChange={(e) => onExpansionState(e.target.checked)}
-            />
-            <span>My state expanded Medicaid</span>
-          </label>
-        </div>
-        <p className="field-note">
-          {here === null
-            ? '40 states and DC have.'
-            : `${here.name} has${here.expandedMedicaid ? '' : ' not'}.`}{' '}
-          If yours has, the subsidy starts at 138% of the poverty line; otherwise at 100%.
-        </p>
       </div>
     </section>
   );

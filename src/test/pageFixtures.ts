@@ -49,7 +49,3 @@ export const incomeField = (): HTMLInputElement =>
 /** The premium field in the rail. */
 export const premiumField = (): HTMLInputElement =>
   screen.getByRole('spinbutton', { name: /benchmark plan premium/i });
-
-/** The switch for the floor. */
-export const expansionSwitch = (): HTMLInputElement =>
-  screen.getByRole('checkbox', { name: /my state expanded medicaid/i });

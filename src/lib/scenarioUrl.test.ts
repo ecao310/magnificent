@@ -33,22 +33,10 @@ describe('the link', () => {
     expect(encodeScenario({ ...couple, adults: 1 })).toBe('adults=1');
   });
 
-  it('writes the premium only when the reader set one, and expansion only when off', () => {
+  it('writes the premium only when the reader set one, and the state only when there is one', () => {
     expect(encodeScenario({ ...defaultScenario(), benchmarkPremium: 900 })).toBe('premium=900');
-    expect(encodeScenario({ ...defaultScenario(), expansionState: false })).toBe('expansion=0');
-  });
-
-  it('writes the state, and expansion only when it disagrees with the state', () => {
     expect(encodeScenario({ ...defaultScenario(), state: 'OH' })).toBe('state=OH');
-    expect(encodeScenario({ ...defaultScenario(), state: 'TX', expansionState: false })).toBe(
-      'state=TX',
-    );
-    expect(encodeScenario({ ...defaultScenario(), state: 'TX', expansionState: true })).toBe(
-      'state=TX&expansion=1',
-    );
-    expect(encodeScenario({ ...defaultScenario(), state: 'OH', expansionState: false })).toBe(
-      'state=OH&expansion=0',
-    );
+    expect(encodeScenario({ ...defaultScenario(), state: 'TX' })).toBe('state=TX');
   });
 
   it('round-trips every field', () => {
@@ -60,7 +48,6 @@ describe('the link', () => {
       dependents: 2,
       state: 'AK' as const,
       benchmarkPremium: 1_250,
-      expansionState: false,
     };
     const { scenario: back, notes } = decodeScenario(`?${encodeScenario(scenario)}`);
     expect(notes).toEqual([]);
@@ -99,24 +86,19 @@ describe('reading a link', () => {
     expect(notes).toHaveLength(1);
   });
 
-  it('reads a state in any case, and opens the switch on the state’s own answer', () => {
+  it('reads a state in any case', () => {
     expect(decodeScenario('?state=tx').scenario.state).toBe('TX');
-    expect(decodeScenario('?state=TX').scenario.expansionState).toBe(false);
-    expect(decodeScenario('?state=TX&expansion=1').scenario.expansionState).toBe(true);
-    expect(decodeScenario('?state=OH').scenario.expansionState).toBe(true);
-    expect(decodeScenario('?state=OH&expansion=0').scenario.expansionState).toBe(false);
-    expect(decodeScenario('?expansion=0').scenario.expansionState).toBe(false);
+    expect(decodeScenario('?state=TX').scenario.state).toBe('TX');
   });
 
   it('falls back to the national average on a state it does not know, with a note', () => {
     const { scenario, notes } = decodeScenario('?state=ZZ');
     expect(scenario.state).toBeNull();
-    expect(scenario.expansionState).toBe(true);
     expect(notes).toHaveLength(1);
   });
 
   it('reads past keys it does not know', () => {
-    const { scenario, notes } = decodeScenario('?year=2025&filing=mfj&kind=harvest&utm_source=x');
+    const { scenario, notes } = decodeScenario('?year=2025&filing=mfj&expansion=0&utm_source=x');
     expect(scenario).toEqual(defaultScenario());
     expect(notes).toEqual([]);
   });
@@ -128,8 +110,11 @@ describe('the engine’s view', () => {
     expect(engineScenario({ ...defaultScenario(), adults: 1, spouseAge: 40 }).ages).toEqual([50]);
   });
 
-  it('carries the state through', () => {
+  it('carries the state through, with its own Medicaid answer', () => {
     expect(engineScenario({ ...defaultScenario(), state: 'HI' }).state).toBe('HI');
+    expect(engineScenario({ ...defaultScenario(), state: 'HI' }).expansionState).toBe(true);
+    expect(engineScenario({ ...defaultScenario(), state: 'TX' }).expansionState).toBe(false);
     expect(engineScenario(defaultScenario()).state).toBeNull();
+    expect(engineScenario(defaultScenario()).expansionState).toBe(true);
   });
 });

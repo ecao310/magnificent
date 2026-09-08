@@ -5,7 +5,6 @@ import {
   chooseAdults,
   chooseChildren,
   chooseState,
-  expansionSwitch,
   incomeField,
   pinPageYear,
   premiumField,
@@ -59,7 +58,7 @@ describe('the page', () => {
     expect(incomeField()).toHaveValue(50_000);
     expect(premiumField()).toHaveValue(1_747);
     expect(screen.getByRole('combobox', { name: 'State' })).toHaveValue('');
-    expect(expansionSwitch()).toBeChecked();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Use the average' })).not.toBeInTheDocument();
   });
 
@@ -72,17 +71,11 @@ describe('the page', () => {
     expect(options[51]).toHaveValue('WY');
   });
 
-  it('reprices the benchmark for a state, and moves the switch to the state’s answer', () => {
+  it('reprices the benchmark for a state, and back for the national average', () => {
     render(<App />);
     chooseState('TX');
     // Texas at 40 is $661; two fifty-year-olds are 2 × 1.786 / 1.278 of that.
     expect(premiumField()).toHaveValue(1_847);
-    expect(expansionSwitch()).not.toBeChecked();
-    // The reader can put the switch back, and it stays put.
-    fireEvent.click(expansionSwitch());
-    expect(expansionSwitch()).toBeChecked();
-    chooseState('OH');
-    expect(expansionSwitch()).toBeChecked();
     chooseState('');
     expect(premiumField()).toHaveValue(1_747);
   });
@@ -156,20 +149,11 @@ describe('the page', () => {
     expect(premiumField()).toHaveValue(6_000);
   });
 
-  it('moves the expansion switch', () => {
-    render(<App />);
-    fireEvent.click(expansionSwitch());
-    expect(expansionSwitch()).not.toBeChecked();
-    fireEvent.click(expansionSwitch());
-    expect(expansionSwitch()).toBeChecked();
-  });
-
   it('reads a household out of the link and notes what it adjusted', () => {
     window.history.replaceState(null, '', '/?adults=1&age=80&income=30000&state=tx');
     render(<App />);
     expect(screen.getByRole('radio', { name: 'One adult' })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'State' })).toHaveValue('TX');
-    expect(expansionSwitch()).not.toBeChecked();
     expect(screen.getByRole('slider', { name: 'Age' })).toHaveValue('64');
     expect(screen.getByRole('slider', { name: /household income/i })).toHaveValue('30000');
     const note = screen.getByRole('status');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 /**
@@ -25,7 +25,7 @@ import { PAGE_COVERAGE_YEAR, costCurve } from './lib/aca';
 import type { Scenario } from './lib/aca';
 import { CHART, PALETTE } from './styles/palette';
 import { defaultScenario, engineScenario } from './lib/scenarioUrl';
-import { expansionSwitch, pinPageYear, slide, typeMoney } from './test/pageFixtures';
+import { chooseState, pinPageYear, slide, typeMoney } from './test/pageFixtures';
 
 /** What recharts puts in the SVG: the two bands, the marker, and the two edges the subsidy draws. */
 
@@ -77,12 +77,12 @@ describe('the chart', () => {
     expect(document.querySelector('figure.chart-figure input')).toBeNull();
   });
 
-  it('shades the gap under the floor, and moves the floor with the expansion switch', () => {
+  it('shades the gap under the floor, and moves the floor to 100% for a state that did not expand', () => {
     render(<App />);
     expect(marks('.gap-area')).toHaveLength(1);
     const floorX = (): number => Number(marks('.credit-edge line')[0].getAttribute('x1'));
     const before = floorX();
-    fireEvent.click(expansionSwitch());
+    chooseState('TX');
     expect(floorX()).toBeLessThan(before);
     expect(marks('.gap-area')).toHaveLength(1);
   });

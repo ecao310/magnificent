@@ -47,8 +47,7 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
   const [canCopy] = useState(() => typeof navigator.clipboard?.writeText === 'function');
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
-  const { adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState } =
-    scenario;
+  const { adults, age, spouseAge, income, dependents, state, benchmarkPremium } = scenario;
 
   const written = useRef(false);
   useEffect(() => {
@@ -60,7 +59,6 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
       dependents,
       state,
       benchmarkPremium,
-      expansionState,
     };
     let timer: number | undefined;
     if (written.current) {
@@ -71,7 +69,7 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
     }
     setCopyState('idle');
     return () => window.clearTimeout(timer);
-  }, [adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState]);
+  }, [adults, age, spouseAge, income, dependents, state, benchmarkPremium]);
 
   const copy = (): void => {
     /* Flush the address before reading it, so the button copies what is on
@@ -84,7 +82,6 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
       dependents,
       state,
       benchmarkPremium,
-      expansionState,
     });
     void navigator.clipboard
       .writeText(window.location.href)

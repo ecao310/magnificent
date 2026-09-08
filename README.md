@@ -18,10 +18,10 @@ which drew the 400% line without pricing it.
 ## The two steps
 
 1. **Your household** — adults and children on the plan, their ages, your
-   state (a list, opening on the national average), the benchmark plan's
+   state (a list, opening on the national average), and the benchmark plan's
    monthly premium (a number input, prefilled with the state's or the
-   national average for those ages, editable), and whether your state
-   expanded Medicaid, which the state sets and you can move back.
+   national average for those ages, editable). Whether the state expanded
+   Medicaid, and so where the subsidy starts, follows from the state.
 2. **What you pay** — the benchmark plan's monthly cost after the subsidy,
    plotted against household income. A green band marks the subsidy between
    the cost curve and a dashed full-premium line; ink-dashed lines mark where
@@ -68,9 +68,9 @@ covers it.
 
 The whole household lives in the query string, so a link survives a refresh
 and can be sent to a spouse or a navigator: `adults`, `age`, `spouse`,
-`income`, `deps`, `state`, `premium`, `expansion` — each written only when it
-differs from what the page opens with, and `expansion` only when it disagrees
-with the state. A link asking for something the page cannot show — an age of
+`income`, `deps`, `state`, `premium` — each written only when it differs
+from what the page opens with. A link asking for something the page cannot
+show — an age of
 70, an income past the slider's edge, a state it does not know — is clamped
 to what it can, and the page says on load what it changed. The step is a
 fragment (`#step-cost`), not a query parameter: it is where the reader is
