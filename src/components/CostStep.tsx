@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import { MAX_INCOME } from '../lib/scenarioUrl';
 import type { CostPoint, PtcAssessment, Scenario, SubsidyLine } from '../lib/aca';
 import { formatCurrency } from '../lib/format';
@@ -21,7 +21,7 @@ export interface CostStepProps {
   income: number;
   onIncome: (next: number) => void;
   incomeSliderStep: number;
-  /** Every line the subsidy puts on this axis; the tiers are drawn on request. */
+  /** The subsidy's two edges on this axis. */
   lines: SubsidyLine[];
   /** Where the household stands at its own income. */
   here: PtcAssessment;
@@ -46,12 +46,8 @@ export const CostStep: React.FC<CostStepProps> = ({
   lines,
   here,
 }) => {
-  const [showTiers, setShowTiers] = useState(false);
-
   const axisDomain: [number, number] = [curve[0].magi, curve[curve.length - 1].magi];
-  const drawn = lines.filter(
-    (line) => line.magi <= axisMax && (line.kind === 'edge' || showTiers),
-  );
+  const drawn = lines.filter((line) => line.magi <= axisMax);
   const monthly = here.netPremiumAnnual === null ? null : Math.round(here.netPremiumAnnual / 12);
 
   return (
@@ -75,34 +71,6 @@ export const CostStep: React.FC<CostStepProps> = ({
           scenario={scenario}
           onIncome={onIncome}
         />
-
-        <figcaption className="chart-legend">
-          <span className="chart-legend-item">
-            <span className="chart-legend-swatch chart-legend-cost" aria-hidden="true" />
-            You pay per month
-          </span>
-          <span className="chart-legend-item">
-            <span className="chart-legend-swatch chart-legend-subsidy" aria-hidden="true" />
-            Subsidy pays
-          </span>
-          <span className="chart-legend-item">
-            <span className="chart-legend-swatch chart-legend-here" aria-hidden="true" />
-            Your income
-          </span>
-          <span className="chart-legend-item">
-            <span className="chart-legend-swatch chart-legend-edge" aria-hidden="true" />
-            Subsidy starts / ends
-          </span>
-          <label className="checkbox-option chart-legend-toggle">
-            <input
-              type="checkbox"
-              checked={showTiers}
-              onChange={(e) => setShowTiers(e.target.checked)}
-            />
-            <span className="chart-legend-swatch chart-legend-tier" aria-hidden="true" />
-            <span>Show cost-sharing tiers (150%, 200%, 250%)</span>
-          </label>
-        </figcaption>
       </figure>
 
       <div className="input-group chart-slider">

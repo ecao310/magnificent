@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   COVERAGE_YEARS,
-  CSR_TIERS,
   EXPANSION_FLOOR_MULTIPLE,
   FPL_YEAR_PARAMS,
   PTC_CLIFF_PERCENT,
@@ -10,7 +9,6 @@ import {
   creditFloorMagi,
   creditLostBetween,
   creditSlopeAt,
-  csrTierFor,
   expectedContribution,
   fplGuidelineYear,
   guidelineFor,
@@ -255,50 +253,18 @@ describe('the slope', () => {
   });
 });
 
-describe('the cost-sharing tiers', () => {
-  it('step at 150%, 200% and 250% of the line, inclusive at the top', () => {
-    const line = povertyLineFor(COUPLE);
-    expect(CSR_TIERS.map((t) => t.actuarialValue)).toEqual([94, 87, 73]);
-    expect(csrTierFor(1.4 * line, COUPLE)?.actuarialValue).toBe(94);
-    expect(csrTierFor(1.5 * line, COUPLE)?.actuarialValue).toBe(94);
-    expect(csrTierFor(1.5 * line + 1, COUPLE)?.actuarialValue).toBe(87);
-    expect(csrTierFor(2 * line, COUPLE)?.actuarialValue).toBe(87);
-    expect(csrTierFor(2.5 * line, COUPLE)?.actuarialValue).toBe(73);
-    expect(csrTierFor(2.5 * line + 1, COUPLE)).toBeNull();
-  });
-
-  it('are not offered under the floor', () => {
-    expect(csrTierFor(1.2 * povertyLineFor(COUPLE), COUPLE)).toBeNull();
-    expect(
-      csrTierFor(1.2 * povertyLineFor(COUPLE), { ...COUPLE, expansionState: false })?.actuarialValue,
-    ).toBe(94);
-  });
-});
-
 describe('the lines on the axis', () => {
-  it('are the floor, the three tiers and the cliff, ascending, in a cliff year', () => {
+  it('are the floor and the cliff, ascending, in a cliff year', () => {
     const lines = subsidyLines(COUPLE);
-    expect(lines.map((l) => l.id)).toEqual(['floor', 'csr-150', 'csr-200', 'csr-250', 'cliff']);
-    expect(lines.map((l) => l.multiple)).toEqual([1.38, 1.5, 2, 2.5, 4]);
-    expect(lines.map((l) => l.label)).toEqual([
-      'Subsidy starts · 138%',
-      'Tier · 150%',
-      'Tier · 200%',
-      'Tier · 250%',
-      'Subsidy ends · 400%',
-    ]);
-    for (let i = 1; i < lines.length; i += 1) {
-      expect(lines[i].magi).toBeGreaterThan(lines[i - 1].magi);
-    }
-    expect(lines[0].label).toBe('Subsidy starts · 138%');
-    expect(lines[4].label).toBe('Subsidy ends · 400%');
+    expect(lines.map((l) => l.id)).toEqual(['floor', 'cliff']);
+    expect(lines.map((l) => l.multiple)).toEqual([1.38, 4]);
+    expect(lines[1].magi).toBeGreaterThan(lines[0].magi);
   });
 
   it('have no cliff in 2025 and a 100% floor without expansion', () => {
     expect(subsidyLines({ ...COUPLE, year: 2025 }).map((l) => l.id)).not.toContain('cliff');
     const gap = subsidyLines({ ...COUPLE, expansionState: false });
     expect(gap[0].multiple).toBe(1);
-    expect(gap[0].label).toBe('Subsidy starts · 100%');
   });
 });
 
@@ -310,7 +276,6 @@ describe('the assessment', () => {
     expect(here.belowFloor).toBe(false);
     expect(here.overCliff).toBe(false);
     expect(here.headroom).toBe(cliff - 60_000);
-    expect(here.csrTier).toBeNull();
     expect(here.slope).toBeCloseTo(creditSlopeAt(60_000, COUPLE), 8);
     const over = ptcFor(cliff + 1, COUPLE);
     expect(over.overCliff).toBe(true);

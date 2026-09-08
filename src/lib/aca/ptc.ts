@@ -337,38 +337,9 @@ export function cliffCost(scenario: Scenario = {}): number | null {
   return toCents(premiumTaxCredit(cliffMagi, scenario));
 }
 
-/** One cost-sharing reduction tier under section 1402 of the ACA. */
-export interface CsrTier {
-  upTo: number;
-  actuarialValue: number;
-}
-
-/**
- * The three tiers, ascending. A standard silver plan is 70%; these turn it
- * into 94%, 87% and 73% — a deductible of a few hundred dollars instead of a
- * few thousand — and each step down is lost whole on the dollar that crosses
- * it. Drawn as lines rather than priced, because what a deductible is worth
- * depends on how ill the household gets.
- */
-export const CSR_TIERS: readonly CsrTier[] = [
-  { upTo: 1.5, actuarialValue: 94 },
-  { upTo: 2, actuarialValue: 87 },
-  { upTo: 2.5, actuarialValue: 73 },
-];
-
-/** The tier a household income lands in, or null above them all or below the floor. */
-export function csrTierFor(magi: number, scenario: Scenario = {}): CsrTier | null {
-  const { expansionState } = resolveScenario(scenario);
-  const multiple = fplMultipleOf(magi, scenario);
-  if (multiple < creditFloorMultiple(expansionState)) return null;
-  return CSR_TIERS.find((tier) => multiple <= tier.upTo) ?? null;
-}
-
-/** One vertical line the chart can draw: an edge of the credit, or a tier boundary. */
+/** One vertical line the chart draws: an edge of the credit. */
 export interface SubsidyLine {
-  id: 'floor' | 'csr-150' | 'csr-200' | 'csr-250' | 'cliff';
-  /** Which family of line it belongs to, which is which switch draws it. */
-  kind: 'edge' | 'csr';
+  id: 'floor' | 'cliff';
   multiple: number;
   magi: number;
   label: string;
@@ -376,8 +347,7 @@ export interface SubsidyLine {
 
 /**
  * Every line the credit puts on an income axis for this household, ascending:
- * the floor, the three cost-sharing boundaries, and — in a year with one —
- * the cliff.
+ * the floor and — in a year with one — the cliff.
  */
 export function subsidyLines(scenario: Scenario = {}): SubsidyLine[] {
   const { expansionState } = resolveScenario(scenario);
@@ -386,26 +356,15 @@ export function subsidyLines(scenario: Scenario = {}): SubsidyLine[] {
   const lines: SubsidyLine[] = [
     {
       id: 'floor',
-      kind: 'edge',
       multiple: floor,
       magi: floor * line,
       label: `Subsidy starts · ${Math.round(floor * 100)}%`,
     },
-    ...CSR_TIERS.map(
-      (tier): SubsidyLine => ({
-        id: `csr-${Math.round(tier.upTo * 100)}` as SubsidyLine['id'],
-        kind: 'csr',
-        multiple: tier.upTo,
-        magi: tier.upTo * line,
-        label: `Tier · ${Math.round(tier.upTo * 100)}%`,
-      }),
-    ),
   ];
   const cliff = ptcCliffMagi(scenario);
   if (cliff !== null) {
     lines.push({
       id: 'cliff',
-      kind: 'edge',
       multiple: PTC_CLIFF_PERCENT,
       magi: cliff,
       label: `Subsidy ends · ${PTC_CLIFF_PERCENT * 100}%`,
@@ -440,7 +399,6 @@ export interface PtcAssessment {
   credit: number;
   /** The credit given back on the next dollar, as a fraction of it. */
   slope: number;
-  csrTier: CsrTier | null;
 }
 
 /** Where a given household income stands against this year's credit. */
@@ -469,6 +427,5 @@ export function ptcFor(magi: number, scenario: Scenario = {}): PtcAssessment {
     netPremiumAnnual: net === null ? null : toCents(net),
     credit: toCents(premiumTaxCredit(magi, scenario)),
     slope: creditSlopeAt(magi, scenario),
-    csrTier: csrTierFor(magi, scenario),
   };
 }

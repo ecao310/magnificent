@@ -36,9 +36,6 @@ export const PALETTE = {
   amberBright: '#9f4600',
   /** What the subsidy pays: the tint between the curve and the full premium. */
   emerald: '#1d7d3e',
-  /** A cost-sharing tier boundary, and its label. */
-  violet: '#7b489e',
-  violetDeep: '#643185',
 } as const;
 
 /**
@@ -53,7 +50,7 @@ export const CHART = {
   label: 13,
   /** A curve: the lines in the plot that are the data. */
   line: 3,
-  /** A reference line: a tier, and the ring the marker's dot is cut with. */
+  /** The ring the marker's dot is cut with. */
   rule: 2,
   /** The one line that is the reader rather than the data. */
   marker: 1.5,

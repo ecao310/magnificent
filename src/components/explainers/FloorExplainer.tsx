@@ -7,11 +7,11 @@ export interface FloorExplainerProps {
   expansionState: boolean;
 }
 
-/** Where the subsidy starts, and the three tiers that step down on the way up. */
+/** Where the subsidy starts. */
 export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionState }) => (
   <details className="explainer">
     <summary>
-      <h3 id="floor-heading">The Medicaid line and the cost-sharing tiers</h3>
+      <h3 id="floor-heading">The Medicaid line</h3>
     </summary>
     <div className="explainer-content">
       {expansionState ? (
@@ -30,21 +30,6 @@ export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionS
           no subsidy and no Medicaid: the coverage gap, where you pay the full premium.
         </p>
       )}
-      <p>
-        <strong>The tiers.</strong> Under 250% of the line a silver plan is upgraded at no
-        extra premium, from covering about 70% of costs to 94% under 150%, 87% under 200%,
-        73% under 250% &mdash; a deductible of a few hundred dollars instead of a few
-        thousand. Each step is lost whole on the dollar that crosses it; for a household
-        that uses its coverage, the step at 200% can be worth more than the slope around
-        it.{' '}
-        {here.csrTier
-          ? `You are in the ${here.csrTier.actuarialValue}% tier.`
-          : here.belowFloor
-            ? expansionState
-              ? 'You are under the Medicaid line.'
-              : 'You are under 100% of the poverty line.'
-            : 'You are above all three.'}
-      </p>
     </div>
   </details>
 );

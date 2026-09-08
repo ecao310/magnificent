@@ -94,7 +94,7 @@ export interface CostChartProps {
   here: number;
   /** What the household pays a month there, or null on Medicaid. */
   hereCost: number | null;
-  /** The vertical lines to draw, already filtered to the tiers that are switched on. */
+  /** The subsidy's two edges, where they fall on this axis. */
   lines: SubsidyLine[];
   label: string;
   scenario: Scenario;
@@ -119,10 +119,9 @@ export interface CostChartProps {
  *
  * The plot measures itself and sets its labels to fit: the two edges are
  * named in full where there is room for both names and by their percentage
- * where there is not, a gap too narrow for its word turns the word upright,
- * and the tiers — never more than a few dozen pixels apart — carry their
- * percentage alone, on two rows when one will not hold them. Before the first
- * measurement everything is set as if the plot were wide.
+ * where there is not, and a gap too narrow for its word turns the word
+ * upright. Before the first measurement everything is set as if the plot
+ * were wide.
  */
 export const CostChart: React.FC<CostChartProps> = ({
   curve,
@@ -148,7 +147,7 @@ export const CostChart: React.FC<CostChartProps> = ({
 
   /* The edges are named in full when both names fit between and inside the
      plot's edges, and by their percentage otherwise. */
-  const edges = lines.filter((line) => line.kind === 'edge');
+  const edges = lines;
   const edgesFit = ((): boolean => {
     if (plotWidth === null) return true;
     const spans = edges.map((line) => ({ at: px(line.magi) as number, half: textWidth(line.label) / 2 }));
@@ -158,12 +157,6 @@ export const CostChart: React.FC<CostChartProps> = ({
     }
     return true;
   })();
-
-  /* The tiers carry their percentage alone, and take turns on two rows when
-     one row would run them together. */
-  const tiers = lines.filter((line) => line.kind === 'csr');
-  const tierPitch = tiers.length > 1 ? (px(tiers[1].magi) ?? Infinity) - (px(tiers[0].magi) ?? 0) : Infinity;
-  const tiersStaggered = tierPitch < textWidth(formatFpl(tiers[0]?.multiple ?? 0)) + LABEL_GAP;
 
   /* The premium's name wraps to the band it is hung in, so a narrow band
      gets it on two or three lines rather than running across the cliff. */
@@ -339,24 +332,6 @@ export const CostChart: React.FC<CostChartProps> = ({
                 value: edgesFit ? line.label : formatFpl(line.multiple),
                 position: 'top',
                 fill: PALETTE.inkSoft,
-                fontSize: CHART.label,
-              }}
-            />
-          ))}
-
-          {tiers.map((line, i) => (
-            <ReferenceLine
-              className="csr-tier"
-              key={line.id}
-              x={line.magi}
-              stroke={PALETTE.violet}
-              strokeDasharray="6 3"
-              strokeWidth={CHART.hairline}
-              label={{
-                value: formatFpl(line.multiple),
-                position: 'insideTop',
-                offset: tiersStaggered && i % 2 === 1 ? 6 + CHART.label + 2 : 6,
-                fill: PALETTE.violetDeep,
                 fontSize: CHART.label,
               }}
             />

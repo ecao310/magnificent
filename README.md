@@ -26,20 +26,20 @@ which drew the 400% line without pricing it.
    plotted against household income. A green band marks the subsidy between
    the cost curve and a dashed full-premium line; ink-dashed lines mark where
    it starts, at 138% or 100% of the poverty line, and ends, at 400%. A
-   legend toggle adds the cost-sharing tiers, and a "You" marker sits at your
-   income — click the chart, drag the slider, or type a number to move it.
+   "You" marker sits at your income — click the chart, drag the slider, or
+   type a number to move it.
 
 Four figures follow: You pay, Subsidy, Each extra $1 of income costs, and
 Room before the cliff. Below them, five notes: How the subsidy is figured,
-The slope, The 400% cliff — back since 2026, The Medicaid line and the
-cost-sharing tiers, and What is left out.
+The slope, The 400% cliff — back since 2026, The Medicaid line, and What is
+left out.
 
 ## What is priced
 
 `src/lib/aca/` prices coverage years 2025 and 2026: the poverty guidelines on
 their one-year lag, for the contiguous states and for Alaska and Hawaii; the
 applicable-percentage table; the subsidy's floor at 138% or 100% of the
-line; the 400% ceiling; the cost-sharing tiers; and the benchmark premium
+line; the 400% ceiling; and the benchmark premium
 from KFF's average for the state, or the national one, scaled along CMS's
 age curve. Choosing a state sets its average, its Medicaid status and, in
 Alaska and Hawaii, its poverty line. New York and Vermont, which do not price

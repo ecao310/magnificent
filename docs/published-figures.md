@@ -42,15 +42,12 @@ years beginning after 31 December 2025; the House passed H.R. 7 (a
 three-year extension) on 8 January 2026, 230–196, and the Senate has not
 taken it up as of September 2026.
 
-## Floor and cost-sharing tiers
+## Floor and ceiling
 
 | Line | Multiple of FPL | Source |
 | --- | --- | --- |
 | Medicaid expansion floor | 138% (133% + 5% disregard) | 42 USC 1396a(a)(10)(A)(i)(VIII), 1396a(e)(14)(I) |
 | Statutory floor (no expansion) | 100% | IRC 36B(c)(1)(A) |
-| CSR 94% actuarial value | ≤ 150% | ACA §1402(c)(2) |
-| CSR 87% | ≤ 200% | ACA §1402(c)(2) |
-| CSR 73% | ≤ 250% | ACA §1402(c)(2) |
 | Ceiling | 400% | IRC 36B(c)(1)(A) |
 
 Forty states and DC had expanded Medicaid as of 2026; the ten that had not

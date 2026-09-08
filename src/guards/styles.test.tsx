@@ -60,8 +60,6 @@ describe('the palette', () => {
       amber: '--amber',
       amberBright: '--amber-bright',
       emerald: '--emerald',
-      violet: '--violet',
-      violetDeep: '--violet-deep',
     };
     for (const [key, token] of Object.entries(named) as [keyof typeof PALETTE, string][]) {
       expect(screenTokens[token], token).toBe(PALETTE[key]);
@@ -118,7 +116,7 @@ describe('the selectors', () => {
     );
     // Classes written through a template or a conditional, named here so the
     // extractor above does not have to understand them.
-    for (const dynamic of ['credit-edge', 'csr-tier', 'here-line']) classNames.add(dynamic);
+    for (const dynamic of ['credit-edge', 'here-line']) classNames.add(dynamic);
     // Classes the components write as one of a pair, e.g. `money-field amber`.
     for (const compound of ['money-field', 'amber']) classNames.add(compound);
     for (const selector of nested) {
@@ -137,7 +135,6 @@ describe('the selectors', () => {
       '.answer-figure dd',
       '.explainer h3',
       '.chart-slider .slider-readout',
-      '.chart-legend .chart-legend-swatch',
       '.notes-section .explainer',
     ];
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();

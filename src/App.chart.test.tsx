@@ -27,16 +27,12 @@ import { CHART, PALETTE } from './styles/palette';
 import { defaultScenario, engineScenario } from './lib/scenarioUrl';
 import { expansionSwitch, pinPageYear, slide, typeMoney } from './test/pageFixtures';
 
-/** What recharts puts in the SVG: the two bands, the marker, and the lines the subsidy draws. */
+/** What recharts puts in the SVG: the two bands, the marker, and the two edges the subsidy draws. */
 
 pinPageYear();
 
 const plot = (): HTMLElement => screen.getByRole('img', { name: /^Chart:/ });
 const marks = (selector: string): Element[] => Array.from(plot().querySelectorAll(selector));
-/** How many words the plot writes: the axis titles, the lines' labels, the marker's. */
-const labelCount = (): number => marks('.recharts-label').length;
-const tiersSwitch = (): HTMLElement =>
-  screen.getByRole('checkbox', { name: 'Show cost-sharing tiers (150%, 200%, 250%)' });
 
 describe('the chart', () => {
   it('draws both axes with their ticks', () => {
@@ -65,46 +61,20 @@ describe('the chart', () => {
     expect(premium.getAttribute('stroke-dasharray')).toBe('2 4');
   });
 
-  it('draws the subsidy’s edges from the start, in ink, and the tiers from the legend’s switch', () => {
+  it('draws the subsidy’s edges from the start, in ink', () => {
     render(<App />);
     expect(marks('.credit-edge')).toHaveLength(2);
-    expect(marks('.csr-tier')).toHaveLength(0);
     for (const line of marks('.credit-edge line')) {
       expect(line.getAttribute('stroke')).toBe(PALETTE.inkMuted);
       expect(line.getAttribute('stroke-dasharray')).toBe('2 3');
     }
-    const before = labelCount();
-
-    expect(tiersSwitch()).not.toBeChecked();
-    fireEvent.click(tiersSwitch());
-    expect(marks('.csr-tier')).toHaveLength(3);
-    expect(marks('.credit-edge')).toHaveLength(2);
-    for (const line of marks('.csr-tier line')) {
-      expect(line.getAttribute('stroke')).toBe(PALETTE.violet);
-      expect(line.getAttribute('stroke-dasharray')).toBe('6 3');
-    }
-    // The tiers are a few dozen pixels apart, so each carries its own label.
-    expect(labelCount()).toBe(before + 3);
-    fireEvent.click(tiersSwitch());
-    expect(marks('.csr-tier')).toHaveLength(0);
-    expect(labelCount()).toBe(before);
   });
 
-  it('keys its marks in a row under the plot, with the one switch among them', () => {
+  it('carries no key and no switch under the plot', () => {
     render(<App />);
-    const legend = document.querySelector('figure.chart-figure > figcaption.chart-legend') as HTMLElement;
-    expect(legend).not.toBeNull();
-    expect(legend.querySelectorAll('.chart-legend-item')).toHaveLength(4);
-    const swatches = Array.from(legend.querySelectorAll('.chart-legend-swatch')).map((s) => s.className);
-    expect(swatches).toEqual([
-      'chart-legend-swatch chart-legend-cost',
-      'chart-legend-swatch chart-legend-subsidy',
-      'chart-legend-swatch chart-legend-here',
-      'chart-legend-swatch chart-legend-edge',
-      'chart-legend-swatch chart-legend-tier',
-    ]);
-    expect(legend.contains(tiersSwitch())).toBe(true);
-    expect(screen.queryByRole('button', { name: /breakpoints/i })).not.toBeInTheDocument();
+    expect(document.querySelector('figure.chart-figure')).not.toBeNull();
+    expect(document.querySelector('figure.chart-figure figcaption')).toBeNull();
+    expect(document.querySelector('figure.chart-figure input')).toBeNull();
   });
 
   it('shades the gap under the floor, and moves the floor with the expansion switch', () => {
@@ -174,7 +144,7 @@ describe('the hover', () => {
 
   it('adds a second line only where the plain reading does not hold', () => {
     hover(40_000);
-    expect(document.querySelector('.chart-tooltip-standing')).not.toBeNull();
+    expect(document.querySelector('.chart-tooltip-standing')).toBeNull();
     document.body.innerHTML = '';
     hover(90_000);
     expect(document.querySelector('.chart-tooltip-standing')).not.toBeNull();

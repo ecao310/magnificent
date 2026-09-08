@@ -13,7 +13,7 @@ export interface ChartTooltipProps {
  * What one point on the axis is worth: the income that makes it, where it
  * stands against the poverty line, what you pay there and what the subsidy
  * pays. The second line of the head appears only where the plain reading —
- * you on the slope, buying a standard silver plan — does not hold.
+ * you on the slope — does not hold.
  */
 export const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, scenario }) => {
   if (!active || !payload || !payload.length) return null;
@@ -25,9 +25,7 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, sce
       : 'Medicaid'
     : here.overCliff
       ? 'No subsidy — over the 400% line'
-      : here.csrTier
-        ? `${here.csrTier.actuarialValue}% silver tier`
-        : null;
+      : null;
   const share =
     point.cost === null
       ? null

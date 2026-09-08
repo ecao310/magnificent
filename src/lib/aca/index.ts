@@ -33,7 +33,6 @@ export type {
   ApplicableBand,
   PovertyGuideline,
   PtcYearParams,
-  CsrTier,
   SubsidyLine,
   PtcAssessment,
 } from './ptc';
@@ -43,7 +42,6 @@ export {
   STATUTORY_FLOOR_MULTIPLE,
   FPL_GUIDELINE_LOOKBACK_YEARS,
   FPL_YEAR_PARAMS,
-  CSR_TIERS,
   creditFloorMultiple,
   fplGuidelineYear,
   guidelineFor,
@@ -61,7 +59,6 @@ export {
   creditSlopeAt,
   creditLostBetween,
   cliffCost,
-  csrTierFor,
   subsidyLines,
   ptcFor,
 } from './ptc';
