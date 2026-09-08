@@ -17,10 +17,9 @@ export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => 
     <div className="masthead-body">
       <h1>The ACA Subsidy Slope</h1>
       <p className="subtitle">
-        On a Marketplace plan you pay a set share of your household income for the
-        benchmark plan &mdash; the second-cheapest silver plan in your area &mdash; and
-        the subsidy pays the rest. The share rises with income, and at 400% of the
-        poverty line the subsidy is gone.
+        On an ACA plan, you pay a set share of your household income and
+        the subsidy pays the rest. When household income reaches 400% of the
+        poverty line, the subsidy ends abruptly (the ACA subsidy cliff).
       </p>
     </div>
 
