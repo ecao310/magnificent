@@ -17,10 +17,12 @@ export const LeftOutExplainer: React.FC = () => (
           the smooth line by a few dollars.
         </li>
         <li>
-          <strong>Where you live.</strong> The benchmark is a national average until you
-          enter your own. New York and Vermont do not price by age; Alaska and Hawaii have
-          higher poverty lines; Georgia&rsquo;s partial expansion and states with their own
-          age curves are not modelled.
+          <strong>Where you live.</strong> The benchmark is a state average, or a national
+          one, until you enter your own; your county&rsquo;s figure differs. New York and
+          Vermont are priced flat, since they do not price by age; Alabama, DC,
+          Massachusetts, Minnesota, Mississippi, Oregon and Utah rate on curves of their
+          own and are priced on the federal one here. Georgia&rsquo;s partial expansion is
+          not modelled.
         </li>
         <li>
           <strong>Other plans.</strong> The subsidy is the same whichever plan you buy: a

@@ -6,8 +6,11 @@
 export type { CoverageYear } from './types';
 export { COVERAGE_YEARS, PAGE_COVERAGE_YEAR, defaultCoverageYear } from './years';
 
+export type { StateCode, StateParams, GuidelineRegion, AgeRating } from './states';
+export { STATES, STATE_CODES, isStateCode } from './states';
+
 export type { Adults, Scenario, ResolvedScenario } from './scenario';
-export { DEFAULT_AGE, resolveScenario, adultAges, householdSizeFor } from './scenario';
+export { DEFAULT_AGE, resolveScenario, expansionFor, adultAges, householdSizeFor } from './scenario';
 
 export type { BenchmarkYearParams } from './premium';
 export {
@@ -20,12 +23,20 @@ export {
   BENCHMARK_YEAR_PARAMS,
   BENCHMARK_REFERENCE_AGE,
   ageFactor,
+  benchmarkAt40,
   averageBenchmarkMonthly,
   benchmarkMonthlyFor,
   benchmarkAnnualFor,
 } from './premium';
 
-export type { ApplicableBand, PtcYearParams, CsrTier, SubsidyLine, PtcAssessment } from './ptc';
+export type {
+  ApplicableBand,
+  PovertyGuideline,
+  PtcYearParams,
+  CsrTier,
+  SubsidyLine,
+  PtcAssessment,
+} from './ptc';
 export {
   PTC_CLIFF_PERCENT,
   EXPANSION_FLOOR_MULTIPLE,
@@ -35,8 +46,11 @@ export {
   CSR_TIERS,
   creditFloorMultiple,
   fplGuidelineYear,
+  guidelineFor,
+  guidelineRegionFor,
   povertyLine,
   povertyLineFor,
+  perAdditionalPersonFor,
   fplMultipleOf,
   applicablePercentage,
   creditFloorMagi,

@@ -13,7 +13,10 @@ import {
   csrTierFor,
   expectedContribution,
   fplGuidelineYear,
+  guidelineFor,
+  guidelineRegionFor,
   netPremiumAt,
+  perAdditionalPersonFor,
   povertyLine,
   povertyLineFor,
   premiumTaxCredit,
@@ -48,6 +51,38 @@ describe('the poverty line', () => {
     expect(povertyLineFor({ adults: 1, year: 2026 })).toBe(15_650);
     expect(povertyLineFor({ adults: 2, year: 2026 })).toBe(21_150);
     expect(povertyLineFor({ adults: 2, dependents: 2, year: 2026 })).toBe(32_150);
+  });
+
+  it('is higher in Alaska and Hawaii, from the same notice', () => {
+    expect(guidelineFor(2026, 'alaska')).toEqual({ firstPerson: 19_550, perAdditionalPerson: 6_880 });
+    expect(guidelineFor(2026, 'hawaii')).toEqual({ firstPerson: 17_990, perAdditionalPerson: 6_330 });
+    expect(guidelineFor(2025, 'alaska')).toEqual({ firstPerson: 18_810, perAdditionalPerson: 6_730 });
+    expect(guidelineFor(2025, 'hawaii')).toEqual({ firstPerson: 17_310, perAdditionalPerson: 6_190 });
+    expect(guidelineFor(2026)).toEqual({ firstPerson: 15_650, perAdditionalPerson: 5_500 });
+    expect(povertyLine(2, 2026, 'alaska')).toBe(26_430);
+    expect(povertyLine(2, 2026, 'hawaii')).toBe(24_320);
+    expect(povertyLine(2, 2026, 'contiguous')).toBe(21_150);
+  });
+
+  it('reads the region off the household’s state', () => {
+    expect(guidelineRegionFor({ state: 'AK' })).toBe('alaska');
+    expect(guidelineRegionFor({ state: 'HI' })).toBe('hawaii');
+    expect(guidelineRegionFor({ state: 'TX' })).toBe('contiguous');
+    expect(guidelineRegionFor({})).toBe('contiguous');
+    expect(povertyLineFor({ adults: 2, year: 2026, state: 'AK' })).toBe(26_430);
+    expect(povertyLineFor({ adults: 2, year: 2026, state: 'TX' })).toBe(21_150);
+    expect(perAdditionalPersonFor({ state: 'AK', year: 2026 })).toBe(6_880);
+    expect(perAdditionalPersonFor({ year: 2026 })).toBe(5_500);
+  });
+
+  it('puts the floor at 100% in a state that did not expand, unless the reader says otherwise', () => {
+    expect(creditFloorMagi({ adults: 1, year: 2026, state: 'TX' })).toBe(15_650);
+    expect(creditFloorMagi({ adults: 1, year: 2026, state: 'TX', expansionState: true })).toBe(
+      1.38 * 15_650,
+    );
+    expect(creditFloorMagi({ adults: 1, year: 2026, state: 'OH' })).toBe(1.38 * 15_650);
+    expect(ptcFor(15_000, { adults: 1, year: 2026, state: 'TX' }).belowFloor).toBe(true);
+    expect(ptcFor(16_000, { adults: 1, year: 2026, state: 'TX' }).belowFloor).toBe(false);
   });
 });
 

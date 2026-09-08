@@ -8,6 +8,8 @@ import type { CoverageYear } from './types';
 import { defaultCoverageYear } from './years';
 import { householdSizeFor, resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
+import { STATES } from './states';
+import type { GuidelineRegion } from './states';
 import { benchmarkAnnualFor, benchmarkMonthlyFor } from './premium';
 import { toCents } from './money';
 
@@ -64,6 +66,13 @@ export interface ApplicableBand {
   final: number;
 }
 
+/** One region's poverty guideline: a first person, and a step for each one after. */
+export interface PovertyGuideline {
+  firstPerson: number;
+  /** Added for each person past the first. The guidelines are that linear. */
+  perAdditionalPerson: number;
+}
+
 /** One coverage year's poverty line and table. */
 export interface PtcYearParams {
   source: string;
@@ -71,12 +80,18 @@ export interface PtcYearParams {
   guidelineYear: number;
   /**
    * The guideline for a one-person household in the 48 contiguous states and
-   * DC. Alaska and Hawaii have their own, roughly 25% and 15% higher, so a
-   * reader there meets every line here at more income than it is drawn at.
+   * DC — the line the page draws for a household with no state.
    */
   firstPerson: number;
   /** Added for each person past the first. The guidelines are that linear. */
   perAdditionalPerson: number;
+  /**
+   * HHS publishes two more guidelines each January, roughly 25% and 15%
+   * over the contiguous one, from the same notice. A household in Alaska or
+   * Hawaii meets every line on the page at that much more income.
+   */
+  alaska: PovertyGuideline;
+  hawaii: PovertyGuideline;
   /** Whether income over 400% zeroes the credit. False 2021–2025, true from 2026. */
   cliff: boolean;
   /**
@@ -104,6 +119,9 @@ export const FPL_YEAR_PARAMS: Record<CoverageYear, PtcYearParams> = {
     guidelineYear: 2024,
     firstPerson: 15_060,
     perAdditionalPerson: 5_380,
+    // 89 Fed. Reg. 2961 (January 17 2024).
+    alaska: { firstPerson: 18_810, perAdditionalPerson: 6_730 },
+    hawaii: { firstPerson: 17_310, perAdditionalPerson: 6_190 },
     cliff: false,
     table: [
       { from: 0, to: 1.5, initial: 0, final: 0 },
@@ -120,6 +138,9 @@ export const FPL_YEAR_PARAMS: Record<CoverageYear, PtcYearParams> = {
     guidelineYear: 2025,
     firstPerson: 15_650,
     perAdditionalPerson: 5_500,
+    // The same notice, 90 Fed. Reg. 5917.
+    alaska: { firstPerson: 19_550, perAdditionalPerson: 6_880 },
+    hawaii: { firstPerson: 17_990, perAdditionalPerson: 6_330 },
     cliff: true,
     table: [
       { from: 0, to: 1.33, initial: 0.021, final: 0.021 },
@@ -132,16 +153,48 @@ export const FPL_YEAR_PARAMS: Record<CoverageYear, PtcYearParams> = {
   },
 };
 
-/** The poverty line for a household of `householdSize`, for a coverage year. */
-export function povertyLine(householdSize: number, year: CoverageYear = defaultCoverageYear()): number {
-  const { firstPerson, perAdditionalPerson } = FPL_YEAR_PARAMS[year];
+/** The guideline a coverage year is priced from, for one of the three regions. */
+export function guidelineFor(
+  year: CoverageYear = defaultCoverageYear(),
+  region: GuidelineRegion = 'contiguous',
+): PovertyGuideline {
+  const params = FPL_YEAR_PARAMS[year];
+  switch (region) {
+    case 'alaska':
+      return params.alaska;
+    case 'hawaii':
+      return params.hawaii;
+    default:
+      return { firstPerson: params.firstPerson, perAdditionalPerson: params.perAdditionalPerson };
+  }
+}
+
+/** The region a scenario's poverty line is read from: its state's, or the contiguous one. */
+export function guidelineRegionFor(scenario: Scenario = {}): GuidelineRegion {
+  const { state } = resolveScenario(scenario);
+  return state === null ? 'contiguous' : STATES[state].guidelineRegion;
+}
+
+/** The poverty line for a household of `householdSize`, for a coverage year, in a region. */
+export function povertyLine(
+  householdSize: number,
+  year: CoverageYear = defaultCoverageYear(),
+  region: GuidelineRegion = 'contiguous',
+): number {
+  const { firstPerson, perAdditionalPerson } = guidelineFor(year, region);
   return firstPerson + perAdditionalPerson * (Math.max(1, householdSize) - 1);
 }
 
 /** The poverty line this scenario's household is measured against. */
 export function povertyLineFor(scenario: Scenario = {}): number {
   const { year } = resolveScenario(scenario);
-  return povertyLine(householdSizeFor(scenario), year);
+  return povertyLine(householdSizeFor(scenario), year, guidelineRegionFor(scenario));
+}
+
+/** What one more person adds to this scenario's poverty line: what a child moves it by. */
+export function perAdditionalPersonFor(scenario: Scenario = {}): number {
+  const { year } = resolveScenario(scenario);
+  return guidelineFor(year, guidelineRegionFor(scenario)).perAdditionalPerson;
 }
 
 /** A household income as a multiple of the poverty line: 4 is 400% of it. */

@@ -15,6 +15,15 @@ it (26 CFR 1.36B-1(h)). Contiguous 48 states and DC.
 | 2025 | 2026 | $15,650 | $5,500 | 90 Fed. Reg. 5917 (January 17 2025) |
 | 2026 | 2027 | $15,960 | $5,680 | 91 Fed. Reg. 1797 (January 15 2026) |
 
+Alaska and Hawaii, from the same notices. The engine reads these when the
+household's state is one of the two.
+
+| Guidelines | Price coverage in | Alaska, first person | Alaska, each additional | Hawaii, first person | Hawaii, each additional |
+| --- | --- | --- | --- | --- | --- |
+| 2024 | 2025 | $18,810 | $6,730 | $17,310 | $6,190 |
+| 2025 | 2026 | $19,550 | $6,880 | $17,990 | $6,330 |
+| 2026 | 2027 | $19,950 | $7,100 | $18,360 | $6,530 |
+
 ## Applicable percentage table (IRC 36B(b)(3)(A))
 
 | Household income, % of FPL | 2025 (ARPA 9661, IRA 12001) | 2026 (Rev. Proc. 2025-25) | 2027 (Rev. Proc. 2026-26) |
@@ -59,13 +68,74 @@ on this; the engine does not model advance payments.
 
 ## Benchmark premium (KFF, Marketplace Average Benchmark Premiums)
 
-US average monthly premium of the second-lowest-cost silver plan for a
-40-year-old, weighted by county plan selections.
+Average monthly premium of the second-lowest-cost silver plan for a
+40-year-old, weighted by county plan selections, from
+https://www.kff.org/affordable-care-act/state-indicator/marketplace-average-benchmark-premiums/
+(read September 8 2026). The US row is the national figure; the state rows
+are `src/lib/aca/states.ts`.
 
-| Coverage year | Monthly at 40 |
+| Coverage year | Monthly at 40, US |
 | --- | --- |
 | 2025 | $497 |
 | 2026 | $625 |
+
+| Code | State | 2025 | 2026 |
+| --- | --- | --- | --- |
+| AL | Alabama | $535 | $645 |
+| AK | Alaska | $1,045 | $1,032 |
+| AZ | Arizona | $410 | $532 |
+| AR | Arkansas | $458 | $774 |
+| CA | California | $512 | $570 |
+| CO | Colorado | $463 | $557 |
+| CT | Connecticut | $693 | $870 |
+| DE | Delaware | $534 | $691 |
+| DC | District of Columbia | $578 | $610 |
+| FL | Florida | $515 | $683 |
+| GA | Georgia | $493 | $615 |
+| HI | Hawaii | $493 | $541 |
+| ID | Idaho | $436 | $490 |
+| IL | Illinois | $474 | $646 |
+| IN | Indiana | $382 | $474 |
+| IA | Iowa | $429 | $501 |
+| KS | Kansas | $513 | $670 |
+| KY | Kentucky | $442 | $590 |
+| LA | Louisiana | $524 | $646 |
+| ME | Maine | $546 | $709 |
+| MD | Maryland | $365 | $414 |
+| MA | Massachusetts | $447 | $494 |
+| MI | Michigan | $404 | $523 |
+| MN | Minnesota | $363 | $448 |
+| MS | Mississippi | $485 | $662 |
+| MO | Missouri | $489 | $605 |
+| MT | Montana | $554 | $692 |
+| NE | Nebraska | $600 | $710 |
+| NV | Nevada | $414 | $497 |
+| NH | New Hampshire | $325 | $401 |
+| NJ | New Jersey | $492 | $545 |
+| NM | New Mexico | $515 | $623 |
+| NY | New York | $790 | $817 |
+| NC | North Carolina | $507 | $638 |
+| ND | North Dakota | $537 | $570 |
+| OH | Ohio | $441 | $513 |
+| OK | Oklahoma | $501 | $604 |
+| OR | Oregon | $510 | $543 |
+| PA | Pennsylvania | $461 | $572 |
+| RI | Rhode Island | $425 | $506 |
+| SC | South Carolina | $471 | $564 |
+| SD | South Dakota | $619 | $655 |
+| TN | Tennessee | $516 | $711 |
+| TX | Texas | $489 | $661 |
+| UT | Utah | $547 | $640 |
+| VT | Vermont | $1,277 | $1,299 |
+| VA | Virginia | $372 | $455 |
+| WA | Washington | $434 | $612 |
+| WV | West Virginia | $919 | $1,073 |
+| WI | Wisconsin | $495 | $611 |
+| WY | Wyoming | $871 | $1,090 |
+
+Two rows look wrong and are not: Alaska's benchmark fell from 2025 to 2026
+while every other state's rose, and Arkansas's rose 69% against a national
+26%. Both are as KFF published them.
 
 ## Federal default standard age curve (45 CFR 147.102, CMS guidance of December 16 2016, Appendix I)
 
@@ -90,5 +160,7 @@ US average monthly premium of the second-lowest-cost silver plan for a
 | | | 47 | 1.563 | 64+ | 3.000 |
 
 At most three children under 21 are rated on one policy (45 CFR
-147.102(c)(1)). States with curves of their own, or no age rating: Alabama,
-DC, Massachusetts, Minnesota, Mississippi, New York, Oregon, Utah, Vermont.
+147.102(c)(1)). States with curves of their own: Alabama, DC, Massachusetts,
+Minnesota, Mississippi, Oregon, Utah — priced on the federal curve here.
+States with no age rating: New York, Vermont — priced flat at the 40-year-old
+figure. CMS, State Specific Age Curve Variations.

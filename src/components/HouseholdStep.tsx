@@ -1,9 +1,13 @@
 import {
   MAX_ADULT_AGE,
   MIN_ADULT_AGE,
+  STATES,
+  STATE_CODES,
   averageBenchmarkMonthly,
+  isStateCode,
+  perAdditionalPersonFor,
 } from '../lib/aca';
-import type { Adults, CoverageYear } from '../lib/aca';
+import type { Adults, CoverageYear, StateCode } from '../lib/aca';
 import { ADULT_COUNTS, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
 import { formatCurrency } from '../lib/format';
 import { ADULTS_LABELS } from '../lib/householdProse';
@@ -19,7 +23,10 @@ export interface HouseholdStepProps {
   onSpouseAge: (next: number) => void;
   dependents: number;
   onDependents: (next: number) => void;
-  /** Your own monthly benchmark, or null for the national average. */
+  /** The household's state, or null for the national average. */
+  state: StateCode | null;
+  onState: (next: StateCode | null) => void;
+  /** Your own monthly benchmark, or null for the state's average, or the national one. */
   benchmarkPremium: number | null;
   onBenchmarkPremium: (next: number | null) => void;
   expansionState: boolean;
@@ -29,9 +36,13 @@ export interface HouseholdStepProps {
 /** The counts the strip of children offers. */
 const CHILD_COUNTS = Array.from({ length: MAX_DEPENDENTS + 1 }, (_, n) => n);
 
+/** The value the select carries for no state: the option the page opens on. */
+const NATIONAL = '';
+
 /**
  * The household every figure on the page is priced for: who is on the plan,
- * how old they are, what the benchmark costs and where the subsidy starts.
+ * how old they are, where they live, what the benchmark costs and where the
+ * subsidy starts.
  *
  * Everything is visible. Nothing here is advanced — each control moves a
  * figure the reader can see move — and a control behind a disclosure is a
@@ -48,6 +59,8 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   onSpouseAge,
   dependents,
   onDependents,
+  state,
+  onState,
   benchmarkPremium,
   onBenchmarkPremium,
   expansionState,
@@ -55,8 +68,10 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
 }) => {
   const couple = adults === 2;
   const ages = couple ? [age, spouseAge] : [age];
-  const average = averageBenchmarkMonthly(ages, dependents, year);
+  const average = averageBenchmarkMonthly(ages, dependents, year, state);
   const benchmark = benchmarkPremium ?? average;
+  const here = state === null ? null : STATES[state];
+  const perChild = perAdditionalPersonFor({ state, year });
 
   return (
     <section
@@ -105,7 +120,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           ))}
         </div>
         <p className="field-note">
-          Each child raises the poverty line by about {formatCurrency(5_500)} and adds a
+          Each child raises the poverty line by about {formatCurrency(perChild)} and adds a
           child&rsquo;s premium.
         </p>
       </fieldset>
@@ -154,6 +169,29 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
       </div>
 
       <div className="input-group">
+        <label htmlFor="state">State</label>
+        <span className="select-field">
+          <select
+            id="state"
+            value={state ?? NATIONAL}
+            aria-describedby="state-note"
+            onChange={(e) => onState(isStateCode(e.target.value) ? e.target.value : null)}
+          >
+            <option value={NATIONAL}>National average</option>
+            {STATE_CODES.map((code) => (
+              <option key={code} value={code}>
+                {STATES[code].name}
+              </option>
+            ))}
+          </select>
+        </span>
+        <p className="field-note" id="state-note">
+          Sets the average premium and the Medicaid line for your state, and the poverty
+          line in Alaska and Hawaii.
+        </p>
+      </div>
+
+      <div className="input-group">
         <div className="slider-header">
           <label htmlFor="benchmark-premium">Benchmark plan premium, per month</label>
           <MoneyField
@@ -167,8 +205,12 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           />
         </div>
         <p className="field-note" id="benchmark-premium-note">
-          Prefilled with the {year} national average for these ages. Your Marketplace quotes
-          your area&rsquo;s figure.
+          {here === null
+            ? `Prefilled with the ${year} national average for these ages.`
+            : here.ageRating === 'none'
+              ? `Prefilled with the ${year} average for ${here.name}, which does not price by age.`
+              : `Prefilled with the ${year} average for ${here.name} for these ages.`}{' '}
+          Your Marketplace quotes your area&rsquo;s figure.
         </p>
         {benchmarkPremium !== null && benchmarkPremium !== average && (
           <p className="field-reset">
@@ -195,8 +237,10 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           </label>
         </div>
         <p className="field-note">
-          40 states and DC have. If yours has, the subsidy starts at 138% of the poverty
-          line; otherwise at 100%.
+          {here === null
+            ? '40 states and DC have.'
+            : `${here.name} has${here.expandedMedicaid ? '' : ' not'}.`}{' '}
+          If yours has, the subsidy starts at 138% of the poverty line; otherwise at 100%.
         </p>
       </div>
     </section>

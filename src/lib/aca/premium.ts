@@ -4,13 +4,16 @@
  * figure no statute publishes.
  *
  * The household's own figure when the reader has one, and otherwise the
- * national average scaled to the household's ages along the curve every
- * insurer in a default-curve state is required to use.
+ * state's average — or the national one, with no state — scaled to the
+ * household's ages along the curve every insurer in a default-curve state is
+ * required to use.
  */
 import type { CoverageYear } from './types';
 import { defaultCoverageYear } from './years';
 import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
+import { STATES } from './states';
+import type { StateCode } from './states';
 
 /**
  * The federal default standard age curve, 45 CFR 147.102(e) as set in CMS's
@@ -65,16 +68,17 @@ export interface BenchmarkYearParams {
   source: string;
   /**
    * The average monthly benchmark premium for a 40-year-old across every
-   * county, weighted by plan selections. KFF publishes this figure each
-   * autumn from the rate filings; it is the one number on this page that is
-   * a market average rather than a statutory one.
+   * county in the country, weighted by plan selections. KFF publishes this
+   * figure each autumn from the rate filings, one row per state and one for
+   * the US; the state rows are in `states.ts`. It is the one kind of number
+   * on this page that is a market average rather than a statutory one.
    */
   monthlyAt40: number;
 }
 
 /**
- * The benchmark by coverage year. Its own table, because it comes from a
- * different publisher on a different schedule; `Record<CoverageYear, …>`
+ * The national benchmark by coverage year. Its own table, because it comes
+ * from a different publisher on a different schedule; `Record<CoverageYear, …>`
  * still makes it exhaustive.
  */
 export const BENCHMARK_YEAR_PARAMS: Record<CoverageYear, BenchmarkYearParams> = {
@@ -95,27 +99,45 @@ export const BENCHMARK_YEAR_PARAMS: Record<CoverageYear, BenchmarkYearParams> = 
 /** The age KFF's published average is for. */
 export const BENCHMARK_REFERENCE_AGE = 40;
 
+/** KFF's 40-year-old figure for a state, or the national one with no state. */
+export function benchmarkAt40(year: CoverageYear, state: StateCode | null = null): number {
+  return state === null
+    ? BENCHMARK_YEAR_PARAMS[year].monthlyAt40
+    : STATES[state].benchmarkAt40[year];
+}
+
 /**
- * The national-average benchmark for a household of these ages, monthly, in
- * whole dollars: KFF's 40-year-old figure divided by the 40-year-old's factor
+ * The average benchmark for a household of these ages, monthly, in whole
+ * dollars: KFF's 40-year-old figure divided by the 40-year-old's factor
  * gives the curve's unit, and each person on the plan is that unit times
  * their own factor, children at the child factor and at most three of them.
+ *
+ * Two approximations, by state. Where the state does not rate on age — New
+ * York and Vermont — every adult is charged the 40-year-old's figure flat,
+ * and a child the child's share of it: the nearest thing the default curve
+ * has to a community rate. Where the state rates on a curve of its own, the
+ * default curve is used regardless, because the state's is not on file; a
+ * 60-year-old in Utah or Massachusetts is priced somewhat off.
  */
 export function averageBenchmarkMonthly(
   ages: number[],
   dependents = 0,
   year: CoverageYear = defaultCoverageYear(),
+  state: StateCode | null = null,
 ): number {
-  const unit = BENCHMARK_YEAR_PARAMS[year].monthlyAt40 / ageFactor(BENCHMARK_REFERENCE_AGE);
-  const adults = ages.reduce((sum, age) => sum + ageFactor(age), 0);
+  const at40 = benchmarkAt40(year, state);
+  const flat = state !== null && STATES[state].ageRating === 'none';
+  const factor = (age: number): number => (flat ? ageFactor(BENCHMARK_REFERENCE_AGE) : ageFactor(age));
+  const unit = at40 / ageFactor(BENCHMARK_REFERENCE_AGE);
+  const adults = ages.reduce((sum, age) => sum + factor(age), 0);
   const children = Math.min(MAX_RATED_CHILDREN, Math.max(0, dependents)) * CHILD_AGE_FACTOR;
   return Math.round(unit * (adults + children));
 }
 
 /** The benchmark this household is priced against, monthly. */
 export function benchmarkMonthlyFor(scenario: Scenario = {}): number {
-  const { benchmarkPremium, ages, dependents, year } = resolveScenario(scenario);
-  return benchmarkPremium ?? averageBenchmarkMonthly(ages, dependents, year);
+  const { benchmarkPremium, ages, dependents, year, state } = resolveScenario(scenario);
+  return benchmarkPremium ?? averageBenchmarkMonthly(ages, dependents, year, state);
 }
 
 /** The same figure for the year, which is what the credit is measured against. */

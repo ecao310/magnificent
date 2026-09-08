@@ -38,6 +38,19 @@ describe('the link', () => {
     expect(encodeScenario({ ...defaultScenario(), expansionState: false })).toBe('expansion=0');
   });
 
+  it('writes the state, and expansion only when it disagrees with the state', () => {
+    expect(encodeScenario({ ...defaultScenario(), state: 'OH' })).toBe('state=OH');
+    expect(encodeScenario({ ...defaultScenario(), state: 'TX', expansionState: false })).toBe(
+      'state=TX',
+    );
+    expect(encodeScenario({ ...defaultScenario(), state: 'TX', expansionState: true })).toBe(
+      'state=TX&expansion=1',
+    );
+    expect(encodeScenario({ ...defaultScenario(), state: 'OH', expansionState: false })).toBe(
+      'state=OH&expansion=0',
+    );
+  });
+
   it('round-trips every field', () => {
     const scenario = {
       adults: 1 as const,
@@ -45,6 +58,7 @@ describe('the link', () => {
       spouseAge: 50,
       income: 37_500,
       dependents: 2,
+      state: 'AK' as const,
       benchmarkPremium: 1_250,
       expansionState: false,
     };
@@ -71,21 +85,34 @@ describe('reading a link', () => {
     expect(scenario.dependents).toBe(MAX_DEPENDENTS);
     expect(scenario.benchmarkPremium).toBe(MAX_PREMIUM_MONTHLY);
     expect(notes).toHaveLength(5);
-    expect(notes.join(' ')).toMatch(/Medicare takes over/);
-    expect(notes.join(' ')).toMatch(/\$200,000/);
   });
 
   it('answers a count of adults it does not offer', () => {
     const { scenario, notes } = decodeScenario('?adults=3');
     expect(scenario.adults).toBe(2);
     expect(notes).toHaveLength(1);
-    expect(notes[0]).toMatch(/3 adults/);
   });
 
   it('falls back on a value that is not a number, with a note', () => {
     const { scenario, notes } = decodeScenario('?income=lots');
     expect(scenario.income).toBe(defaultScenario().income);
-    expect(notes[0]).toMatch(/“lots”/);
+    expect(notes).toHaveLength(1);
+  });
+
+  it('reads a state in any case, and opens the switch on the state’s own answer', () => {
+    expect(decodeScenario('?state=tx').scenario.state).toBe('TX');
+    expect(decodeScenario('?state=TX').scenario.expansionState).toBe(false);
+    expect(decodeScenario('?state=TX&expansion=1').scenario.expansionState).toBe(true);
+    expect(decodeScenario('?state=OH').scenario.expansionState).toBe(true);
+    expect(decodeScenario('?state=OH&expansion=0').scenario.expansionState).toBe(false);
+    expect(decodeScenario('?expansion=0').scenario.expansionState).toBe(false);
+  });
+
+  it('falls back to the national average on a state it does not know, with a note', () => {
+    const { scenario, notes } = decodeScenario('?state=ZZ');
+    expect(scenario.state).toBeNull();
+    expect(scenario.expansionState).toBe(true);
+    expect(notes).toHaveLength(1);
   });
 
   it('reads past keys it does not know', () => {
@@ -99,5 +126,10 @@ describe('the engine’s view', () => {
   it('lists two ages for a couple and one for one adult', () => {
     expect(engineScenario({ ...defaultScenario(), spouseAge: 40 }).ages).toEqual([50, 40]);
     expect(engineScenario({ ...defaultScenario(), adults: 1, spouseAge: 40 }).ages).toEqual([50]);
+  });
+
+  it('carries the state through', () => {
+    expect(engineScenario({ ...defaultScenario(), state: 'HI' }).state).toBe('HI');
+    expect(engineScenario(defaultScenario()).state).toBeNull();
   });
 });

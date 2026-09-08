@@ -1,12 +1,14 @@
-import type { Adults, CoverageYear, PtcAssessment } from '../lib/aca';
+import type { Adults, CoverageYear, PtcAssessment, StateCode } from '../lib/aca';
 import { formatCents, formatCurrency, formatFpl, formatPercent } from '../lib/format';
-import { ADULTS_PROSE, agesProse } from '../lib/householdProse';
+import { householdPhrase } from '../lib/householdProse';
 import type { CopyState } from '../hooks/useScenarioAddress';
 
 export interface AnswerProps {
   year: CoverageYear;
   adults: Adults;
   ages: number[];
+  /** Named in the subline when the household has one. */
+  state: StateCode | null;
   income: number;
   here: PtcAssessment;
   /** What the next block of income costs in subsidy, and how big the block is. */
@@ -28,6 +30,7 @@ export const Answer: React.FC<AnswerProps> = ({
   year,
   adults,
   ages,
+  state,
   income,
   here,
   nextBlock,
@@ -56,8 +59,8 @@ export const Answer: React.FC<AnswerProps> = ({
         Your numbers at {formatCurrency(income)}
       </h2>
       <p className="answer-subline">
-        {formatFpl(here.fplMultiple)} of the poverty line · {ADULTS_PROSE[adults]},{' '}
-        {agesProse(ages)} · {year} coverage
+        {formatFpl(here.fplMultiple)} of the poverty line · {householdPhrase(adults, ages, state)}{' '}
+        · {year} coverage
       </p>
 
       <dl className="answer-figures">

@@ -9,11 +9,12 @@ import {
   ptcFor,
   subsidyLines,
 } from './lib/aca';
-import type { Adults, Scenario } from './lib/aca';
+import type { Adults, Scenario, StateCode } from './lib/aca';
+import { expansionFor } from './lib/aca';
 import { decodeScenario, engineScenario } from './lib/scenarioUrl';
 import type { PageScenario } from './lib/scenarioUrl';
 import { formatCurrency } from './lib/format';
-import { ADULTS_PROSE, agesProse } from './lib/householdProse';
+import { householdPhrase } from './lib/householdProse';
 import { readoutText } from './lib/readout';
 import { useScenarioAddress } from './hooks/useScenarioAddress';
 import { useSettledReading } from './hooks/useSettledReading';
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [spouseAge, setSpouseAge] = useState<number>(opening.spouseAge);
   const [income, setIncome] = useState<number>(opening.income);
   const [dependents, setDependents] = useState<number>(opening.dependents);
+  const [state, setState] = useState<StateCode | null>(opening.state);
   const [benchmarkPremium, setBenchmarkPremium] = useState<number | null>(opening.benchmarkPremium);
   const [expansionState, setExpansionState] = useState<boolean>(opening.expansionState);
 
@@ -64,14 +66,23 @@ const App: React.FC = () => {
 
   /** The household as the page holds it: what the address bar carries. */
   const pageScenario: PageScenario = useMemo(
-    () => ({ adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState }),
-    [adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState],
+    () => ({ adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState }),
+    [adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState],
   );
   const address = useScenarioAddress(pageScenario);
 
   const household = (setter: () => void): void => {
     setter();
     announce('household');
+  };
+
+  /**
+   * A state brings its Medicaid answer with it: the switch moves to the
+   * state's status, visibly, and stays the reader's to move back.
+   */
+  const chooseState = (next: StateCode | null): void => {
+    setState(next);
+    setExpansionState(expansionFor(next));
   };
 
   /** The household in the shape the engine reads it: one object everything below prices off. */
@@ -105,9 +116,9 @@ const App: React.FC = () => {
   const reading = ((): string => {
     switch (announceFrom) {
       case 'household':
-        return `${year} coverage for ${ADULTS_PROSE[adults]}, ${agesProse(
-          ages,
-        )}, benchmark ${formatCurrency(here.benchmarkMonthly)} a month.`;
+        return `${year} coverage for ${householdPhrase(adults, ages, state)}, benchmark ${formatCurrency(
+          here.benchmarkMonthly,
+        )} a month.`;
       case 'cost':
         return readoutText(here);
       default:
@@ -140,6 +151,8 @@ const App: React.FC = () => {
           onSpouseAge={(next) => household(() => setSpouseAge(next))}
           dependents={dependents}
           onDependents={(next) => household(() => setDependents(next))}
+          state={state}
+          onState={(next) => household(() => chooseState(next))}
           benchmarkPremium={benchmarkPremium}
           onBenchmarkPremium={(next) => household(() => setBenchmarkPremium(next))}
           expansionState={expansionState}
@@ -165,6 +178,7 @@ const App: React.FC = () => {
             year={year}
             adults={adults}
             ages={ages}
+            state={state}
             income={income}
             here={here}
             nextBlock={NEXT_BLOCK}
@@ -184,8 +198,8 @@ const App: React.FC = () => {
         <FurtherReading />
         <p>
           Educational only; not insurance, tax or financial advice. Figures are modelled
-          from published HHS, IRS and CMS numbers and a national-average premium unless you
-          enter your own.
+          from published HHS, IRS and CMS numbers and a national- or state-average premium
+          unless you enter your own.
         </p>
       </footer>
     </div>

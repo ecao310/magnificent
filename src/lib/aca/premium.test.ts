@@ -8,6 +8,7 @@ import {
   ageFactor,
   averageBenchmarkMonthly,
   benchmarkAnnualFor,
+  benchmarkAt40,
   benchmarkMonthlyFor,
 } from './index';
 
@@ -65,6 +66,33 @@ describe('the national-average benchmark', () => {
   });
 });
 
+describe('a state’s benchmark', () => {
+  it('is KFF’s figure for that state for a 40-year-old, exactly', () => {
+    expect(benchmarkAt40(2026, 'TX')).toBe(661);
+    expect(benchmarkAt40(2026, null)).toBe(625);
+    expect(averageBenchmarkMonthly([40], 0, 2026, 'TX')).toBe(661);
+    expect(averageBenchmarkMonthly([40], 0, 2025, 'TX')).toBe(489);
+    expect(averageBenchmarkMonthly([40], 0, 2026, 'VT')).toBe(1_299);
+  });
+
+  it('scales along the same curve as the national figure', () => {
+    expect(averageBenchmarkMonthly([50, 50], 0, 2026, 'TX')).toBe(Math.round((661 / 1.278) * 2 * 1.786));
+    expect(averageBenchmarkMonthly([64], 0, 2026, 'WY')).toBe(Math.round((1_090 / 1.278) * 3));
+  });
+
+  it('is flat across the ages where the state does not price by age', () => {
+    expect(averageBenchmarkMonthly([64], 0, 2026, 'VT')).toBe(1_299);
+    expect(averageBenchmarkMonthly([21], 0, 2026, 'VT')).toBe(1_299);
+    expect(averageBenchmarkMonthly([21, 64], 0, 2026, 'NY')).toBe(817 * 2);
+    expect(averageBenchmarkMonthly([40], 1, 2026, 'NY')).toBe(Math.round((817 / 1.278) * (1.278 + 0.765)));
+  });
+
+  it('leaves the national figure alone', () => {
+    expect(averageBenchmarkMonthly([50, 50], 0, 2026)).toBe(averageBenchmarkMonthly([50, 50], 0, 2026, null));
+    expect(averageBenchmarkMonthly([50, 50], 0, 2026)).toBe(1_747);
+  });
+});
+
 describe('the household’s benchmark', () => {
   it('is the reader’s own figure when they gave one', () => {
     expect(benchmarkMonthlyFor({ ages: [50], benchmarkPremium: 900 })).toBe(900);
@@ -76,5 +104,12 @@ describe('the household’s benchmark', () => {
     expect(benchmarkMonthlyFor({ adults: 1, ages: [50, 60], year: 2026 })).toBe(
       averageBenchmarkMonthly([50], 0, 2026),
     );
+  });
+
+  it('is the state’s average when the household has a state', () => {
+    expect(benchmarkMonthlyFor({ adults: 2, ages: [50], year: 2026, state: 'TX' })).toBe(
+      averageBenchmarkMonthly([50, 50], 0, 2026, 'TX'),
+    );
+    expect(benchmarkMonthlyFor({ ages: [50], year: 2026, state: 'TX', benchmarkPremium: 900 })).toBe(900);
   });
 });

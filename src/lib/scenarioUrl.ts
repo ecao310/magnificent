@@ -1,7 +1,7 @@
 /**
  * The household, written into the address bar and read back out of it.
  *
- * Every figure on the page is derived from seven values, and the address bar
+ * Every figure on the page is derived from eight values, and the address bar
  * is already the share surface every reader knows how to use: a refresh keeps
  * the household, and the link can go to a spouse or a navigator. Every value
  * it carries prices something. The step is a fragment (`#step-cost`), not a
@@ -14,8 +14,8 @@
  * way in against the same bound the page's own control would have held it
  * inside, and every clamp says what it did.
  */
-import { MAX_ADULT_AGE, MIN_ADULT_AGE } from './aca';
-import type { Adults } from './aca';
+import { MAX_ADULT_AGE, MIN_ADULT_AGE, expansionFor, isStateCode } from './aca';
+import type { Adults, StateCode } from './aca';
 import { formatCurrency } from './format';
 
 /** The whole household the page prices, and the whole of what a link carries. */
@@ -26,8 +26,15 @@ export interface PageScenario {
   spouseAge: number;
   income: number;
   dependents: number;
-  /** The reader's own monthly benchmark, or null for the national average. */
+  /** The household's state, or null for the national average. */
+  state: StateCode | null;
+  /** The reader's own monthly benchmark, or null for the state's average, or the national one. */
   benchmarkPremium: number | null;
+  /**
+   * Whether the subsidy starts at 138% of the poverty line or at 100%. The
+   * page sets it from the state when the state changes, and the reader can
+   * move it after; see `encodeScenario` for what that means for the link.
+   */
   expansionState: boolean;
 }
 
@@ -48,7 +55,8 @@ export const MAX_DEPENDENTS = 5;
 
 /**
  * The most the premium field takes, monthly. A couple of sixty-four-year-olds
- * in the most expensive county in the country is under $5,000.
+ * on Wyoming's average — the steepest state on the curve — is about $5,100,
+ * and the most expensive county in the country is not far past it.
  */
 export const MAX_PREMIUM_MONTHLY = 6_000;
 
@@ -63,6 +71,7 @@ export function defaultScenario(): PageScenario {
     spouseAge: 50,
     income: DEFAULT_INCOME,
     dependents: 0,
+    state: null,
     benchmarkPremium: null,
     expansionState: true,
   };
@@ -73,7 +82,10 @@ export function defaultScenario(): PageScenario {
  *
  * A value is written only when it differs from what the page opens with, so an
  * untouched page reads as the empty string, and every key that is present is
- * something the reader did. The second age is written only for a couple.
+ * something the reader did. The second age is written only for a couple, and
+ * the expansion switch only when it disagrees with the state — its default
+ * moves with the state, so a link that names Texas and nothing else opens
+ * with the switch off, and `expansion=1` is Texas with the switch put back.
  */
 export function encodeScenario(scenario: PageScenario): string {
   const opening = defaultScenario();
@@ -85,8 +97,11 @@ export function encodeScenario(scenario: PageScenario): string {
   }
   if (scenario.income !== opening.income) params.set('income', String(scenario.income));
   if (scenario.dependents !== opening.dependents) params.set('deps', String(scenario.dependents));
+  if (scenario.state !== null) params.set('state', scenario.state);
   if (scenario.benchmarkPremium !== null) params.set('premium', String(scenario.benchmarkPremium));
-  if (!scenario.expansionState) params.set('expansion', '0');
+  if (scenario.expansionState !== expansionFor(scenario.state)) {
+    params.set('expansion', scenario.expansionState ? '1' : '0');
+  }
   return params.toString();
 }
 
@@ -212,6 +227,19 @@ export function decodeScenario(search: string): DecodedScenario {
     subject: 'The number of children',
   });
 
+  const rawState = params.get('state');
+  let state: StateCode | null = opening.state;
+  if (rawState !== null && rawState.trim() !== '') {
+    const asked = rawState.trim().toUpperCase();
+    if (isStateCode(asked)) {
+      state = asked;
+    } else {
+      notes.push(
+        `The link named a state “${rawState}” this page does not know; set to the national average.`,
+      );
+    }
+  }
+
   const rawPremium = params.get('premium');
   const benchmarkPremium =
     rawPremium === null || rawPremium.trim() === ''
@@ -225,10 +253,12 @@ export function decodeScenario(search: string): DecodedScenario {
           format: formatCurrency,
         });
 
-  const expansionState = params.get('expansion') !== '0';
+  const rawExpansion = params.get('expansion');
+  const expansionState =
+    rawExpansion === '0' ? false : rawExpansion === '1' ? true : expansionFor(state);
 
   return {
-    scenario: { adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState },
+    scenario: { adults, age, spouseAge, income, dependents, state, benchmarkPremium, expansionState },
     notes,
   };
 }
@@ -240,6 +270,7 @@ export function engineScenario(scenario: PageScenario) {
     ages: scenario.adults === 2 ? [scenario.age, scenario.spouseAge] : [scenario.age],
     income: scenario.income,
     dependents: scenario.dependents,
+    state: scenario.state,
     benchmarkPremium: scenario.benchmarkPremium,
     expansionState: scenario.expansionState,
   };

@@ -17,10 +17,11 @@ which drew the 400% line without pricing it.
 
 ## The two steps
 
-1. **Your household** — adults and children on the plan, their ages, the
-   benchmark plan's monthly premium (a number input, prefilled with the
+1. **Your household** — adults and children on the plan, their ages, your
+   state (a list, opening on the national average), the benchmark plan's
+   monthly premium (a number input, prefilled with the state's or the
    national average for those ages, editable), and whether your state
-   expanded Medicaid.
+   expanded Medicaid, which the state sets and you can move back.
 2. **What you pay** — the benchmark plan's monthly cost after the subsidy,
    plotted against household income. A green band marks the subsidy between
    the cost curve and a dashed full-premium line; ink-dashed lines mark where
@@ -36,9 +37,14 @@ cost-sharing tiers, and What is left out.
 ## What is priced
 
 `src/lib/aca/` prices coverage years 2025 and 2026: the poverty guidelines on
-their one-year lag, the applicable-percentage table, the subsidy's floor at
-138% or 100% of the line, the 400% ceiling, the cost-sharing tiers, and the
-benchmark premium from KFF's national average scaled along CMS's age curve.
+their one-year lag, for the contiguous states and for Alaska and Hawaii; the
+applicable-percentage table; the subsidy's floor at 138% or 100% of the
+line; the 400% ceiling; the cost-sharing tiers; and the benchmark premium
+from KFF's average for the state, or the national one, scaled along CMS's
+age curve. Choosing a state sets its average, its Medicaid status and, in
+Alaska and Hawaii, its poverty line. New York and Vermont, which do not price
+by age, are priced flat; the seven states with curves of their own are priced
+on the federal curve.
 
 The 2025 table (ARPA section 9661, extended through 2025 by the Inflation
 Reduction Act) owed nothing under 150% of the line, capped at 8.5%, with no
@@ -62,12 +68,13 @@ covers it.
 
 The whole household lives in the query string, so a link survives a refresh
 and can be sent to a spouse or a navigator: `adults`, `age`, `spouse`,
-`income`, `deps`, `premium`, `expansion` — each written only when it differs
-from what the page opens with. A link asking for something the page cannot
-show — an age of 70, an income past the slider's edge — is clamped to what
-it can, and the page says on load what it changed. The step is a fragment
-(`#step-cost`), not a query parameter: it is where the reader is standing,
-not what the household is.
+`income`, `deps`, `state`, `premium`, `expansion` — each written only when it
+differs from what the page opens with, and `expansion` only when it disagrees
+with the state. A link asking for something the page cannot show — an age of
+70, an income past the slider's edge, a state it does not know — is clamped
+to what it can, and the page says on load what it changed. The step is a
+fragment (`#step-cost`), not a query parameter: it is where the reader is
+standing, not what the household is.
 
 `index.html` also carries an Open Graph and Twitter card pointing at
 `public/og-cover.png` — static, so it shows the opening household, not the
@@ -102,7 +109,7 @@ npm run build    # tsc -b && vite build
 | `src/lib/scenarioUrl.ts` | The household, encoded into the address bar and clamped back out. |
 | `src/lib/format.ts`, `householdProse.ts`, `furtherReading.ts`, `readout.ts` | Rendering a figure, describing a household, the reading list, the readout. |
 | `src/styles/` | `index.css` and the palette subset the chart hands to SVG. |
-| `src/guards/` | Tests holding down what nothing else reads: the link preview, this README, the stylesheet, the rendered prose. |
+| `src/guards/` | Tests holding down what nothing else reads: the link preview, this README, the stylesheet. |
 | `src/test/` | Test setup and shared fixtures. |
 | `docs/` | The published figures the engine is checked against, and their sources. |
 | `public/` | The favicon, the touch icon and the link-preview card. |
@@ -131,5 +138,5 @@ publishes.
 ---
 
 Not insurance, tax or financial advice. Figures are modelled from published
-HHS, IRS and CMS numbers and a national-average premium unless you enter
-your own.
+HHS, IRS and CMS numbers and a national- or state-average premium unless you
+enter your own.

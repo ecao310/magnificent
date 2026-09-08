@@ -1,4 +1,5 @@
-import type { Adults } from './aca';
+import { STATES } from './aca';
+import type { Adults, StateCode } from './aca';
 
 /**
  * How a household is described in words, in the one place every description
@@ -27,6 +28,14 @@ export const agesProse = (ages: number[]): string =>
     : ages[0] === ages[1]
       ? `both ${ages[0]}`
       : `aged ${ages[0]} and ${ages[1]}`;
+
+/**
+ * "a couple, both 50" or "a couple, both 50, in Texas": the household in one
+ * phrase, with its state when it has one. No state is not named as such —
+ * the national average is what the page opens on, not a place.
+ */
+export const householdPhrase = (adults: Adults, ages: number[], state: StateCode | null): string =>
+  `${ADULTS_PROSE[adults]}, ${agesProse(ages)}${state === null ? '' : `, in ${STATES[state].name}`}`;
 
 /** "one person", "2 people": the household as the poverty line counts it. */
 export const householdProse = (size: number): string =>
