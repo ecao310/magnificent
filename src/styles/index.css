@@ -25,11 +25,11 @@
  * lightest, `--ink-dim`, reads 4.8:1 — and every data hue that carries text
  * clears it too, at the sizes it carries.
  *
- * The data colours keep the jobs the page before this one gave them: blue is
- * the curve, amber is the marker, fuchsia is an edge of the subsidy — the
- * floor and the 400% line — and violet is a cost-sharing tier and the one
- * advanced slider. A reader matches a swatch in the Breakpoints panel to a
- * line in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
+ * The data colours each have one job: blue is the curve and the hatch under
+ * it, green is what the subsidy pays, amber is you, and violet is a
+ * cost-sharing tier. The subsidy's own edges are drawn in ink, because they
+ * are structure rather than data. A reader matches a swatch in the legend to
+ * a mark on the plot by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
  * that no line on the plot shouts over another; the values here are those
  * colours written out in sRGB, because a `var()` cannot reach an SVG attribute
  * and `palette.ts` has to carry the same literals.
@@ -59,8 +59,6 @@
   /* What each curve, line and marker means. */
   --amber: #b76100;
   --amber-bright: #9f4600;
-  --fuchsia: #a644a0;
-  --fuchsia-bright: #852381;
   --violet: #7b489e;
   --violet-deep: #643185;
   --emerald: #1d7d3e;
@@ -73,12 +71,12 @@
   --column: 22.5rem;
   --gutter: 4rem;
 
-  /* The gutter recharts holds back for the y-axis, so the caption under the
-     plot can start where the plot area does. The one number on this page that
-     a stylesheet and an SVG attribute both have to know: `CHART.axis` in
-     palette.ts is the same 56, and `the chart metrics` in styles.test.tsx
-     fails if either moves without the other. */
-  --chart-axis: 56px;
+  /* The gutter recharts holds back for the y-axis — its ticks and its rotated
+     title — so the slider under the plot can start where the plot area does.
+     The one number on this page that a stylesheet and an SVG attribute both
+     have to know: `CHART.axis` in palette.ts is the same 76, and `the chart
+     metrics` in styles.test.tsx fails if either moves without the other. */
+  --chart-axis: 76px;
 }
 
 /* ───── The type ───────────────────────────────────────────────────────────
@@ -119,19 +117,16 @@
  * The broadsheet's, at a 16px root so every rem length on the page stays
  * where it was put:
  *
- *   5.75    the page title
- *   2.875   the page title on a narrow screen
- *   2.75    a section heading, and a closing figure
- *   2.125   the return's heading, and a section heading on a narrow screen
- *   1.75    the income slider's readout
- *   1.5     a note's heading, the slider readout, a benefit figure
- *   1.375   the deck under the title
- *   1.25    a step's deck, the close's intro, a figure inside a sentence
+ *   2.75    the page title
+ *   2.125   a section heading, and one of the four closing figures
+ *   2       the page title on a narrow screen
+ *   1.5     the rail's heading, the figures the controls carry
+ *   1.25    a section's deck, the sentence under the slider
+ *   1.125   the deck under the title, a note's heading
  *   1.0625  body copy, a control's label
- *   1       the recap that closes the return
  *   .875    a note, a gloss, a footnote
  *   .8125   a chart label, a button, a status line
- *   .75     a kicker, a line number, a range label
+ *   .75     a kicker, a tooltip, a range label
  *
  * `the type scale` in styles.test.tsx holds the list closed: a size that is
  * not one of these fails, so widening the scale is an edit to the scale
@@ -187,48 +182,48 @@ a:focus-visible {
  * The title and the deck, under the page's top rule and over a hairline.
  */
 .masthead-body {
-  padding: 3.5rem 0 3rem;
+  padding: 1.75rem 0 1.25rem;
   border-bottom: 1px solid var(--edge);
 }
 
 h1 {
   margin: 0;
   max-width: 20ch;
-  font-size: 5.75rem;
+  font-size: 2.75rem;
   font-weight: 500;
-  line-height: 0.96;
+  line-height: 1.05;
   letter-spacing: -0.022em;
-  font-variation-settings: 'opsz' 72;
+  font-variation-settings: 'opsz' 48;
   color: var(--ink-bright);
   text-wrap: balance;
 }
 
 .subtitle {
-  margin: 1.875rem 0 0;
-  max-width: 42.5rem;
-  font-size: 1.375rem;
-  line-height: 1.42;
+  margin: 1rem 0 0;
+  max-width: 38rem;
+  font-size: 1.125rem;
+  line-height: 1.5;
   color: var(--ink-soft);
 }
 
 /* ───── The shell ──────────────────────────────────────────────────────────
  *
- * The household in a column that stays put and the curve in a column that
- * scrolls past it. Every input that describes the *household* — the status,
- * the ages, the income it has regardless, the premium — lives in the first;
- * the chart, its slider, the notes and the close live in the second, so the
- * household being priced is beside the plot at every point in the walk.
+ * The household in a column that stays put, and the curve, the figures and
+ * the notes in a column that scrolls past it. Every input that describes the
+ * *household* lives in the rail; income does not, because it is the axis of
+ * the chart and the field under the chart sets it.
  *
- * The slider in step 2 stays where it is on purpose: it is the cursor on the
- * chart directly above it, and moving it into the rail would take the cursor
- * away from the plot it marks.
+ * Three children, two of them in the reading column: the chart and its
+ * figures, then the notes under them. Collapsed to one column the order is
+ * the answer first, the controls that move it second and the working third,
+ * which is `order` below.
  */
 .shell {
   display: grid;
   grid-template-columns: var(--column) minmax(0, var(--measure));
   column-gap: var(--gutter);
   align-items: start;
-  margin-top: 3rem;
+  margin-top: 1.75rem;
 }
 
 /* Sticky rather than fixed, so it participates in the grid and collapses
@@ -237,14 +232,22 @@ h1 {
 .step-config {
   position: sticky;
   top: 1.5rem;
-  max-height: 100vh;
+  max-height: calc(100vh - 3rem);
   overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0 0.25rem 1.5rem 0;
+  padding-right: 0.5rem;
+  scrollbar-gutter: stable;
   margin-top: 0;
 }
 
 .flow {
+  min-width: 0;
+}
+
+/* The working, under the answer rather than beside it, in the reading column
+   the answer is in. The counter that numbers the notes is reset here because
+   this is the element that holds them all. */
+.notes-section {
+  grid-column: 2;
   min-width: 0;
   counter-reset: note;
 }
@@ -258,32 +261,24 @@ h1 {
 
 /* ───── The line items ──────────────────────────────────────────────────────
  *
- * The household is a Form 1040 and a Form 8962, so it is laid out as one: a
- * row per item, a hairline between rows, and a line number in the margin
- * where a form has one — 2b and 3a are interest and qualified dividends, 7 is
- * the gain, and 8962's line 11 is the benchmark. Filing status and age are
- * the form's checkboxes above its numbered lines, and get no number for the
- * same reason.
+ * The household is laid out as a form: a row per item, a hairline between
+ * rows, and the whole width of the rail for the control, because a rail this
+ * narrow has none to give away.
  */
 .step-config .input-group {
   position: relative;
   margin-bottom: 0;
-  padding: 1.125rem 0 1.25rem 3.25rem;
+  padding: 1.125rem 0 1.25rem;
   border-top: 1px solid var(--edge);
 }
 
-/* The first row opens the list with ink; the rest are separated by hairlines. */
+/* The first row opens the list with ink, and the last closes it. */
 .step-config .filing-status:first-of-type {
   border-top-color: var(--ink);
 }
 
-.line-ref {
-  position: absolute;
-  left: 0;
-  top: 1.375rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--ink-muted);
+.step-config > :last-child {
+  border-bottom: 1px solid var(--ink);
 }
 
 label {
@@ -349,9 +344,8 @@ fieldset.filing-status legend {
   margin-bottom: 0.75rem;
 }
 
-/* Two stamped boxes side by side. Each takes the width its label needs, so
-   "Married Filing Jointly" is the wider of the pair rather than the two
-   being forced to a size that fits neither. */
+/* Stamped boxes side by side, sharing the row equally: two of them for the
+   adults, six for the children, and a strip of digits reads as a scale. */
 .segmented {
   display: flex;
   flex-wrap: wrap;
@@ -360,7 +354,7 @@ fieldset.filing-status legend {
 
 .segmented-option {
   position: relative;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   cursor: pointer;
 }
 
@@ -500,11 +494,6 @@ fieldset.filing-status legend {
   margin: 0;
 }
 
-.link-note strong {
-  color: var(--amber-bright);
-  font-weight: 600;
-}
-
 .link-note ul {
   margin: 0.5rem 0 0;
   padding-left: 1.1rem;
@@ -570,10 +559,94 @@ fieldset.filing-status legend {
   white-space: nowrap;
 }
 
-/* Three markers across the width of the slider above them: the two ends and
-   whatever is worth pointing at in between. The middle one stays centred on
-   its own text rather than on the slider, which is the honest place for it:
-   the average is not the midpoint of anything. */
+/* ───── A figure the reader types ────────────────────────────────────────────
+ *
+ * Set exactly as `.slider-value` beside it — mono, right-aligned, the same
+ * size — because it is the same figure, and the only difference is that this
+ * one can be typed into. A hairline under it is the whole of the box: an
+ * input drawn as an input would be the one chromed control on the page. The
+ * spinners come off because the step they walk is not the step the figure
+ * moves in. The box is `--digits` characters wide — the component sets it to
+ * the length of the largest figure the field takes — plus room for a caret,
+ * so the sign stands against the digits.
+ */
+.money-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.0625rem;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.money-field input {
+  width: calc(var(--digits, 7) * 1ch + 0.25rem);
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--edge);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  font-variant-numeric: inherit;
+  appearance: textfield;
+}
+
+.money-field input::-webkit-outer-spin-button,
+.money-field input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.money-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The sign stands outside the box, so it is never typed over and never
+   selected with the figure, and takes the figure's own colour so the pair
+   reads as one figure. */
+.money-field-sign {
+  color: inherit;
+  user-select: none;
+}
+
+/* Amber is you: the field that says where on the chart you are standing. */
+.money-field.amber {
+  color: var(--amber-bright);
+}
+
+/* The way back to the figure the page prefilled. */
+.field-reset {
+  margin: 0.5rem 0 0;
+}
+
+.reset-button {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.reset-button:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.reset-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The two ends of the slider under the chart, and of each age slider. */
 .slider-range-labels {
   display: flex;
   justify-content: space-between;
@@ -583,46 +656,43 @@ fieldset.filing-status legend {
   color: var(--ink-dim);
 }
 
-/* The slider that says where on the chart above the reader is standing. It
-   reads as part of that chart rather than as a control in a stack of them, so
-   it starts where the plot area starts and gets the room a caption gets. */
+/* The slider is the chart's cursor, so it is inset to the plot area exactly:
+   the y-axis gutter and the plot's own left margin on one side, its right
+   margin on the other. The thumb then stands under the marker it moves. */
 .chart-slider {
-  margin: 2rem 0 0;
-  padding-left: var(--chart-axis);
+  margin: 1.25rem 0 0;
+  padding-left: calc(var(--chart-axis) + 10px);
+  padding-right: 28px;
 }
 
 /* The other half of the pairing: the curve read back at the slider's value,
-   set as a pull quote — the one sentence on the page that says what the
-   reader's own dollar costs. Its figures are mono, and the rate on the next
-   dollar takes the marker's amber, so the sentence, the slider and the line
-   on the plot are one thing. */
+   in one sentence. Its figures are mono, and the first of them — what you
+   pay — takes the marker's amber, so the sentence, the slider and the line on
+   the plot are one thing. */
 .slider-readout {
-  margin: 1.75rem 0 0;
-  max-width: 44rem;
-  font-size: 1.5rem;
-  line-height: 1.42;
+  margin: 1.25rem 0 0;
+  max-width: 40rem;
+  font-size: 1.25rem;
+  line-height: 1.45;
   color: var(--ink);
 }
 
 .slider-readout strong {
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: 1.0625rem;
   font-weight: 500;
   color: var(--ink);
 }
 
 .slider-readout strong:first-of-type {
-  color: var(--amber);
+  color: var(--amber-bright);
   font-weight: 600;
 }
 
-/* Everything that describes one chart, grouped: the plot and the caption
-   under it. The padding is the band the settings button rides in, so the
-   button covers nothing. */
+/* Everything that describes one chart, grouped: the plot and the key under it. */
 .chart-figure {
-  margin: 1.75rem 0 0;
+  margin: 1rem 0 0;
   position: relative;
-  padding-top: 2.375rem;
 }
 
 .chart-container {
@@ -638,108 +708,91 @@ fieldset.filing-status legend {
   font-family: var(--font-mono);
 }
 
-/* ───── The chart's own settings ────────────────────────────────────────────
+/* ───── The key ─────────────────────────────────────────────────────────────
  *
- * Step 2 draws two families of vertical line that are not in either curve —
- * the credit's own edges, and the cost-sharing tiers — and this is the control
- * that puts them there. It is the only thing on the page that changes what is
- * *drawn* rather than what is *priced*, which is why it sits with the chart
- * instead of down among the sliders.
- *
- * It sits in the figure's top-right corner, in a band of its own above the
- * plot: the top-right of *this* chart is the one corner that is never free,
- * because the marginal rate is at its highest where income is highest.
+ * What the plot's four marks mean, in a row under it, inset to the plot area
+ * the way the slider is. It replaces a popover: two of these marks are the
+ * whole subject of the page, and a reader should not have to open anything to
+ * learn which is which. The one switch is the tiers, which belong only to a
+ * reader buying silver.
  */
-.chart-lines {
-  position: absolute;
-  top: 0;
-  right: 0;
-  /* Over the SVG, under the panel it opens. */
-  z-index: 20;
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 1.25rem;
+  margin: 0.75rem 0 0;
+  padding-left: calc(var(--chart-axis) + 10px);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
 }
 
-.chart-lines-button {
+.chart-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4375rem 0.75rem;
-  border: 1px solid var(--ink);
-  border-radius: 0;
-  background: var(--surface);
+}
+
+/* A zero-height box, so the border *is* the mark: dashed for a line the chart
+   draws dashed, solid and heavier for the curve itself. */
+.chart-legend-swatch {
+  flex: 0 0 1.5rem;
+  height: 0;
+  border-top: 1px dashed var(--ink-muted);
+}
+
+.chart-legend-cost {
+  border-top: 3px solid var(--accent);
+}
+
+/* The one mark that is an area rather than a line, so it is drawn as one:
+   the chart's own tint, over an edge that keeps it visible at this size. */
+.chart-legend-subsidy {
+  height: 0.75rem;
+  border: 1px solid var(--emerald);
+  background: color-mix(in srgb, var(--emerald) 12%, var(--surface));
+}
+
+/* The subsidy's own edges, in ink: structure rather than data. */
+.chart-legend-edge {
+  border-top-color: var(--ink-muted);
+}
+
+.chart-legend-here {
+  border-top-color: var(--amber);
+}
+
+.chart-legend-tier {
+  border-top-color: var(--violet);
+}
+
+/* The switch sits in the row as one more item, at the row's own size rather
+   than at the 44px a control gets in the rail. */
+.chart-legend-toggle {
+  min-height: 0;
+  gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  letter-spacing: 0.06em;
-  color: var(--ink);
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.chart-lines-button:hover,
-.chart-lines-button[aria-expanded='true'] {
-  background: var(--ink);
-  color: var(--surface);
-}
-
-.chart-lines-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* A slip of paper laid over the plot: paper, an ink edge, no shadow. */
-.chart-lines-panel {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  z-index: 30;
-  width: max-content;
-  max-width: min(18rem, 90vw);
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--ink);
-  background: var(--surface-raised);
-}
-
-.chart-lines-group {
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-.chart-lines-group legend {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--ink-muted);
-  padding: 0;
 }
 
-/* One switch per line. `.checkbox-option` is an inline-flex everywhere else on
-   the page, where it sits in a row of siblings; here there are two of them in
-   a box sized to its own content, and inline they would share a line. */
-.chart-lines-option {
-  display: flex;
-  margin-top: 0.375rem;
-}
-
-/* The swatch is the key: the same dashed rule the chart draws, so a reader
-   matches the switch to the line by hue before reading either. */
-.chart-lines-swatch {
-  align-self: center;
-  margin-top: 0;
+.chart-legend-toggle input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* The hover reading. Paper with an ink edge, set in the mono because every
    line in it is a figure. It follows the pointer and has to stay legible
    over whatever part of the curve it covers, which the opaque paper does. */
 .chart-tooltip {
-  padding: 0.75rem 0.875rem;
+  max-width: 14rem;
+  padding: 0.5rem 0.625rem;
   border: 1px solid var(--ink);
   background: var(--surface-raised);
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.6;
+  font-size: 0.75rem;
+  line-height: 1.5;
   color: var(--ink);
 }
 
@@ -750,30 +803,29 @@ fieldset.filing-status legend {
   color: var(--ink-soft);
 }
 
-/* Rendered as HTML rather than an SVG <XAxis label> so it can never be
-   clipped by the chart's viewport. The padding-left starts it where the plot
-   area starts, after the y-axis gutter; italic, because it is a caption. */
-.chart-axis-label {
-  margin: 0.75rem 0 0;
-  padding-left: var(--chart-axis);
-  font-size: 0.8125rem;
-  font-style: italic;
+/* Only where the plain reading does not hold: Medicaid, past the line, a
+   silver plan that has been upgraded. */
+.chart-tooltip-standing {
+  display: block;
   color: var(--ink-muted);
 }
 
-/* A zero-height box so the border *is* the swatch, nudged down to the middle
-   of the first line of text rather than its top. Dashed for a line the chart
-   draws dashed — an edge, a tier — and solid for a curve. */
-.chart-key-swatch {
-  flex: 0 0 1.75rem;
-  align-self: flex-start;
-  height: 0;
-  margin-top: 0.55rem;
-  border-top: 2px dashed var(--fuchsia);
+/* A label and its figure, the figures aligned down the right. */
+.chart-tooltip-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.75rem;
+  margin: 0;
 }
 
-.chart-key-swatch-csr {
-  border-top-color: var(--violet);
+.chart-tooltip-rows dt {
+  color: var(--ink-muted);
+}
+
+.chart-tooltip-rows dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ───── The notes ───────────────────────────────────────────────────────────
@@ -785,7 +837,7 @@ fieldset.filing-status legend {
  * off renumbers the rest.
  */
 .notes-kicker {
-  margin: 3.5rem 0 0;
+  margin: 3rem 0 0;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-mono);
@@ -797,7 +849,7 @@ fieldset.filing-status legend {
 
 .explainer {
   margin: 0;
-  padding: 1.125rem 0;
+  padding: 0.75rem 0;
   border-top: 1px solid var(--edge);
   counter-increment: note;
 }
@@ -812,17 +864,17 @@ fieldset.filing-status legend {
 }
 
 .explainer h3 {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.3;
   margin: 0;
-  font-variation-settings: 'opsz' 36;
+  font-variation-settings: 'opsz' 24;
   color: var(--ink-bright);
 }
 
 details.explainer summary {
   display: grid;
-  grid-template-columns: 2.75rem minmax(0, 1fr) 1.5rem;
+  grid-template-columns: 2rem minmax(0, 1fr) 1.25rem;
   column-gap: 0.75rem;
   align-items: center;
   min-height: 2.75rem;
@@ -850,7 +902,7 @@ details.explainer summary::after {
   content: '+';
   justify-self: end;
   font-family: var(--font-mono);
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 300;
   line-height: 1;
   color: var(--ink);
@@ -872,8 +924,8 @@ details.explainer summary:focus-visible {
 /* Indented to the heading, under the number. */
 .explainer-content {
   margin: 0.875rem 0 0.5rem;
-  padding-left: 3.5rem;
-  max-width: 45rem;
+  padding-left: 2.75rem;
+  max-width: 40rem;
   cursor: default;
 }
 
@@ -907,27 +959,13 @@ details.explainer summary:focus-visible {
   margin-bottom: 0;
 }
 
-/* Each slider wears the colour of the line it moves: amber for the block,
-   violet for the one advanced input. */
-.slider-value.amber {
-  font-size: 1.75rem;
-  color: var(--amber);
-}
-
+/* The one slider that wears a colour: the cursor on the chart. */
 .slider-amber {
   accent-color: var(--amber) !important;
 }
 
-.slider-value.violet {
-  color: var(--violet);
-}
-
-.slider-violet {
-  accent-color: var(--violet-deep) !important;
-}
-
 footer {
-  margin-top: 4rem;
+  margin-top: 3rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--ink);
 }
@@ -1023,7 +1061,7 @@ footer p {
   border-top: 1px solid var(--edge);
 }
 
-/* Set like `.answer-line`: the mono margin note beside a serif label. */
+/* The publisher, in the margin beside the title it published. */
 .reading-source {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -1059,34 +1097,24 @@ footer p {
   outline-offset: 0.75rem;
 }
 
-.step-kicker {
-  margin: 0 0 0.625rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-/* A section heading, and the close's `.answer-heading` is set to match: the
-   close is a section, not a figure inside one. */
+/* A section heading: the chart's, and the figures' below it. */
 .step-heading {
-  font-size: 2.75rem;
+  font-size: 2.125rem;
   font-weight: 500;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.015em;
-  font-variation-settings: 'opsz' 72;
-  margin: 0 0 0.625rem;
+  font-variation-settings: 'opsz' 48;
+  margin: 0 0 0.5rem;
   color: var(--ink-bright);
 }
 
-/* The return's heading, a size down: it names a column, not the page's
-   subject. */
+/* The rail's heading, a size down: it names a column of controls, not the
+   page's subject. */
 .step-config .step-heading {
-  font-size: 2.125rem;
-  line-height: 1.1;
+  font-size: 1.5rem;
+  line-height: 1.2;
   letter-spacing: -0.01em;
-  margin-bottom: 1.375rem;
+  margin-bottom: 1rem;
 }
 
 /* The sentence under a section heading that says what the section draws. */
@@ -1098,73 +1126,45 @@ footer p {
   color: var(--ink-soft);
 }
 
-/* The line that closes step 1 by naming the return everything else prices.
-   Set apart by a rule in the margin rather than by a bigger type size,
-   because it is a summary of the inputs above it, not a new claim. */
-.scenario-recap {
-  margin: 1.375rem 0 0;
-  padding: 0.25rem 0 0.25rem 0.875rem;
-  border-left: 2px solid var(--edge);
-  font-size: 1rem;
-  font-style: italic;
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
-
-.scenario-recap strong {
-  font-style: normal;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-/* ───── The close ───────────────────────────────────────────────────────────
+/* ───── The figures ─────────────────────────────────────────────────────────
  *
- * The ledger: a double rule, the six figures the reader leaves with, each
- * under a rule of its own with its 1040 line number where the form has one,
- * and the button that sends the whole return as a link.
+ * Four of them, under one rule: what you pay, what the subsidy pays, what the
+ * next dollar costs and how far the line is. Each carries a gloss that says
+ * the same figure a second way — a year rather than a month, a block of
+ * income rather than a dollar — and the button that sends the household as a
+ * link closes the block.
  */
 .answer {
-  margin-top: 5rem;
-  padding-top: 1.75rem;
-  border-top: 3px double var(--ink);
-}
-
-.answer-kicker {
-  margin: 0 0 0.625rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ink);
 }
 
 .answer-heading {
   margin: 0;
-  font-size: 2.75rem;
+  font-size: 1.5rem;
   font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.015em;
-  font-variation-settings: 'opsz' 72;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'opsz' 36;
   color: var(--ink-bright);
 }
 
-.answer-intro {
-  margin: 1rem 0 0;
-  max-width: 40rem;
-  font-size: 1.25rem;
-  font-style: italic;
-  line-height: 1.45;
-  color: var(--ink-soft);
+/* The household the four figures are priced for, set as a status line. */
+.answer-subline {
+  margin: 0.375rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
 }
 
-/* Three across where there is room for three. The figures are read down the
-   list rather than across it — no row means anything — so stacking on a
-   narrow screen loses nothing but the width. */
+/* Two by two. The figures are read one at a time — no row means anything —
+   so stacking on a narrow screen loses nothing but the width. */
 .answer-figures {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2.25rem 3rem;
-  margin: 2.5rem 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2rem;
+  margin: 1.75rem 0 0;
 }
 
 .answer-figure {
@@ -1183,37 +1183,27 @@ footer p {
   color: var(--ink);
 }
 
-.answer-line {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  white-space: nowrap;
-}
-
 .answer-figure dd {
   margin: 0.625rem 0 0;
 }
 
 .answer-figure dd strong {
   font-family: var(--font-mono);
-  font-size: 2.75rem;
+  font-size: 2.125rem;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
 }
 
-/* The second half of a figure that is a pair — "of $24,852", "the standard
-   premium" — a size down and a tier lighter, so the figure reads first. It
-   wraps: a phrase held to one line was what pushed the whole page past the
-   right edge of a 1024px window. */
+/* The unit under the figure — "/mo", "of subsidy" — on a line of its own, so
+   the figure itself is never the thing that wraps. */
 .answer-of {
+  display: block;
+  margin-top: 0.25rem;
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: 0.875rem;
   color: var(--ink-muted);
 }
 
@@ -1226,24 +1216,23 @@ footer p {
   color: var(--ink-muted);
 }
 
-/* Only the cost of the block takes a colour, and it is the marker's. */
-.answer-figure:nth-of-type(5) dd strong {
-  color: var(--amber);
+/* One figure takes a colour, and it is the marker's: the page's subject. */
+.answer-figure:nth-of-type(3) dd strong {
+  color: var(--amber-bright);
 }
 
-/* ───── Sending the answer ─────
+/* ───── Sending the figures ─────
  *
- * The last thing in the close, under its own hairline: what is worth a link
- * is the answer, and this is the one place the answer sits together. The
- * button is the one solid block of ink on the page.
+ * Under the four figures, on their own hairline: the button is the one solid
+ * block of ink on the page.
  */
 .answer-share {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1.25rem;
-  margin-top: 3rem;
-  padding-top: 1.5rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--edge);
 }
 
@@ -1350,88 +1339,15 @@ footer p {
   outline-offset: 2px;
 }
 
-/* ───── Advanced inputs ─────────────────────────────────────────────────────
- *
- * The last line item in the rail: a row that opens, closing the list with an
- * ink rule. The summary carries whatever has been set, so closing it never
- * hides state.
- */
-.advanced-inputs {
-  margin: 0;
-  border-top: 1px solid var(--edge);
-  border-bottom: 1px solid var(--ink);
-}
-
-.advanced-inputs > summary {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  min-height: 3.75rem;
-  list-style: none;
-  cursor: pointer;
-  user-select: none;
-  padding: 0.75rem 0 0.75rem 3.25rem;
-}
-
-.advanced-inputs > summary::-webkit-details-marker {
-  display: none;
-}
-
-.advanced-inputs > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.advanced-label {
-  font-size: 1.0625rem;
-  font-weight: 500;
-  color: var(--ink);
-  flex-shrink: 0;
-}
-
-.advanced-inputs > summary:hover .advanced-label {
-  color: var(--accent);
-}
-
-/* Pushed hard right, ahead of the mark, so the set values read as a status
- * line rather than as a subtitle to the label. */
-.advanced-state {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--ink-muted);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.advanced-state-set {
-  color: var(--emerald);
-}
-
-.advanced-inputs > summary::after {
-  content: '+';
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 300;
-  line-height: 1;
-  color: var(--ink);
-  flex-shrink: 0;
-}
-
-.advanced-inputs[open] > summary::after {
-  content: '−';
-}
-
 /* ───── The collapse ────────────────────────────────────────────────────────
  *
- * Two steps down. Below 1200px the page's own margins halve and the ledger
- * goes to two columns, because three 44px figures do not fit in three columns
- * of a laptop window. Below 1100px the two columns become one and the page is
- * the walk it was: the return first, then the curve. 1100 rather than lower
- * because the rail is 22.5rem and the gutter 4rem, so under it the reading
- * column — and the plot in it — would be narrower than the rail is tall.
+ * Two steps down. Below 1200px the page's own margins halve. Below 1100px the
+ * two columns become one, and the order is set rather than left to the
+ * markup: the chart and the figures first, because they are what the reader
+ * came for; the controls that move them second; the notes last. 1100 rather
+ * than lower because the rail is 22.5rem and the gutter 4rem, so under it the
+ * reading column — and the plot in it — would be narrower than the rail is
+ * tall.
  *
  * Last in the screen half on purpose — a media query adds no specificity, so
  * a rule it overrides has to be above it in the file or the override silently
@@ -1441,27 +1357,29 @@ footer p {
   #root {
     padding: 0 3rem 3rem;
   }
-
-  .answer-figures {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1100px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 3rem;
+    row-gap: 2.5rem;
+  }
+
+  .flow {
+    order: 1;
   }
 
   .step-config {
+    order: 2;
     position: static;
     max-height: none;
     overflow: visible;
-    padding: 0;
+    padding-right: 0;
   }
 
-  .masthead-body {
-    padding: 2.5rem 0 2rem;
+  .notes-section {
+    order: 3;
+    grid-column: auto;
   }
 }
 
@@ -1469,38 +1387,38 @@ footer p {
   #root {
     padding: 0 1.5rem 2.5rem;
   }
-
-  .answer-figures {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.5rem;
-  }
 }
 
 @media (max-width: 640px) {
   h1 {
-    font-size: 2.875rem;
+    font-size: 2rem;
   }
 
   .subtitle {
     font-size: 1.0625rem;
   }
 
-  .step-heading,
-  .answer-heading,
-  .answer-figure dd strong {
-    font-size: 2.125rem;
+  .step-heading {
+    font-size: 1.5rem;
   }
 
   .slider-readout {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
   }
 
-  .slider-readout strong {
-    font-size: 1.0625rem;
+  .chart-container {
+    height: 320px;
   }
 
-  .chart-slider {
+  .chart-slider,
+  .chart-legend {
     padding-left: 0;
+    padding-right: 0;
+  }
+
+  .answer-figures {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
   }
 }
 
@@ -1525,10 +1443,9 @@ footer p {
  * here: the chosen segmented option is re-drawn as a heavier border, and the
  * checkbox's tick is inked in the accent.
  *
- * *The whole walk prints, not only the close.* The charts with the reader's
- * own marker standing on them are what make the closing figures mean
- * anything, so the walk prints, and the close is forced onto a sheet of its
- * own so that the handoff is still one clean page.
+ * *The whole page prints.* The chart with the reader's own marker standing on
+ * it is what makes the four figures under it mean anything, so it prints too,
+ * and the figures follow it on the same sheet where they fit.
  *
  * *An explainer prints exactly as the reader left it.* Print CSS cannot open
  * a `<details>`, so what is on screen is what prints, and a closed note is
@@ -1567,8 +1484,6 @@ footer p {
 
     --amber: #9f4600;
     --amber-bright: #7d3600;
-    --fuchsia: #8f3689;
-    --fuchsia-bright: #6f1a6b;
     --violet: #6a3d8c;
     --violet-deep: #542870;
     --emerald: #176a33;
@@ -1606,14 +1521,14 @@ footer p {
   .reading,
   .answer-share-button,
   .link-note button,
-  .chart-lines,
+  .reset-button,
+  .chart-legend-toggle,
   input[type='range'],
   .slider-range-labels {
     display: none;
   }
 
-  details.explainer summary::after,
-  .advanced-inputs > summary::after {
+  details.explainer summary::after {
     display: none;
   }
 
@@ -1621,8 +1536,7 @@ footer p {
     display: none;
   }
 
-  details.explainer summary,
-  .advanced-inputs > summary {
+  details.explainer summary {
     cursor: default;
   }
 
@@ -1681,8 +1595,6 @@ footer p {
 
   h1,
   h2,
-  .step-kicker,
-  .answer-kicker,
   .notes-kicker {
     break-after: avoid;
   }
@@ -1694,12 +1606,8 @@ footer p {
     break-inside: avoid;
   }
 
-  .chart-figure {
-    padding-top: 0;
-  }
-
-  .answer {
-    break-before: page;
-    margin-top: 0;
+  /* A typed figure prints as the figure, not as the box it was typed into. */
+  .money-field input {
+    border-bottom: none;
   }
 }

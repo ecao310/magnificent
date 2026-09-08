@@ -68,14 +68,14 @@ describe('the cover', () => {
   });
 
   it('quotes a cost the opening household still reaches', () => {
-    // The card and the deck both say "around 17 cents"; the slope under the
-    // opening household has to still round to that.
+    // The card says "about 17 cents"; the slope under the household the page
+    // opens on has to still round to that, and the note that works the figure
+    // out in full has to be the same page's.
     const opening = { ...engineScenario(defaultScenario()), year: PAGE_COVERAGE_YEAR };
     const cents = Math.round(creditSlopeAt(opening.income, opening) * 100);
     expect(meta('property', 'og:description')).toContain(`about ${cents} cents`);
-    const header = readFileSync(resolve(root, 'src/components/Header.tsx'), 'utf8');
-    expect(header).toContain(`around ${cents} cents`);
-    expect(readme).toContain(`${cents} cents of every extra dollar`);
+    const notes = readFileSync(resolve(root, 'src/components/Notes.tsx'), 'utf8');
+    expect(notes).toContain('SlopeExplainer');
   });
 });
 
@@ -148,8 +148,15 @@ describe('the front door', () => {
 });
 
 describe('the reading list', () => {
-  it('names the thread this page answers, and the README names the page it follows', () => {
-    expect(FURTHER_READING[0].href).toMatch(/reddit\.com\/r\/financialindependence/);
+  it('opens on the piece that works the same problem in prose, and carries no thread', () => {
+    expect(FURTHER_READING[0].source).toBe('Kitces');
+    expect(FURTHER_READING.map((r) => r.source)).toEqual([
+      'Kitces',
+      'The Finance Buff',
+      'KFF',
+      'HealthCare.gov',
+      'CMS',
+    ]);
     expect(readme).toContain('https://ecao310.github.io/congenial-octo-spork/');
   });
 

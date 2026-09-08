@@ -15,20 +15,20 @@ export const formatCurrency = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value);
 
-/** A rate given as a fraction, rendered the way the chart axis renders it. */
-export const formatPercent = (rate: number): string =>
-  `${Math.round(rate * 10_000) / 100}%`;
+/**
+ * A rate given as a fraction, to one decimal: `7.9%`.
+ *
+ * One place, because a second decimal is a figure nobody reads and a whole
+ * number hides the thing the page is about — the share moving as income does.
+ */
+export const formatPercent = (rate: number): string => `${(rate * 100).toFixed(1)}%`;
 
-/** A rate given as a fraction, rendered as cents lost per dollar earned. */
-export const formatCents = (rate: number): string =>
-  `${Math.round(rate * 10_000) / 100}¢`;
+/** The same rounding, read as cents given back per extra dollar earned. */
+export const formatCents = (rate: number): string => `${(rate * 100).toFixed(1)}¢`;
 
-/** A multiple of the poverty line, as the form states it: 2.84 is `284%`. */
+/** A multiple of the poverty line, whole: 2.36 is `236%`. */
 export const formatFpl = (multiple: number): string => `${Math.round(multiple * 100)}%`;
 
-/** Short enough for an axis tick: $150,000 as `150K`. */
-export const formatCompact = (value: number): string =>
-  new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
+/** Short enough for an axis tick, and still money: $25,000 as `$25K`. */
+export const formatAxisMoney = (value: number): string =>
+  value === 0 ? '$0' : `$${Math.round(value / 1_000)}K`;

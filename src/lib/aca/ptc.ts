@@ -336,7 +336,7 @@ export function subsidyLines(scenario: Scenario = {}): SubsidyLine[] {
       kind: 'edge',
       multiple: floor,
       magi: floor * line,
-      label: `${Math.round(floor * 100)}% FPL`,
+      label: `Subsidy starts · ${Math.round(floor * 100)}%`,
     },
     ...CSR_TIERS.map(
       (tier): SubsidyLine => ({
@@ -344,7 +344,7 @@ export function subsidyLines(scenario: Scenario = {}): SubsidyLine[] {
         kind: 'csr',
         multiple: tier.upTo,
         magi: tier.upTo * line,
-        label: `CSR ${tier.actuarialValue}%`,
+        label: `Tier · ${Math.round(tier.upTo * 100)}%`,
       }),
     ),
   ];
@@ -355,7 +355,7 @@ export function subsidyLines(scenario: Scenario = {}): SubsidyLine[] {
       kind: 'edge',
       multiple: PTC_CLIFF_PERCENT,
       magi: cliff,
-      label: `${PTC_CLIFF_PERCENT * 100}% FPL`,
+      label: `Subsidy ends · ${PTC_CLIFF_PERCENT * 100}%`,
     });
   }
   return lines;

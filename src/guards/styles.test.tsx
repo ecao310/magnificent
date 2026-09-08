@@ -54,10 +54,12 @@ describe('the palette', () => {
       edge: '--edge',
       edgeStrong: '--edge-strong',
       inkMuted: '--ink-muted',
+      inkSoft: '--ink-soft',
+      inkDim: '--ink-dim',
       accent: '--accent',
       amber: '--amber',
-      fuchsia: '--fuchsia',
-      fuchsiaBright: '--fuchsia-bright',
+      amberBright: '--amber-bright',
+      emerald: '--emerald',
       violet: '--violet',
       violetDeep: '--violet-deep',
     };
@@ -88,7 +90,7 @@ describe('the chart metrics', () => {
 });
 
 describe('the type scale', () => {
-  const scale = ['5.75', '2.875', '2.75', '2.125', '1.75', '1.5', '1.375', '1.25', '1.0625', '1', '.875', '.8125', '.75'];
+  const scale = ['2.75', '2.125', '2', '1.5', '1.25', '1.125', '1.0625', '.875', '.8125', '.75'];
 
   it('is closed: every font-size is one of its steps', () => {
     const sizes = Array.from(uncommented.matchAll(/font-size:\s*([\d.]+)rem/g)).map((m) => m[1].replace(/^0/, ''));
@@ -117,6 +119,8 @@ describe('the selectors', () => {
     // Classes written through a template or a conditional, named here so the
     // extractor above does not have to understand them.
     for (const dynamic of ['credit-edge', 'csr-tier', 'here-line']) classNames.add(dynamic);
+    // Classes the components write as one of a pair, e.g. `money-field amber`.
+    for (const compound of ['money-field', 'amber']) classNames.add(compound);
     for (const selector of nested) {
       for (const cls of selector.match(/\.[\w-]+/g) ?? []) {
         const name = cls.slice(1);
@@ -128,7 +132,14 @@ describe('the selectors', () => {
 
   it('render on the page where a default render can reach them', () => {
     render(<App />);
-    const reachable = ['.step-config .input-group', '.answer-figure dd', '.explainer h3', '.chart-slider .slider-readout'];
+    const reachable = [
+      '.step-config .input-group',
+      '.answer-figure dd',
+      '.explainer h3',
+      '.chart-slider .slider-readout',
+      '.chart-legend .chart-legend-swatch',
+      '.notes-section .explainer',
+    ];
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();
   });
 });

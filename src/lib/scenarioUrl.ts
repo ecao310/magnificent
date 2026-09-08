@@ -43,11 +43,11 @@ export const DEFAULT_INCOME = 50_000;
  */
 export const MAX_INCOME = 200_000;
 
-/** Dependents past this move the line by amounts nobody on this page will meet. */
+/** Children past this move the line by amounts nobody on this page will meet. */
 export const MAX_DEPENDENTS = 5;
 
 /**
- * The most the premium slider offers, monthly. A couple of sixty-four-year-olds
+ * The most the premium field takes, monthly. A couple of sixty-four-year-olds
  * in the most expensive county in the country is under $5,000.
  */
 export const MAX_PREMIUM_MONTHLY = 6_000;
@@ -124,13 +124,17 @@ export function decodeScenario(search: string): DecodedScenario {
       min = 0,
       max,
       what,
+      subject,
       reason,
       format = (n: number) => String(n),
     }: {
       fallback: number;
       min?: number;
       max: number;
+      /** The value as it reads mid-sentence: “asked for <b>an age</b> of 70”. */
       what: string;
+      /** The same value as it opens one: “<b>The age</b> “x” is not a number”. */
+      subject: string;
       reason?: string;
       format?: (n: number) => string;
     },
@@ -139,23 +143,19 @@ export function decodeScenario(search: string): DecodedScenario {
     if (raw === null || raw.trim() === '') return fallback;
     const value = Number(raw);
     if (!Number.isFinite(value)) {
-      notes.push(
-        `This link gave ${what} as “${raw}”, which is not a number, so it is set to ${format(fallback)}.`,
-      );
+      notes.push(`${subject} “${raw}” is not a number; set to ${format(fallback)}.`);
       return fallback;
     }
     const asked = Math.round(value);
     if (asked > max) {
       notes.push(
-        `This link asked for ${what} of ${format(asked)}. The most this page can carry is ${format(max)}${reason ? ` — ${reason}` : ''}, so that is what is set.`,
+        `The link asked for ${what} of ${format(asked)}; the most is ${format(max)}${reason ? ` — ${reason}` : ''}. Set to ${format(max)}.`,
       );
       return max;
     }
     if (asked < min) {
       notes.push(
-        min === 0
-          ? `This link asked for ${what} of ${format(asked)}, which cannot be less than nothing, so it is set to ${format(0)}.`
-          : `This link asked for ${what} of ${format(asked)}. The least this page can carry is ${format(min)}, so that is what is set.`,
+        `The link asked for ${what} of ${format(asked)}; the least is ${format(min)}. Set to ${format(min)}.`,
       );
       return min;
     }
@@ -169,7 +169,7 @@ export function decodeScenario(search: string): DecodedScenario {
       adults = Number(rawAdults) as Adults;
     } else {
       notes.push(
-        `This link names ${rawAdults} adults, and a plan here carries one or two, so it is showing a couple.`,
+        `The link named ${rawAdults} adults; the choice is one or two. Set to two.`,
       );
     }
   }
@@ -177,27 +177,39 @@ export function decodeScenario(search: string): DecodedScenario {
   const ageBounds = {
     min: MIN_ADULT_AGE,
     max: MAX_ADULT_AGE,
-    reason: `at ${MAX_ADULT_AGE + 1} Medicare takes over and the credit ends`,
+    reason: `at ${MAX_ADULT_AGE + 1} Medicare takes over and the subsidy ends`,
   };
-  const age = whole('age', { fallback: opening.age, what: 'an age', ...ageBounds });
+  const age = whole('age', {
+    fallback: opening.age,
+    what: 'an age',
+    subject: 'The age',
+    ...ageBounds,
+  });
   /**
    * Kept whatever the count, as the page keeps it: switching to one adult
    * hides the second slider without forgetting its answer, so a refresh has
    * to keep it too.
    */
-  const spouseAge = whole('spouse', { fallback: opening.spouseAge, what: 'a second age', ...ageBounds });
+  const spouseAge = whole('spouse', {
+    fallback: opening.spouseAge,
+    what: 'a second age',
+    subject: 'The second age',
+    ...ageBounds,
+  });
 
   const income = whole('income', {
     fallback: opening.income,
     max: MAX_INCOME,
     what: 'household income',
-    reason: 'the right edge of the slider that sets it',
+    subject: 'Household income',
+    reason: 'the top of the slider',
     format: formatCurrency,
   });
   const dependents = whole('deps', {
     fallback: opening.dependents,
     max: MAX_DEPENDENTS,
-    what: 'a number of dependents',
+    what: 'a number of children',
+    subject: 'The number of children',
   });
 
   const rawPremium = params.get('premium');
@@ -208,7 +220,8 @@ export function decodeScenario(search: string): DecodedScenario {
           fallback: 0,
           max: MAX_PREMIUM_MONTHLY,
           what: 'a monthly benchmark premium',
-          reason: 'the right edge of the slider that sets it',
+          subject: 'The benchmark premium',
+          reason: 'the top of the slider',
           format: formatCurrency,
         });
 

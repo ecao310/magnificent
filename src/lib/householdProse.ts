@@ -3,8 +3,8 @@ import type { Adults } from './aca';
 /**
  * How a household is described in words, in the one place every description
  * of it can read. Each of these is said in at least two places — on the page
- * and in the live region that reads the same thing aloud, or in step 1's
- * recap and again in the close — and two hand-written copies are two chances
+ * and in the live region that reads the same thing aloud, or under the
+ * figures and again in a note — and two hand-written copies are two chances
  * to describe two different households.
  */
 
@@ -31,15 +31,3 @@ export const agesProse = (ages: number[]): string =>
 /** "one person", "2 people": the household as the poverty line counts it. */
 export const householdProse = (size: number): string =>
   size === 1 ? 'one person' : `${size} people`;
-
-/**
- * The separator that goes before item `i` of an `n`-item English list: nothing,
- * then ", ", then " and " or ", and " in front of the last one.
- */
-export const listSeparator = (i: number, n: number): string =>
-  i === 0 ? '' : i < n - 1 ? ', ' : n > 2 ? ', and ' : ' and ';
-
-/** The list as flat text, for anything read aloud rather than looked at. */
-export function joinProse(parts: string[]): string {
-  return parts.map((part, i) => listSeparator(i, parts.length) + part).join('');
-}

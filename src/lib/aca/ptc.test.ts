@@ -245,18 +245,25 @@ describe('the lines on the axis', () => {
     const lines = subsidyLines(COUPLE);
     expect(lines.map((l) => l.id)).toEqual(['floor', 'csr-150', 'csr-200', 'csr-250', 'cliff']);
     expect(lines.map((l) => l.multiple)).toEqual([1.38, 1.5, 2, 2.5, 4]);
+    expect(lines.map((l) => l.label)).toEqual([
+      'Subsidy starts · 138%',
+      'Tier · 150%',
+      'Tier · 200%',
+      'Tier · 250%',
+      'Subsidy ends · 400%',
+    ]);
     for (let i = 1; i < lines.length; i += 1) {
       expect(lines[i].magi).toBeGreaterThan(lines[i - 1].magi);
     }
-    expect(lines[0].label).toBe('138% FPL');
-    expect(lines[4].label).toBe('400% FPL');
+    expect(lines[0].label).toBe('Subsidy starts · 138%');
+    expect(lines[4].label).toBe('Subsidy ends · 400%');
   });
 
   it('have no cliff in 2025 and a 100% floor without expansion', () => {
     expect(subsidyLines({ ...COUPLE, year: 2025 }).map((l) => l.id)).not.toContain('cliff');
     const gap = subsidyLines({ ...COUPLE, expansionState: false });
     expect(gap[0].multiple).toBe(1);
-    expect(gap[0].label).toBe('100% FPL');
+    expect(gap[0].label).toBe('Subsidy starts · 100%');
   });
 });
 

@@ -2,10 +2,10 @@
  * Where to read on, in the one place the footer and the test that reads the
  * footer back can both look.
  *
- * Six pieces, in the order a reader who has just walked both steps would want
- * them: the thread this page answers, the piece that works the same problem
- * in prose, the table and the calculator the figures come from, what counts
- * as household income, and the curve the default premium is drawn on. Each
+ * Five pieces, in the order a reader who has just read the page would want
+ * them: the piece that works the same problem in prose, the table and the
+ * calculator the figures come from, what counts as household income, and the
+ * curve the default premium is drawn on. Each
  * is a title and its publisher, nothing more: a publisher refreshes an
  * article and a date or a summary on the page would go stale while the link
  * did not.
@@ -18,11 +18,6 @@ export interface Reading {
 }
 
 export const FURTHER_READING: readonly Reading[] = [
-  {
-    href: 'https://www.reddit.com/r/financialindependence/comments/1w8a2nz/tax_optimization_in_early_retirement_maximizing/',
-    title: 'Maximizing ACA subsidies vs. tax-gain harvesting or Roth conversions',
-    source: 'r/financialindependence',
-  },
   {
     href: 'https://www.kitces.com/blog/reducing-aca-health-insurance-premiums-after-the-expiration-of-the-enhanced-premium-tax-credit-expiration-affordable-care-act-ptc/',
     title: 'Reducing ACA Health Insurance Premiums After ‘Enhanced’ Premium Tax Credit Expiration',

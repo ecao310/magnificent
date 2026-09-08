@@ -114,8 +114,7 @@ const INK_MUTED = '#6c6158';
 const EDGE = '#c9c3ba';
 const ACCENT = '#2769b7';
 const AMBER = '#b76100';
-const FUCHSIA = '#a644a0';
-const FUCHSIA_BRIGHT = '#852381';
+const EMERALD = '#1d7d3e';
 
 const SERIF = "'Newsreader', Georgia, 'Times New Roman', serif";
 const MONO = "'IBM Plex Mono', Menlo, Consolas, monospace";
@@ -155,6 +154,24 @@ function cover(curve, hook) {
     )
     .join('');
 
+  // Subsidy pays: the flat band between the cost curve and the full-premium
+  // line. `fullPremium` is null wherever `cost` is (Medicaid), and equal to
+  // `cost` past the cliff, so the band vanishes on its own in both places.
+  const bandPath = runs
+    .map((r) => {
+      const top = y(r[0].fullPremium);
+      return (
+        `M${x(r[0].magi).toFixed(1)},${top.toFixed(1)}` +
+        `L${x(r[r.length - 1].magi).toFixed(1)},${top.toFixed(1)}` +
+        [...r]
+          .reverse()
+          .map((p) => `L${x(p.magi).toFixed(1)},${y(p.cost).toFixed(1)}`)
+          .join('') +
+        'Z'
+      );
+    })
+    .join('');
+
   const gridCosts = [];
   for (let c = 0; c <= maxY; c += 500) gridCosts.push(c);
   const ticks = [50_000, 100_000].filter((v) => v > minX && v < maxX);
@@ -175,12 +192,12 @@ function cover(curve, hook) {
 
   <text x="72" y="140" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">How much subsidy does</text>
   <text x="72" y="204" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">the next dollar cost?</text>
-  <text x="72" y="250" fill="${INK_SOFT}" font-size="21">What a household pays for its Marketplace plan at every income,</text>
-  <text x="72" y="279" fill="${INK_SOFT}" font-size="21">and what each extra dollar does to the subsidy — priced for your own.</text>
+  <text x="72" y="250" fill="${INK_SOFT}" font-size="21">What you pay for a Marketplace plan at every household income,</text>
+  <text x="72" y="279" fill="${INK_SOFT}" font-size="21">and what each extra dollar costs you in subsidy — priced for your household.</text>
 
-  <text x="1128" y="112" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">SHARE OF INCOME AT ${money(hook.income)}</text>
-  <text x="1128" y="172" fill="${INK_MUTED}" font-size="62" text-anchor="end" style="font-variation-settings: 'opsz' 72">${hook.share}</text>
-  <text x="1128" y="204" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">THE NEXT DOLLAR COSTS</text>
+  <text x="1128" y="112" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">YOU PAY AT ${money(hook.income)}</text>
+  <text x="1128" y="172" fill="${INK_MUTED}" font-size="62" text-anchor="end" style="font-variation-settings: 'opsz' 72">$${hook.monthly}/mo</text>
+  <text x="1128" y="204" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">EACH EXTRA DOLLAR COSTS</text>
   <text x="1128" y="284" fill="${AMBER}" font-size="88" font-weight="500" letter-spacing="-2.6" text-anchor="end" style="font-variation-settings: 'opsz' 72">${hook.slope}</text>
 
   ${gridCosts
@@ -191,9 +208,18 @@ function cover(curve, hook) {
     )
     .join('\n  ')}
 
+  <path d="${bandPath}" fill="${EMERALD}" fill-opacity="0.10"/>
   <path d="${areaPath}" fill="url(#hatch)"/>
-  <line x1="${x(hook.cliff).toFixed(1)}" y1="${PLOT.top - 10}" x2="${x(hook.cliff).toFixed(1)}" y2="${PLOT.bottom}" stroke="${FUCHSIA}" stroke-width="2.5" stroke-dasharray="6 5"/>
-  <text x="${(x(hook.cliff) + 10).toFixed(1)}" y="${PLOT.top + 8}" fill="${FUCHSIA_BRIGHT}" font-family="${MONO}" font-size="15">400% FPL · the whole subsidy</text>
+
+  <line x1="${PLOT.left}" y1="${y(hook.benchmark).toFixed(1)}" x2="${PLOT.right}" y2="${y(hook.benchmark).toFixed(1)}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 4"/>
+  <text x="${PLOT.left + 6}" y="${(y(hook.benchmark) - 8).toFixed(1)}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13">Full premium $${hook.benchmark.toLocaleString('en-US')}/mo</text>
+
+  <line x1="${x(hook.floor).toFixed(1)}" y1="${PLOT.top}" x2="${x(hook.floor).toFixed(1)}" y2="${PLOT.bottom}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="${(x(hook.floor) + 6).toFixed(1)}" y="${PLOT.top + 20}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13">${hook.floorLabel}</text>
+
+  <line x1="${x(hook.cliff).toFixed(1)}" y1="${PLOT.top}" x2="${x(hook.cliff).toFixed(1)}" y2="${PLOT.bottom}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="${(x(hook.cliff) - 6).toFixed(1)}" y="${PLOT.top + 20}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13" text-anchor="end">${hook.cliffLabel}</text>
+
   <path d="${linePath}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
   <line x1="${x(hook.income).toFixed(1)}" y1="${PLOT.top + 40}" x2="${x(hook.income).toFixed(1)}" y2="${PLOT.bottom}" stroke="${AMBER}" stroke-width="2.5" stroke-dasharray="8 5"/>
   <circle cx="${x(hook.income).toFixed(1)}" cy="${y(hook.monthly).toFixed(1)}" r="8" fill="${AMBER}" stroke="${SURFACE}" stroke-width="2.5"/>
@@ -223,20 +249,34 @@ function touchIcon() {
 
 /* ── The run ─────────────────────────────────────────────────────────────── */
 
-const { costCurve, axisMax, ptcFor, ptcCliffMagi, defaultScenario, engineScenario, PAGE_COVERAGE_YEAR } =
-  await loadTaxModule();
+const {
+  costCurve,
+  axisMax,
+  ptcFor,
+  ptcCliffMagi,
+  defaultScenario,
+  engineScenario,
+  PAGE_COVERAGE_YEAR,
+  creditSlopeAt,
+  subsidyLines,
+} = await loadTaxModule();
 
 const scenario = { ...engineScenario(defaultScenario()), year: PAGE_COVERAGE_YEAR };
 const curve = costCurve(scenario, { maxMagi: axisMax(scenario), step: 250 });
 const here = ptcFor(scenario.income, scenario);
+const lines = subsidyLines(scenario);
+const floorLine = lines.find((line) => line.id === 'floor');
+const cliffLine = lines.find((line) => line.id === 'cliff');
 const hook = {
   year: PAGE_COVERAGE_YEAR,
   income: scenario.income,
   cliff: ptcCliffMagi(scenario),
+  floor: floorLine.magi,
+  floorLabel: floorLine.label,
+  cliffLabel: cliffLine?.label ?? 'No cliff this year',
   benchmark: here.benchmarkMonthly,
   monthly: Math.round((here.netPremiumAnnual ?? 0) / 12),
-  share: `${Math.round(here.applicablePercentage * 1000) / 10}%`,
-  slope: `${Math.round(here.slope * 1000) / 10}¢`,
+  slope: `${Math.round(creditSlopeAt(scenario.income, scenario) * 1000) / 10}¢`,
 };
 console.log(`curve: ${curve.length} points to ${money(curve.at(-1).magi)}; at ${money(hook.income)} pays $${hook.monthly}/mo, next dollar ${hook.slope}`);
 

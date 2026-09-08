@@ -1,23 +1,19 @@
 import { ptcFor } from '../lib/aca';
 import type { CostPoint, Scenario } from '../lib/aca';
 import { formatCurrency, formatFpl, formatPercent } from '../lib/format';
-import { PALETTE } from '../styles/palette';
 
 export interface ChartTooltipProps {
   active?: boolean;
   payload?: Array<{ payload: CostPoint }>;
-  /** The household, so the hovered point can be assessed against the credit. */
+  /** The household, so the hovered point can be priced against the subsidy. */
   scenario: Scenario;
 }
 
 /**
- * What one point on the axis is worth: the income that makes it and where it
- * stands against the poverty line, the subsidy there, what the household
- * pays, and the share of income that is.
- *
- * Figures and no advice: a recommendation about wherever a mouse happened to
- * land is nobody's point in particular. What a hover is good for is the
- * subsidy *at this point*, which is what the reader asked to see.
+ * What one point on the axis is worth: the income that makes it, where it
+ * stands against the poverty line, what you pay there and what the subsidy
+ * pays. The second line of the head appears only where the plain reading —
+ * you on the slope, buying a standard silver plan — does not hold.
  */
 export const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, scenario }) => {
   if (!active || !payload || !payload.length) return null;
@@ -25,43 +21,36 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, sce
   const here = ptcFor(point.magi, scenario);
   const standing = here.belowFloor
     ? scenario.expansionState === false
-      ? 'under 100%: no subsidy, no Medicaid'
-      : 'under the floor: Medicaid'
+      ? 'No subsidy or Medicaid'
+      : 'Medicaid'
     : here.overCliff
-      ? 'over the line: no subsidy'
+      ? 'No subsidy — over the 400% line'
       : here.csrTier
-        ? `silver upgraded to ${here.csrTier.actuarialValue}%`
-        : 'standard silver';
+        ? `${here.csrTier.actuarialValue}% silver tier`
+        : null;
+  const share =
+    point.cost === null
+      ? null
+      : here.overCliff || here.credit === 0
+        ? formatPercent(point.magi > 0 ? (point.costAnnual ?? 0) / point.magi : 0)
+        : formatPercent(point.share);
+
   return (
     <div className="chart-tooltip">
       <div className="chart-tooltip-head">
-        Household income {formatCurrency(point.magi)} · {formatFpl(here.fplMultiple)} of the
-        poverty line · {standing}
+        {formatCurrency(point.magi)} · {formatFpl(here.fplMultiple)} of poverty line
+        {standing !== null && <span className="chart-tooltip-standing">{standing}</span>}
       </div>
-      <div>
-        Subsidy:{' '}
-        <strong style={{ color: PALETTE.fuchsiaBright }}>
-          {formatCurrency(point.credit)}/yr
-        </strong>
-        {point.credit > 0 ? ` (${formatCurrency(Math.round(point.credit / 12))}/mo)` : ''}
-      </div>
-      <div>
-        You pay:{' '}
-        <strong style={{ color: PALETTE.accent }}>
-          {point.cost === null ? 'Medicaid' : `${formatCurrency(point.cost)}/mo`}
-        </strong>
-        {point.costAnnual !== null ? ` (${formatCurrency(point.costAnnual)}/yr)` : ''}
-      </div>
-      <div>
-        Share of income:{' '}
-        <strong style={{ color: PALETTE.inkMuted }}>
-          {point.cost === null
-            ? '—'
-            : here.overCliff
-              ? formatPercent(point.magi > 0 ? (point.costAnnual ?? 0) / point.magi : 0)
-              : formatPercent(point.share)}
-        </strong>
-      </div>
+      <dl className="chart-tooltip-rows">
+        <dt>You pay</dt>
+        <dd>{point.cost === null ? '—' : `${formatCurrency(point.cost)}/mo`}</dd>
+        <dt>Subsidy</dt>
+        <dd>
+          {point.credit > 0 ? `${formatCurrency(Math.round(point.credit / 12))}/mo` : 'None'}
+        </dd>
+        <dt>Share of income</dt>
+        <dd>{share ?? '—'}</dd>
+      </dl>
     </div>
   );
 };

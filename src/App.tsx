@@ -12,8 +12,9 @@ import {
 import type { Adults, Scenario } from './lib/aca';
 import { decodeScenario, engineScenario } from './lib/scenarioUrl';
 import type { PageScenario } from './lib/scenarioUrl';
-import { formatCents, formatCurrency, formatFpl } from './lib/format';
+import { formatCurrency } from './lib/format';
 import { ADULTS_PROSE, agesProse } from './lib/householdProse';
+import { readoutText } from './lib/readout';
 import { useScenarioAddress } from './hooks/useScenarioAddress';
 import { useSettledReading } from './hooks/useSettledReading';
 import { Answer } from './components/Answer';
@@ -21,16 +22,14 @@ import { CostStep, NEXT_BLOCK } from './components/CostStep';
 import { FurtherReading } from './components/FurtherReading';
 import { Header } from './components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
+import { Notes } from './components/Notes';
 
 /**
- * One worked example in two steps, in the order a reader builds it: the
- * household, then what its plan costs at every income and where on that curve
- * it stands. Both steps price the same household, so a figure set in step 1
- * is still set in step 2. The steps stay mounted and the window scrolls.
+ * One household, priced three ways down the page: the curve it is standing
+ * on, the figures at the point it stands, and the notes behind them. The rail
+ * that describes the household stays beside all three.
  */
-const STEPS = ['household', 'cost'] as const;
-
-type StepId = (typeof STEPS)[number];
+type Reading = 'household' | 'cost';
 
 /**
  * Sampling interval for the swept curve, and the step of the slider walking
@@ -61,7 +60,7 @@ const App: React.FC = () => {
    * moved anything. One region, keyed to the control last touched, so a drag
    * is one announcement and arrival is none.
    */
-  const [announceFrom, announce] = useState<StepId | null>(null);
+  const [announceFrom, announce] = useState<Reading | null>(null);
 
   /** The household as the page holds it: what the address bar carries. */
   const pageScenario: PageScenario = useMemo(
@@ -84,7 +83,7 @@ const App: React.FC = () => {
   const axisMax = useMemo(() => axisMaxFor(scenario), [scenario]);
   const curveStep = curveStepFor(axisMax);
 
-  /** The one curve: what the household pays, month by month, across every income. */
+  /** The one curve: what you pay, month by month, across every income. */
   const curve = useMemo(
     () => costCurve(scenario, { maxMagi: axisMax, step: curveStep }),
     [scenario, axisMax, curveStep],
@@ -106,21 +105,11 @@ const App: React.FC = () => {
   const reading = ((): string => {
     switch (announceFrom) {
       case 'household':
-        return `${year} coverage for ${ADULTS_PROSE[adults]}, ${agesProse(ages)}, on a benchmark silver plan at ${formatCurrency(
-          here.benchmarkMonthly,
-        )} a month.`;
+        return `${year} coverage for ${ADULTS_PROSE[adults]}, ${agesProse(
+          ages,
+        )}, benchmark ${formatCurrency(here.benchmarkMonthly)} a month.`;
       case 'cost':
-        return here.netPremiumAnnual === null
-          ? `At ${formatCurrency(income)} of household income, ${formatFpl(
-              here.fplMultiple,
-            )} of the poverty line, this household is under the floor and eligible for Medicaid.`
-          : `At ${formatCurrency(income)} of household income, ${formatFpl(
-              here.fplMultiple,
-            )} of the poverty line, this household pays ${formatCurrency(
-              Math.round(here.netPremiumAnnual / 12),
-            )} a month for the benchmark plan and the subsidy is ${formatCurrency(
-              here.credit,
-            )} a year. The next dollar costs ${formatCents(here.slope)} of subsidy.`;
+        return readoutText(here);
       default:
         return '';
     }
@@ -142,10 +131,7 @@ const App: React.FC = () => {
 
       <main className="shell">
         <HouseholdStep
-          stepNumber={1}
-          stepCount={STEPS.length}
           year={year}
-          scenario={scenario}
           adults={adults}
           onAdults={(next) => household(() => setAdults(next))}
           age={age}
@@ -162,9 +148,6 @@ const App: React.FC = () => {
 
         <div className="flow">
           <CostStep
-            stepNumber={2}
-            stepCount={STEPS.length}
-            year={year}
             scenario={scenario}
             curve={curve}
             axisMax={axisMax}
@@ -176,9 +159,6 @@ const App: React.FC = () => {
             incomeSliderStep={Math.max(500, curveStep)}
             lines={lines}
             here={here}
-            nextBlockCost={nextBlockCost}
-            nextBlockCrossesCliff={nextBlockCrossesCliff}
-            cliffCost={cliffCost}
           />
 
           <Answer
@@ -196,15 +176,16 @@ const App: React.FC = () => {
             onCopy={address.copy}
           />
         </div>
+
+        <Notes year={year} scenario={scenario} here={here} cliffCost={cliffCost} />
       </main>
 
       <footer>
         <FurtherReading />
         <p>
-          This tool is for educational purposes only and does not constitute
-          insurance, tax or financial advice. Every figure is a model of published
-          IRS, HHS and CMS numbers and a national-average premium; your Marketplace
-          has facts a page like this never asks for.
+          Educational only; not insurance, tax or financial advice. Figures are modelled
+          from published HHS, IRS and CMS numbers and a national-average premium unless you
+          enter your own.
         </p>
       </footer>
     </div>

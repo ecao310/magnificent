@@ -13,7 +13,7 @@ it (26 CFR 1.36B-1(h)). Contiguous 48 states and DC.
 | --- | --- | --- | --- | --- |
 | 2024 | 2025 | $15,060 | $5,380 | 89 Fed. Reg. 2961 (January 17 2024) |
 | 2025 | 2026 | $15,650 | $5,500 | 90 Fed. Reg. 5917 (January 17 2025) |
-| 2026 | 2027 | $15,960 | $5,680 | 91 Fed. Reg. 1797 (January 15 2026) — not yet on file: 2027 brackets unpublished |
+| 2026 | 2027 | $15,960 | $5,680 | 91 Fed. Reg. 1797 (January 15 2026) |
 
 ## Applicable percentage table (IRC 36B(b)(3)(A))
 

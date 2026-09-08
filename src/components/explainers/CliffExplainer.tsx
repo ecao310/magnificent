@@ -1,4 +1,4 @@
-import { FPL_GUIDELINE_LOOKBACK_YEARS, PTC_CLIFF_PERCENT, fplGuidelineYear } from '../../lib/aca';
+import { PTC_CLIFF_PERCENT, fplGuidelineYear } from '../../lib/aca';
 import type { CoverageYear, PtcAssessment } from '../../lib/aca';
 import { formatCurrency, formatFpl } from '../../lib/format';
 import { householdProse } from '../../lib/householdProse';
@@ -18,55 +18,44 @@ export const CliffExplainer: React.FC<CliffExplainerProps> = ({ here, cliffCost,
     </summary>
     <div className="explainer-content">
       <p>
-        36B(c)(1)(A) allows the subsidy to a household whose income is &ldquo;at least
-        100 percent but not more than 400 percent&rdquo; of the poverty line. Past 400%
-        there is no row in the table, so the subsidy is not smaller &mdash; it is nothing.
-        For {householdProse(here.householdSize)} the line is{' '}
+        The subsidy goes to a household with income from 100% to 400% of the poverty line.
+        Past 400% it is not smaller &mdash; it is gone. For{' '}
+        {householdProse(here.householdSize)} the line is{' '}
         <strong>{here.cliffMagi !== null ? formatCurrency(here.cliffMagi) : '—'}</strong>,
-        which is {PTC_CLIFF_PERCENT * 100}% of the {formatCurrency(here.povertyLine)}{' '}
-        poverty line.
+        400% of the {formatCurrency(here.povertyLine)} poverty line.
       </p>
       {cliffCost !== null && (
         <p>
-          <strong>What the dollar over it costs.</strong> Just under the line this
-          household pays 9.96% of its income for the benchmark and the subsidy pays the
-          other <strong>{formatCurrency(cliffCost)}</strong>. One dollar over, it pays
-          the whole {formatCurrency(here.benchmarkAnnual)}. That is the cost of the
-          dollar: {formatCurrency(cliffCost)}, which is the vertical step in the curve
-          at the pink line.
+          <strong>The dollar over it.</strong> Just under the line you pay 10% of income and
+          the subsidy pays the other <strong>{formatCurrency(cliffCost)}</strong>. One dollar
+          over, you pay the full {formatCurrency(here.benchmarkAnnual)}. That dollar costs{' '}
+          {formatCurrency(cliffCost)}.
           {cliffCost === 0 &&
-            ' For this household the figure is zero: its share of the benchmark reaches the premium before income reaches the line, so there is nothing left to fall off.'}
+            ' For this household the figure is zero: your share reaches the full premium before income reaches the line.'}
         </p>
       )}
       <p>
-        <strong>You are here.</strong> Household income is{' '}
-        {formatCurrency(Math.round(here.magi))}, {formatFpl(here.fplMultiple)} of the
-        line.{' '}
+        <strong>Where you are.</strong> At {formatCurrency(Math.round(here.magi))},{' '}
+        {formatFpl(here.fplMultiple)} of the poverty line,{' '}
         {here.overCliff
-          ? `That is past the cliff: there is no subsidy this year, and coming back under it takes ${formatCurrency(
+          ? `you are ${formatCurrency(
               Math.round(here.magi - (here.cliffMagi ?? 0)),
-            )} less income.`
+            )} over the line: no subsidy this year.`
           : here.headroom !== null
-            ? `Another ${formatCurrency(Math.round(here.headroom))} of it reaches the line, and the dollar after that is the one that costs.`
-            : 'There is no line this year.'}
+            ? `another ${formatCurrency(
+                Math.round(here.headroom),
+              )} of income reaches the line, and the dollar after that is the one that costs.`
+            : 'there is no line this year.'}
       </p>
       <p>
-        <strong>It was gone, and it is back.</strong> From 2021 through 2025 there was
-        no 400% ceiling: ARPA section 9661, extended by the Inflation Reduction Act,
-        replaced the table with one that ran past 400% and capped the household&apos;s
-        share at 8.5% of income however high income went. That expired at the end of
-        2025. The House passed a three-year extension on 8 January 2026, 230 to 196;
-        the Senate did not take it up, and {year} coverage is priced under the table
-        this page draws. Under the 2025 table this household&apos;s share would have run
-        from nothing to 8.5% and never fallen off anything.
+        <strong>Gone from 2021 to 2025, back in 2026.</strong> For those years there was no
+        400% ceiling, and your share was capped at 8.5% of income however high income went.
+        That expired at the end of 2025; a three-year extension passed the House in January
+        2026 and stalled in the Senate.
       </p>
       <p>
-        <strong>The line runs a year behind.</strong> 26 CFR 1.36B-1(h) fixes the
-        poverty line at the guidelines in effect when open enrollment began, the
-        previous 1 November, so {year} coverage is priced off the {fplGuidelineYear(year)}{' '}
-        guidelines &mdash; {FPL_GUIDELINE_LOOKBACK_YEARS} year old when the year starts.
-        The 2026 guidelines, which price 2027, put a one-person line at $15,960 and add
-        $5,680 a person.
+        <strong>The poverty line runs a year behind.</strong> {year} coverage uses the{' '}
+        {fplGuidelineYear(year)} guidelines, the ones in force when open enrollment began.
       </p>
     </div>
   </details>

@@ -4,6 +4,7 @@
  */
 import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
+import { benchmarkMonthlyFor } from './premium';
 import {
   applicablePercentage,
   creditFloorMagi,
@@ -20,6 +21,12 @@ export interface CostPoint {
   cost: number | null;
   /** The same, for the year. */
   costAnnual: number | null;
+  /**
+   * The benchmark's own monthly premium, drawn as the ceiling the subsidy
+   * fills up to: the same figure at every income, and null wherever `cost` is
+   * — on Medicaid there is no premium to draw a ceiling over.
+   */
+  fullPremium: number | null;
   /** The year's credit at this income, in dollars. */
   credit: number;
   /** The share of income the table asks for here. */
@@ -49,6 +56,7 @@ export function costCurve(
   { maxMagi = 150_000, step = 250 }: CostCurveRange = {},
 ): CostPoint[] {
   const { year } = resolveScenario(scenario);
+  const monthly = benchmarkMonthlyFor(scenario);
   const xs = new Set<number>();
   for (let magi = 0; magi <= maxMagi; magi += step) xs.add(magi);
   const floor = Math.round(creditFloorMagi(scenario));
@@ -65,6 +73,7 @@ export function costCurve(
         magi,
         cost: net === null ? null : Math.round(net / 12),
         costAnnual: net === null ? null : Math.round(net),
+        fullPremium: net === null ? null : monthly,
         credit: Math.round(premiumTaxCredit(magi, scenario)),
         share: applicablePercentage(fplMultiple, year),
         fplMultiple,
