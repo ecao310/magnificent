@@ -1,5 +1,5 @@
-import { CSR_TIERS, EXPANSION_FLOOR_MULTIPLE } from '../../lib/tax';
-import type { PtcAssessment } from '../../lib/tax';
+import { CSR_TIERS, EXPANSION_FLOOR_MULTIPLE } from '../../lib/aca';
+import type { PtcAssessment } from '../../lib/aca';
 import { formatCurrency, formatFpl } from '../../lib/format';
 
 export interface FloorExplainerProps {
@@ -7,7 +7,7 @@ export interface FloorExplainerProps {
   expansionState: boolean;
 }
 
-/** The floor under the credit, and the three tiers that step down on the way up. */
+/** The floor under the subsidy, and the three tiers that step down on the way up. */
 export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionState }) => (
   <details className="explainer">
     <summary>
@@ -22,18 +22,19 @@ export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionS
             {formatFpl(EXPANSION_FLOOR_MULTIPLE)} of the poverty line &mdash;{' '}
             {formatCurrency(Math.round(here.floorMagi))} for this one &mdash; is eligible for
             Medicaid, and 36B(c)(2)(B) makes anyone eligible for Medicaid ineligible for
-            the credit. Medicaid has no premium, so in pure dollars it is cheaper still;
-            whether a household wants it is a different question, and one this page
-            does not price. What it draws is the line, because a household managing its
-            income to the credit needs to know where the credit begins.
+            the subsidy. Medicaid has no premium, so the curve above stops at the floor
+            rather than dropping to zero: under it the household is not buying a
+            Marketplace plan at all, and whether it wants Medicaid is a different
+            question from what it costs.
           </>
         ) : (
           <>
-            In a state that did not expand Medicaid the credit begins at 100% of the
+            In a state that did not expand Medicaid the subsidy begins at 100% of the
             poverty line &mdash; {formatCurrency(Math.round(here.floorMagi))} for this
-            household &mdash; and under it there is neither a credit nor Medicaid: the
-            coverage gap. A household there has to <em>reach</em> the line, which is the
-            one place on this page where more income buys more coverage.
+            household &mdash; and under it there is neither a subsidy nor Medicaid: the
+            coverage gap, where the curve above sits at the full benchmark. A household
+            there has to <em>reach</em> the line, which is the one place on this page
+            where more income buys cheaper coverage.
           </>
         )}
       </p>
@@ -54,14 +55,13 @@ export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionS
             : 'This household is above all three.'}
       </p>
       <p>
-        <strong>Why they are lines and not part of the curve.</strong> The credit is
-        dollars, and its slope can be drawn. A deductible is worth what the household
+        <strong>Why they are lines and not part of the curve.</strong> The premium is
+        dollars, and its curve can be drawn. A deductible is worth what the household
         would have spent under it, which depends on how ill anyone gets: a healthy
         couple on the 73% plan loses nothing they would have used, and a couple with
         one hospital stay loses several thousand dollars. So the boundary is drawn and
-        the price is left to the reader, who knows the household&apos;s health and
-        this page does not. For a household that uses its coverage, the drop at 200%
-        is often worth more than the credit slope on either side of it.
+        the price is left to the reader. For a household that uses its coverage, the
+        drop at 200% is often worth more than the slope on either side of it.
       </p>
     </div>
   </details>

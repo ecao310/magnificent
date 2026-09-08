@@ -55,9 +55,7 @@ describe('the palette', () => {
       edgeStrong: '--edge-strong',
       inkMuted: '--ink-muted',
       accent: '--accent',
-      emerald: '--emerald',
       amber: '--amber',
-      orange: '--orange',
       fuchsia: '--fuchsia',
       fuchsiaBright: '--fuchsia-bright',
       violet: '--violet',
@@ -112,13 +110,13 @@ describe('the selectors', () => {
     .filter((selector) => /^\.[\w-]+ \.[\w-]+$/.test(selector));
 
   it('name classes the markup actually writes', () => {
-    expect(nested.length).toBeGreaterThanOrEqual(3);
+    expect(nested.length).toBeGreaterThanOrEqual(2);
     const classNames = new Set(
       Array.from(source.matchAll(/className=["'`]([^"'`$]+)["'`]/g)).flatMap((m) => m[1].split(/\s+/)),
     );
     // Classes written through a template or a conditional, named here so the
     // extractor above does not have to understand them.
-    for (const dynamic of ['chart-key-current', 'credit-edge', 'csr-tier', 'here-line', 'curve-conversion', 'curve-harvest']) classNames.add(dynamic);
+    for (const dynamic of ['credit-edge', 'csr-tier', 'here-line']) classNames.add(dynamic);
     for (const selector of nested) {
       for (const cls of selector.match(/\.[\w-]+/g) ?? []) {
         const name = cls.slice(1);
@@ -130,7 +128,7 @@ describe('the selectors', () => {
 
   it('render on the page where a default render can reach them', () => {
     render(<App />);
-    const reachable = ['.step-config .input-group', '.answer-figure dd', '.explainer h3', '.chart-key li', '.kind-strip .segmented'];
+    const reachable = ['.step-config .input-group', '.answer-figure dd', '.explainer h3', '.chart-slider .slider-readout'];
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();
   });
 });

@@ -1,17 +1,14 @@
 /**
  * The benchmark premium: what the second-lowest-cost silver plan costs the
  * household, which is the one figure the credit is a share of and the one
- * figure the tax code does not publish.
+ * figure no statute publishes.
  *
- * The page before this one drew the 400% line and left the loss blank,
- * because the loss is the benchmark premium and the benchmark is set by age
- * and county. This module is how the blank is filled in: with the household's
- * own figure when the reader has one, and otherwise with the national average
- * scaled to the household's ages along the curve every insurer in a
- * default-curve state is required to use.
+ * The household's own figure when the reader has one, and otherwise the
+ * national average scaled to the household's ages along the curve every
+ * insurer in a default-curve state is required to use.
  */
-import type { TaxYear } from './types';
-import { defaultTaxYear } from './params';
+import type { CoverageYear } from './types';
+import { defaultCoverageYear } from './years';
 import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
 
@@ -21,11 +18,10 @@ import type { Scenario } from './scenario';
  * of its own has used since plan year 2018.
  *
  * Age 21 is 1.000 and 64 and older is 3.000 — the 3:1 ratio the statute
- * allows — and everyone under 15 is 0.765. The table is the whole thing:
- * indexed by age from 15 to 63, with the two flat ends handled in
- * `ageFactor`. States that rate on their own curve, or not on age at all —
- * New York and Vermont among them — are the reason the reader can override
- * the premium this produces.
+ * allows — and everyone under 15 is 0.765. Indexed by age from 15 to 63, with
+ * the two flat ends handled in `ageFactor`. States that rate on their own
+ * curve, or not on age at all — New York and Vermont among them — are the
+ * reason the reader can override the premium this produces.
  */
 export const AGE_CURVE: Readonly<Record<number, number>> = {
   15: 0.833, 16: 0.859, 17: 0.885, 18: 0.913, 19: 0.941, 20: 0.97,
@@ -44,10 +40,7 @@ export const CHILD_AGE_FACTOR = 0.765;
 /** The factor for anyone 64 or older: the top of the 3:1 band. */
 export const TOP_AGE_FACTOR = 3.0;
 
-/**
- * At most three children under 21 are charged for on one family policy
- * (45 CFR 147.102(c)(1)); the fourth and after ride free.
- */
+/** At most three children under 21 are charged for on one policy (45 CFR 147.102(c)(1)). */
 export const MAX_RATED_CHILDREN = 3;
 
 /** The premium ratio for one person of a given age, on the default curve. */
@@ -58,10 +51,7 @@ export function ageFactor(age: number): number {
   return AGE_CURVE[whole];
 }
 
-/**
- * The youngest age the page offers. Under 18 a reader is somebody's
- * dependent, and the dependents here are priced as children.
- */
+/** The youngest age the page offers. Under 18 a reader is somebody's dependent. */
 export const MIN_ADULT_AGE = 18;
 
 /**
@@ -83,14 +73,11 @@ export interface BenchmarkYearParams {
 }
 
 /**
- * The benchmark by coverage year.
- *
- * Its own table, for the reason the poverty line is: it comes from a
- * different publisher on a different schedule. `Record<TaxYear, …>` still
- * makes it exhaustive, so a new year fails to compile until its figure is
- * here.
+ * The benchmark by coverage year. Its own table, because it comes from a
+ * different publisher on a different schedule; `Record<CoverageYear, …>`
+ * still makes it exhaustive.
  */
-export const BENCHMARK_YEAR_PARAMS: Record<TaxYear, BenchmarkYearParams> = {
+export const BENCHMARK_YEAR_PARAMS: Record<CoverageYear, BenchmarkYearParams> = {
   2025: {
     source: 'KFF, Marketplace Average Benchmark Premiums, 2025 (40-year-old, US average)',
     monthlyAt40: 497,
@@ -110,17 +97,14 @@ export const BENCHMARK_REFERENCE_AGE = 40;
 
 /**
  * The national-average benchmark for a household of these ages, monthly, in
- * whole dollars.
- *
- * KFF's figure is one 40-year-old's premium. Dividing by the 40-year-old's
- * factor gives the 21-year-old's — the curve's unit — and each person on the
- * plan is that unit times their own factor, children at the child factor and
- * at most three of them.
+ * whole dollars: KFF's 40-year-old figure divided by the 40-year-old's factor
+ * gives the curve's unit, and each person on the plan is that unit times
+ * their own factor, children at the child factor and at most three of them.
  */
 export function averageBenchmarkMonthly(
   ages: number[],
   dependents = 0,
-  year: TaxYear = defaultTaxYear(),
+  year: CoverageYear = defaultCoverageYear(),
 ): number {
   const unit = BENCHMARK_YEAR_PARAMS[year].monthlyAt40 / ageFactor(BENCHMARK_REFERENCE_AGE);
   const adults = ages.reduce((sum, age) => sum + ageFactor(age), 0);
@@ -128,11 +112,7 @@ export function averageBenchmarkMonthly(
   return Math.round(unit * (adults + children));
 }
 
-/**
- * The benchmark this household is priced against, monthly: the reader's own
- * figure when they gave one, and the national average for their ages
- * otherwise.
- */
+/** The benchmark this household is priced against, monthly. */
 export function benchmarkMonthlyFor(scenario: Scenario = {}): number {
   const { benchmarkPremium, ages, dependents, year } = resolveScenario(scenario);
   return benchmarkPremium ?? averageBenchmarkMonthly(ages, dependents, year);

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { PTC_CLIFF_PERCENT } from '../lib/tax';
+import { PTC_CLIFF_PERCENT } from '../lib/aca';
 import { useDismissable } from '../hooks/useDismissable';
 
 export interface BreakpointsMenuProps {
@@ -18,8 +18,8 @@ export interface BreakpointsMenuProps {
 /**
  * The chart's own settings, and the only control here that changes what is
  * drawn rather than what is priced. It rides in the figure's top-right corner
- * rather than on a row above it, and not down among the sliders, because
- * those all move the household and this one does not touch it.
+ * rather than down among the sliders, because those move the household and
+ * this one does not touch it.
  */
 export const BreakpointsMenu: React.FC<BreakpointsMenuProps> = ({
   linesShown,
@@ -42,14 +42,14 @@ export const BreakpointsMenu: React.FC<BreakpointsMenuProps> = ({
         ref={trigger}
         className="chart-lines-button"
         aria-expanded={open}
-        aria-controls="slope-lines"
+        aria-controls="cost-lines"
         onClick={() => setOpen((wasOpen) => !wasOpen)}
       >
         Breakpoints
         {linesShown > 0 ? ` (${linesShown})` : ''}
       </button>
       {open && (
-        <div className="chart-lines-panel" id="slope-lines">
+        <div className="chart-lines-panel" id="cost-lines">
           <fieldset className="chart-lines-group">
             <legend>Marketplace breakpoints</legend>
             <label className="checkbox-option chart-lines-option">
@@ -60,7 +60,7 @@ export const BreakpointsMenu: React.FC<BreakpointsMenuProps> = ({
               />
               <span className="chart-key-swatch chart-lines-swatch" aria-hidden="true" />
               <span>
-                The credit&apos;s edges: the {floorLabel} floor
+                The subsidy&apos;s edges: the {floorLabel} floor
                 {hasCliff ? ` and the ${PTC_CLIFF_PERCENT * 100}% cliff` : ''}
               </span>
             </label>

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import App from '../App';
 import { FURTHER_READING } from '../lib/furtherReading';
-import { PAGE_TAX_YEAR, blockCost } from '../lib/tax';
+import { PAGE_COVERAGE_YEAR, creditSlopeAt } from '../lib/aca';
 import { defaultScenario, engineScenario } from '../lib/scenarioUrl';
 
 /**
@@ -68,14 +68,14 @@ describe('the cover', () => {
   });
 
   it('quotes a cost the opening household still reaches', () => {
-    // The card and the deck both say "around 17 cents"; the arithmetic under
-    // the opening household has to still round to that.
-    const block = blockCost({ ...engineScenario(defaultScenario()), year: PAGE_TAX_YEAR });
-    const cents = Math.round((block.rate ?? 0) * 100);
+    // The card and the deck both say "around 17 cents"; the slope under the
+    // opening household has to still round to that.
+    const opening = { ...engineScenario(defaultScenario()), year: PAGE_COVERAGE_YEAR };
+    const cents = Math.round(creditSlopeAt(opening.income, opening) * 100);
     expect(meta('property', 'og:description')).toContain(`about ${cents} cents`);
     const header = readFileSync(resolve(root, 'src/components/Header.tsx'), 'utf8');
     expect(header).toContain(`around ${cents} cents`);
-    expect(readme).toContain(`pays ${cents} cents of it`);
+    expect(readme).toContain(`${cents} cents of every extra dollar`);
   });
 });
 
@@ -148,9 +148,8 @@ describe('the front door', () => {
 });
 
 describe('the reading list', () => {
-  it('names the thread this page answers, and the page it follows', () => {
+  it('names the thread this page answers, and the README names the page it follows', () => {
     expect(FURTHER_READING[0].href).toMatch(/reddit\.com\/r\/financialindependence/);
-    expect(FURTHER_READING[FURTHER_READING.length - 1].href).toBe('https://ecao310.github.io/congenial-octo-spork/');
     expect(readme).toContain('https://ecao310.github.io/congenial-octo-spork/');
   });
 

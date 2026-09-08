@@ -1,52 +1,41 @@
 import { useMemo, useState } from 'react';
 import {
-  PAGE_TAX_YEAR,
+  PAGE_COVERAGE_YEAR,
   axisMax as axisMaxFor,
-  blockCost,
   cliffCost as cliffCostFor,
-  filingParams,
-  householdIncomeFor,
-  nextDollarAt,
+  costCurve,
+  creditLostBetween,
+  ptcCliffMagi,
   ptcFor,
-  slopeCurve,
   subsidyLines,
-  totalTax,
-} from './lib/tax';
-import type { AddedKind, FilingStatus, Scenario } from './lib/tax';
+} from './lib/aca';
+import type { Adults, Scenario } from './lib/aca';
 import { decodeScenario, engineScenario } from './lib/scenarioUrl';
 import type { PageScenario } from './lib/scenarioUrl';
-import { formatCurrency, formatFpl, formatPercent } from './lib/format';
-import { ADDED_KIND_PROSE, FILING_STATUS_PROSE, agesProse, otherKind } from './lib/returnProse';
+import { formatCents, formatCurrency, formatFpl } from './lib/format';
+import { ADULTS_PROSE, agesProse } from './lib/householdProse';
 import { useScenarioAddress } from './hooks/useScenarioAddress';
 import { useSettledReading } from './hooks/useSettledReading';
 import { Answer } from './components/Answer';
+import { CostStep, NEXT_BLOCK } from './components/CostStep';
 import { FurtherReading } from './components/FurtherReading';
 import { Header } from './components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
-import { SlopeStep } from './components/SlopeStep';
-import type { BlockPoint } from './components/SlopeChart';
 
 /**
  * One worked example in two steps, in the order a reader builds it: the
- * household and what it has regardless, then the block it is thinking of
- * adding and what that block costs. Both steps price the same household, so a
- * figure set in step 1 is still set in step 2.
- *
- * The steps stay mounted and the window scrolls, for the reasons the page
- * before this one gave: a step you have to click into existence reads as
- * optional, step 2 quotes figures the reader set in step 1, and printing or
- * Ctrl-F reaches everything. What is left of the list is the pair of facts
- * nothing else can supply — `StepId`, which the live region is keyed to, and
- * the count the step kickers number themselves out of.
+ * household, then what its plan costs at every income and where on that curve
+ * it stands. Both steps price the same household, so a figure set in step 1
+ * is still set in step 2. The steps stay mounted and the window scrolls.
  */
-const STEPS = ['household', 'slope'] as const;
+const STEPS = ['household', 'cost'] as const;
 
 type StepId = (typeof STEPS)[number];
 
 /**
- * Sampling interval for the swept curves, and the step of the slider walking
- * them. The interval doubles once the axis does, so the widest chart a link
- * can ask for samples no more points than the narrowest always did.
+ * Sampling interval for the swept curve, and the step of the slider walking
+ * it. The interval doubles once the axis does, so the widest chart a link can
+ * ask for samples no more points than the narrowest always did.
  */
 const curveStepFor = (axisMax: number): number => (axisMax > 200_000 ? 500 : 250);
 
@@ -57,15 +46,12 @@ const App: React.FC = () => {
 
   const [linkNotes, setLinkNotes] = useState<string[]>(() => openedWith.notes);
 
-  /** The year every figure below is priced for. See `PAGE_TAX_YEAR`. */
-  const year = PAGE_TAX_YEAR;
-  const [filingStatus, setFilingStatus] = useState<FilingStatus>(opening.filingStatus);
+  /** The year every figure below is priced for. See `PAGE_COVERAGE_YEAR`. */
+  const year = PAGE_COVERAGE_YEAR;
+  const [adults, setAdults] = useState<Adults>(opening.adults);
   const [age, setAge] = useState<number>(opening.age);
   const [spouseAge, setSpouseAge] = useState<number>(opening.spouseAge);
-  const [ordinaryIncome, setOrdinaryIncome] = useState<number>(opening.ordinaryIncome);
-  const [qualifiedIncome, setQualifiedIncome] = useState<number>(opening.qualifiedIncome);
-  const [added, setAdded] = useState<number>(opening.added);
-  const [addedKind, setAddedKind] = useState<AddedKind>(opening.addedKind);
+  const [income, setIncome] = useState<number>(opening.income);
   const [dependents, setDependents] = useState<number>(opening.dependents);
   const [benchmarkPremium, setBenchmarkPremium] = useState<number | null>(opening.benchmarkPremium);
   const [expansionState, setExpansionState] = useState<boolean>(opening.expansionState);
@@ -77,35 +63,10 @@ const App: React.FC = () => {
    */
   const [announceFrom, announce] = useState<StepId | null>(null);
 
-  /**
-   * The household as the page holds it, which is what the address bar carries
-   * and what the engine's view is built from.
-   */
+  /** The household as the page holds it: what the address bar carries. */
   const pageScenario: PageScenario = useMemo(
-    () => ({
-      filingStatus,
-      age,
-      spouseAge,
-      ordinaryIncome,
-      qualifiedIncome,
-      added,
-      addedKind,
-      dependents,
-      benchmarkPremium,
-      expansionState,
-    }),
-    [
-      filingStatus,
-      age,
-      spouseAge,
-      ordinaryIncome,
-      qualifiedIncome,
-      added,
-      addedKind,
-      dependents,
-      benchmarkPremium,
-      expansionState,
-    ],
+    () => ({ adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState }),
+    [adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState],
   );
   const address = useScenarioAddress(pageScenario);
 
@@ -114,11 +75,7 @@ const App: React.FC = () => {
     announce('household');
   };
 
-  /**
-   * The household in the shape the engine reads it: one object that
-   * everything below prices off, rather than a different subset of the state
-   * at each call site.
-   */
+  /** The household in the shape the engine reads it: one object everything below prices off. */
   const scenario: Scenario = useMemo(
     () => ({ ...engineScenario(pageScenario), year }),
     [pageScenario, year],
@@ -127,69 +84,43 @@ const App: React.FC = () => {
   const axisMax = useMemo(() => axisMaxFor(scenario), [scenario]);
   const curveStep = curveStepFor(axisMax);
 
-  /** The block priced as the strip says, and as the other kind. */
-  const block = useMemo(() => blockCost(scenario), [scenario]);
-  const otherBlock = useMemo(() => blockCost(scenario, otherKind(addedKind)), [scenario, addedKind]);
+  /** The one curve: what the household pays, month by month, across every income. */
+  const curve = useMemo(
+    () => costCurve(scenario, { maxMagi: axisMax, step: curveStep }),
+    [scenario, axisMax, curveStep],
+  );
 
-  /**
-   * Both curves, with the block picked out under the current one: the hatch
-   * is drawn from the base to the base plus the block, and nowhere else.
-   */
-  const curve: BlockPoint[] = useMemo(() => {
-    const key = addedKind === 'conversion' ? 'conversionRate' : 'harvestRate';
-    return slopeCurve(scenario, { maxMagi: axisMax, step: curveStep }).map((point) => ({
-      ...point,
-      blockRate:
-        block.added > 0 && point.magi >= block.from && point.magi <= block.to
-          ? point[key]
-          : undefined,
-    }));
-  }, [scenario, axisMax, curveStep, addedKind, block]);
-
-  const magi = householdIncomeFor(scenario);
-  const here = useMemo(() => ptcFor(magi, scenario), [magi, scenario]);
-  const next = useMemo(() => nextDollarAt(magi, scenario), [magi, scenario]);
+  const here = useMemo(() => ptcFor(income, scenario), [income, scenario]);
   const lines = useMemo(() => subsidyLines(scenario), [scenario]);
   const cliffCost = useMemo(() => cliffCostFor(scenario), [scenario]);
-  const tax = Math.round(totalTax(scenario));
 
-  /**
-   * The top of the 0% gain band in household income for this household: the
-   * standard deduction plus the band, which holds as long as ordinary income
-   * does not itself run past the band.
-   */
-  const zeroBandTop = ((): number => {
-    const { standardDeduction, ltcgBrackets } = filingParams(year, filingStatus);
-    return standardDeduction + ltcgBrackets[0].upTo;
-  })();
+  /** What the next $10,000 of income would cost in subsidy, cliff included if it is crossed. */
+  const nextBlockCost = Math.round(creditLostBetween(income, income + NEXT_BLOCK, scenario));
+  const cliffMagi = ptcCliffMagi(scenario);
+  const nextBlockCrossesCliff =
+    cliffMagi !== null && income <= cliffMagi && income + NEXT_BLOCK > cliffMagi;
 
-  const ages = filingStatus === 'mfj' ? [age, spouseAge] : [age];
+  const ages = adults === 2 ? [age, spouseAge] : [age];
 
   /** What the live region will read out, once whatever changed it has settled. */
   const reading = ((): string => {
     switch (announceFrom) {
       case 'household':
-        return `${year}, ${FILING_STATUS_PROSE[filingStatus]}, ${agesProse(ages)}, with ${formatCurrency(
-          ordinaryIncome,
-        )} of ordinary income and ${formatCurrency(
-          qualifiedIncome,
-        )} of qualified dividends and gains, on a benchmark silver plan at ${formatCurrency(
+        return `${year} coverage for ${ADULTS_PROSE[adults]}, ${agesProse(ages)}, on a benchmark silver plan at ${formatCurrency(
           here.benchmarkMonthly,
         )} a month.`;
-      case 'slope':
-        return added > 0
-          ? `Adding ${formatCurrency(added)} as ${ADDED_KIND_PROSE[addedKind]} takes household income to ${formatCurrency(
-              block.to,
-            )}, ${formatFpl(here.fplMultiple)} of the poverty line, and costs ${formatCurrency(
-              block.total,
-            )}: ${formatCurrency(block.tax)} of federal tax and ${formatCurrency(
-              block.credit,
-            )} of premium tax credit, ${block.rate !== null ? formatPercent(block.rate) : '0%'} of what was added.`
-          : `At ${formatCurrency(block.from)} of household income the next dollar as ${
-              ADDED_KIND_PROSE[addedKind]
-            } costs ${formatPercent(
-              (addedKind === 'conversion' ? next.conversionTax : next.harvestTax) + next.credit,
-            )}.`;
+      case 'cost':
+        return here.netPremiumAnnual === null
+          ? `At ${formatCurrency(income)} of household income, ${formatFpl(
+              here.fplMultiple,
+            )} of the poverty line, this household is under the floor and eligible for Medicaid.`
+          : `At ${formatCurrency(income)} of household income, ${formatFpl(
+              here.fplMultiple,
+            )} of the poverty line, this household pays ${formatCurrency(
+              Math.round(here.netPremiumAnnual / 12),
+            )} a month for the benchmark plan and the subsidy is ${formatCurrency(
+              here.credit,
+            )} a year. The next dollar costs ${formatCents(here.slope)} of subsidy.`;
       default:
         return '';
     }
@@ -199,7 +130,7 @@ const App: React.FC = () => {
 
   return (
     <div className="card">
-      <a className="skip-link" href="#step-slope">
+      <a className="skip-link" href="#step-cost">
         Skip to the chart
       </a>
 
@@ -215,16 +146,12 @@ const App: React.FC = () => {
           stepCount={STEPS.length}
           year={year}
           scenario={scenario}
-          filingStatus={filingStatus}
-          onFilingStatus={(next) => household(() => setFilingStatus(next))}
+          adults={adults}
+          onAdults={(next) => household(() => setAdults(next))}
           age={age}
           onAge={(next) => household(() => setAge(next))}
           spouseAge={spouseAge}
           onSpouseAge={(next) => household(() => setSpouseAge(next))}
-          ordinaryIncome={ordinaryIncome}
-          onOrdinaryIncome={(next) => household(() => setOrdinaryIncome(next))}
-          qualifiedIncome={qualifiedIncome}
-          onQualifiedIncome={(next) => household(() => setQualifiedIncome(next))}
           dependents={dependents}
           onDependents={(next) => household(() => setDependents(next))}
           benchmarkPremium={benchmarkPremium}
@@ -234,45 +161,36 @@ const App: React.FC = () => {
         />
 
         <div className="flow">
-          <SlopeStep
+          <CostStep
             stepNumber={2}
             stepCount={STEPS.length}
             year={year}
             scenario={scenario}
             curve={curve}
             axisMax={axisMax}
-            added={added}
-            onAdded={(next) => {
-              setAdded(next);
-              announce('slope');
+            income={income}
+            onIncome={(next) => {
+              setIncome(next);
+              announce('cost');
             }}
-            addedKind={addedKind}
-            onAddedKind={(next) => {
-              setAddedKind(next);
-              announce('slope');
-            }}
-            addedSliderStep={Math.max(500, curveStep)}
+            incomeSliderStep={Math.max(500, curveStep)}
             lines={lines}
             here={here}
-            block={block}
-            otherBlock={otherBlock}
-            next={next}
+            nextBlockCost={nextBlockCost}
+            nextBlockCrossesCliff={nextBlockCrossesCliff}
             cliffCost={cliffCost}
-            zeroBandTop={zeroBandTop}
           />
 
           <Answer
             year={year}
-            filingStatus={filingStatus}
+            adults={adults}
             ages={ages}
-            ordinaryIncome={ordinaryIncome}
-            qualifiedIncome={qualifiedIncome}
-            addedKind={addedKind}
+            income={income}
             here={here}
-            block={block}
-            otherBlock={otherBlock}
-            next={next}
-            tax={tax}
+            nextBlock={NEXT_BLOCK}
+            nextBlockCost={nextBlockCost}
+            nextBlockCrossesCliff={nextBlockCrossesCliff}
+            cliffCost={cliffCost}
             canCopy={address.canCopy}
             copyState={address.copyState}
             onCopy={address.copy}
@@ -283,10 +201,10 @@ const App: React.FC = () => {
       <footer>
         <FurtherReading />
         <p>
-          This tool is for educational purposes only and does not constitute tax,
-          insurance or financial advice. Every figure is a model of published IRS, HHS
-          and CMS numbers and a national-average premium; your Marketplace and your
-          return have facts a page like this never asks for.
+          This tool is for educational purposes only and does not constitute
+          insurance, tax or financial advice. Every figure is a model of published
+          IRS, HHS and CMS numbers and a national-average premium; your Marketplace
+          has facts a page like this never asks for.
         </p>
       </footer>
     </div>

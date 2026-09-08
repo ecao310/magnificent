@@ -25,12 +25,11 @@
  * lightest, `--ink-dim`, reads 4.8:1 — and every data hue that carries text
  * clears it too, at the sizes it carries.
  *
- * The data colours keep the jobs the page before this one gave them, and
- * take two more: blue is the conversion curve, emerald is the harvested-gain
- * curve beside it, amber is the marker and the block under it, fuchsia is an
- * edge of the credit — the floor and the 400% line — and violet is a
- * cost-sharing tier and the one advanced slider. A reader matches a swatch in
- * the key to a line in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
+ * The data colours keep the jobs the page before this one gave them: blue is
+ * the curve, amber is the marker, fuchsia is an edge of the subsidy — the
+ * floor and the 400% line — and violet is a cost-sharing tier and the one
+ * advanced slider. A reader matches a swatch in the Breakpoints panel to a
+ * line in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
  * that no line on the plot shouts over another; the values here are those
  * colours written out in sRGB, because a `var()` cannot reach an SVG attribute
  * and `palette.ts` has to carry the same literals.
@@ -60,7 +59,6 @@
   /* What each curve, line and marker means. */
   --amber: #b76100;
   --amber-bright: #9f4600;
-  --orange: #b64700;
   --fuchsia: #a644a0;
   --fuchsia-bright: #852381;
   --violet: #7b489e;
@@ -78,9 +76,9 @@
   /* The gutter recharts holds back for the y-axis, so the caption under the
      plot can start where the plot area does. The one number on this page that
      a stylesheet and an SVG attribute both have to know: `CHART.axis` in
-     palette.ts is the same 44, and `the chart metrics` in styles.test.tsx
+     palette.ts is the same 56, and `the chart metrics` in styles.test.tsx
      fails if either moves without the other. */
-  --chart-axis: 44px;
+  --chart-axis: 56px;
 }
 
 /* ───── The type ───────────────────────────────────────────────────────────
@@ -776,79 +774,6 @@ fieldset.filing-status legend {
 
 .chart-key-swatch-csr {
   border-top-color: var(--violet);
-}
-
-.chart-key-swatch-conversion {
-  border-top-style: solid;
-  border-top-width: 3px;
-  border-top-color: var(--accent);
-}
-
-.chart-key-swatch-harvest {
-  border-top-style: solid;
-  border-top-width: 3px;
-  border-top-color: var(--emerald);
-}
-
-/* ───── The key ─────────────────────────────────────────────────────────────
- *
- * Two curves need naming and the plot has no room to name them: a row under
- * the caption, one swatch and one label each, set like the caption because
- * it is one. The label of the curve the block is being priced under is set in
- * ink; the other stays muted, so the key says which curve the slider is on
- * without the plot having to. */
-.chart-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem 1.75rem;
-  margin: 0.625rem 0 0;
-  padding: 0;
-  padding-left: var(--chart-axis);
-  list-style: none;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--ink-muted);
-}
-
-.chart-key li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-}
-
-.chart-key-current {
-  color: var(--ink);
-}
-
-/* ───── The kind ────────────────────────────────────────────────────────────
- *
- * The strip that says what the block is, over the slider that says how big.
- * The same stamped boxes as the filing status, because it is the same kind
- * of question — one of two — and the strip is the one control on the page
- * that moves a curve without moving the household. */
-.kind-strip {
-  border: none;
-  padding: 0;
-  margin: 0 0 1.25rem;
-  min-width: 0;
-}
-
-.kind-strip legend {
-  float: left;
-  width: 100%;
-  font-size: 1.0625rem;
-  font-weight: 500;
-  color: var(--ink);
-  padding: 0;
-  margin-bottom: 0.75rem;
-}
-
-/* Cleared under the floated legend: a flex container is a formatting-context
-   root and would otherwise be fitted beside the float, in the no room a
-   full-width float leaves. */
-.kind-strip .segmented {
-  clear: both;
-  max-width: 26rem;
 }
 
 /* ───── The notes ───────────────────────────────────────────────────────────
@@ -1574,8 +1499,7 @@ footer p {
     font-size: 1.0625rem;
   }
 
-  .chart-slider,
-  .chart-key {
+  .chart-slider {
     padding-left: 0;
   }
 }
@@ -1643,7 +1567,6 @@ footer p {
 
     --amber: #9f4600;
     --amber-bright: #7d3600;
-    --orange: #a03e00;
     --fuchsia: #8f3689;
     --fuchsia-bright: #6f1a6b;
     --violet: #6a3d8c;

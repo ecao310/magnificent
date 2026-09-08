@@ -1,40 +1,30 @@
 import {
   BENCHMARK_REFERENCE_AGE,
   BENCHMARK_YEAR_PARAMS,
-  FILING_STATUSES,
   MAX_ADULT_AGE,
   MIN_ADULT_AGE,
   averageBenchmarkMonthly,
   householdSizeFor,
   povertyLineFor,
-} from '../lib/tax';
-import type { FilingStatus, Scenario, TaxYear } from '../lib/tax';
-import { MAX_BASE_INCOME, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
+} from '../lib/aca';
+import type { Adults, CoverageYear, Scenario } from '../lib/aca';
+import { ADULT_COUNTS, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
 import { formatCurrency } from '../lib/format';
-import {
-  FILING_STATUS_LABELS,
-  FILING_STATUS_PROSE,
-  agesProse,
-  householdProse,
-} from '../lib/returnProse';
+import { ADULTS_LABELS, ADULTS_PROSE, agesProse, householdProse } from '../lib/householdProse';
 import { ProseList } from './ProseList';
 
 export interface HouseholdStepProps {
   stepNumber: number;
   stepCount: number;
-  year: TaxYear;
+  year: CoverageYear;
   /** The household as the engine reads it, for the figures the rail quotes back. */
   scenario: Scenario;
-  filingStatus: FilingStatus;
-  onFilingStatus: (next: FilingStatus) => void;
+  adults: Adults;
+  onAdults: (next: Adults) => void;
   age: number;
   onAge: (next: number) => void;
   spouseAge: number;
   onSpouseAge: (next: number) => void;
-  ordinaryIncome: number;
-  onOrdinaryIncome: (next: number) => void;
-  qualifiedIncome: number;
-  onQualifiedIncome: (next: number) => void;
   dependents: number;
   onDependents: (next: number) => void;
   /** The reader's own monthly benchmark, or null for the national average. */
@@ -45,32 +35,27 @@ export interface HouseholdStepProps {
 }
 
 /**
- * Step 1: the household every figure after it prices — who files, how old
- * they are, what income they have before deciding anything, and what the
- * benchmark plan costs where they live.
+ * Step 1: the household every figure after it prices — who is on the plan,
+ * how old they are, and what the benchmark plan costs where they live.
  *
  * With no curve of its own, the household itself stands where the chart
  * stands in step 2. The ages are here because they are what sets the
- * premium, and the premium is the one figure the page before this one could
- * not price. The three advanced inputs sit in the collapsed block at the end
- * because each starts at its default and at its default leaves the chart
- * identical: the average premium, no dependents, an expansion state.
+ * premium. Income is not: it is the axis of step 2's chart, and the slider
+ * under that chart sets it. The three advanced inputs sit in the collapsed
+ * block at the end because each starts at its default and at its default
+ * leaves the chart identical.
  */
 export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   stepNumber,
   stepCount,
   year,
   scenario,
-  filingStatus,
-  onFilingStatus,
+  adults,
+  onAdults,
   age,
   onAge,
   spouseAge,
   onSpouseAge,
-  ordinaryIncome,
-  onOrdinaryIncome,
-  qualifiedIncome,
-  onQualifiedIncome,
   dependents,
   onDependents,
   benchmarkPremium,
@@ -78,8 +63,8 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   expansionState,
   onExpansionState,
 }) => {
-  const joint = filingStatus === 'mfj';
-  const ages = joint ? [age, spouseAge] : [age];
+  const couple = adults === 2;
+  const ages = couple ? [age, spouseAge] : [age];
   const average = averageBenchmarkMonthly(ages, dependents, year);
   const benchmark = benchmarkPremium ?? average;
   const ownPremium = benchmarkPremium !== null;
@@ -133,18 +118,18 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
       </h2>
 
       <fieldset className="input-group filing-status">
-        <legend>Filing Status</legend>
+        <legend>Adults on the plan</legend>
         <div className="segmented">
-          {FILING_STATUSES.map((value) => (
+          {ADULT_COUNTS.map((value) => (
             <label key={value} className="segmented-option">
               <input
                 type="radio"
-                name="filing-status"
+                name="adults"
                 value={value}
-                checked={filingStatus === value}
-                onChange={() => onFilingStatus(value)}
+                checked={adults === value}
+                onChange={() => onAdults(value)}
               />
-              <span>{FILING_STATUS_LABELS[value]}</span>
+              <span>{ADULTS_LABELS[value]}</span>
             </label>
           ))}
         </div>
@@ -152,7 +137,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
 
       <div className="input-group">
         <div className="slider-header">
-          <label htmlFor="age">{joint ? 'Your age' : 'Age'}</label>
+          <label htmlFor="age">{couple ? 'Your age' : 'Age'}</label>
           <span className="slider-value">{age}</span>
         </div>
         <input
@@ -168,7 +153,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           <span>{MIN_ADULT_AGE}</span>
           <span>{MAX_ADULT_AGE} (the last year before Medicare)</span>
         </div>
-        {joint && (
+        {couple && (
           <>
             <div className="slider-header">
               <label htmlFor="spouse-age">Spouse&apos;s age</label>
@@ -189,71 +174,14 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           Benchmark silver plan <strong>{formatCurrency(benchmark)}</strong> a month
           {ownPremium
             ? `, set by hand under Advanced inputs; the ${year} national average for ${
-                joint ? 'these ages' : 'this age'
+                couple ? 'these ages' : 'this age'
               } is ${formatCurrency(average)}.`
             : `: the ${year} national average for ${
-                joint ? 'these ages' : 'this age'
+                couple ? 'these ages' : 'this age'
               } — KFF’s ${formatCurrency(
                 BENCHMARK_YEAR_PARAMS[year].monthlyAt40,
               )} for a ${BENCHMARK_REFERENCE_AGE}-year-old, scaled on the federal age curve. Your own county’s figure goes under Advanced inputs.`}{' '}
-          Age sets the premium and nothing else here; the credit is a share of it.
-        </p>
-      </div>
-
-      <div className="input-group">
-        {/* Interest and non-qualified dividends: 1040 line 2b, mostly. */}
-        <span className="line-ref" aria-hidden="true">
-          2b
-        </span>
-        <div className="slider-header">
-          <label htmlFor="ordinary-income">Ordinary income you have regardless</label>
-          <span className="slider-value">{formatCurrency(ordinaryIncome)}</span>
-        </div>
-        <input
-          id="ordinary-income"
-          type="range"
-          min={0}
-          max={MAX_BASE_INCOME}
-          step={500}
-          value={ordinaryIncome}
-          onChange={(e) => onOrdinaryIncome(Number(e.target.value))}
-        />
-        <div className="slider-range-labels">
-          <span>$0</span>
-          <span>{formatCurrency(MAX_BASE_INCOME)}</span>
-        </div>
-        <p className="field-note">
-          Interest, part-time wages, a pension, rent, non-qualified dividends: what
-          fills the ordinary brackets before a conversion does.
-        </p>
-      </div>
-
-      <div className="input-group">
-        {/* Qualified dividends are 3a; a long-term gain is line 7. */}
-        <span className="line-ref" aria-hidden="true">
-          3a·7
-        </span>
-        <div className="slider-header">
-          <label htmlFor="qualified-income">Qualified dividends and gains you have regardless</label>
-          <span className="slider-value">{formatCurrency(qualifiedIncome)}</span>
-        </div>
-        <input
-          id="qualified-income"
-          type="range"
-          min={0}
-          max={MAX_BASE_INCOME}
-          step={500}
-          value={qualifiedIncome}
-          onChange={(e) => onQualifiedIncome(Number(e.target.value))}
-        />
-        <div className="slider-range-labels">
-          <span>$0</span>
-          <span>{formatCurrency(MAX_BASE_INCOME)}</span>
-        </div>
-        <p className="field-note">
-          What a taxable brokerage account throws off. Taxed in its own brackets,
-          stacked on top of the ordinary income &mdash; and counted in household
-          income dollar for dollar.
+          Age sets the premium and nothing else here; the subsidy is a share of it.
         </p>
       </div>
 
@@ -305,7 +233,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           </div>
           <p className="field-note">
             The second-lowest-cost silver plan for everyone on the policy, before
-            any credit. Your Marketplace shows it; so does KFF&apos;s calculator.
+            any subsidy. Your Marketplace shows it; so does KFF&apos;s calculator.
             New York and Vermont do not rate on age, and Alaska and Hawaii have
             higher poverty lines than the one drawn here.
           </p>
@@ -331,9 +259,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           </div>
           <p className="field-note">
             Each one moves the poverty line by about {formatCurrency(5_500)} of income
-            and adds a child&apos;s premium to the benchmark. What a dependent does to
-            the tax itself &mdash; the child tax credit above all &mdash; is not priced
-            here.
+            and adds a child&apos;s premium to the benchmark.
           </p>
         </div>
 
@@ -349,7 +275,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
             </label>
           </div>
           <p className="field-note">
-            Forty states and DC have. There the credit begins at 138% of the
+            Forty states and DC have. There the subsidy begins at 138% of the
             poverty line, and under it the household is on Medicaid. In the ten
             that have not, it begins at 100%, and under that there is neither.
           </p>
@@ -357,12 +283,10 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
       </details>
 
       <p className="scenario-recap">
-        One year&rsquo;s household: <strong>{year}</strong>,{' '}
-        <strong>{FILING_STATUS_PROSE[filingStatus]}</strong>, {agesProse(ages)}, with{' '}
-        <strong>{formatCurrency(ordinaryIncome)}</strong> of ordinary income and{' '}
-        <strong>{formatCurrency(qualifiedIncome)}</strong> of qualified dividends and gains,
-        on a benchmark silver plan at <strong>{formatCurrency(benchmark)}</strong> a month.
-        The poverty line for {householdProse(householdSize)} is {formatCurrency(line)}.
+        One year&rsquo;s household: <strong>{year}</strong> coverage for{' '}
+        <strong>{ADULTS_PROSE[adults]}</strong>, {agesProse(ages)}, on a benchmark silver plan
+        at <strong>{formatCurrency(benchmark)}</strong> a month. The poverty line for{' '}
+        {householdProse(householdSize)} is {formatCurrency(line)}.
         {advanced.length > 0 && (
           <>
             {' '}

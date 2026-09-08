@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { listSeparator } from '../lib/returnProse';
+import { listSeparator } from '../lib/householdProse';
 
 /**
  * An English list as marks on the page, for the clauses that carry a bolded

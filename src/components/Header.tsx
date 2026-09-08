@@ -1,8 +1,7 @@
 export interface HeaderProps {
   /**
    * What the link asked for and could not have, if anything. Dismissible
-   * because it describes the arrival rather than the household: it stops
-   * being true of what is on screen the moment the reader moves a control.
+   * because it describes the arrival rather than the household.
    */
   linkNotes: string[];
   onDismissNotes: () => void;
@@ -18,12 +17,13 @@ export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => 
     <div className="masthead-body">
       <h1>The ACA Subsidy Slope</h1>
       <p className="subtitle">
-        A household that buys its coverage on the Marketplace gives back a
-        slice of its premium tax credit with every dollar of income it adds
-        &mdash; around 17 cents for a couple in the middle of the table,
-        whatever its tax bracket says &mdash; and the whole credit on the
-        dollar that crosses 400% of the poverty line. Use this tool to price a
-        Roth conversion or a harvested gain against the subsidy it costs.
+        A household that buys its coverage on the Marketplace pays a set share of
+        its income for the benchmark plan, and the subsidy pays the rest. The
+        share rises with income &mdash; around 17 cents of every extra dollar
+        for a couple in the middle of the table &mdash; and the whole subsidy
+        goes on the dollar that crosses 400% of the poverty line. Use this tool
+        to see what the plan costs at every income, and what the next dollar
+        does to it.
       </p>
     </div>
 

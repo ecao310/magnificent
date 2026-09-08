@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_ADDED,
-  MAX_BASE_INCOME,
   MAX_DEPENDENTS,
+  MAX_INCOME,
   MAX_PREMIUM_MONTHLY,
   decodeScenario,
   defaultScenario,
@@ -10,7 +9,7 @@ import {
   engineScenario,
   scenarioUrl,
 } from './scenarioUrl';
-import { MAX_ADULT_AGE, MIN_ADULT_AGE } from './tax';
+import { MAX_ADULT_AGE, MIN_ADULT_AGE } from './aca';
 
 describe('the link', () => {
   it('is empty for the household the page opens with', () => {
@@ -19,20 +18,19 @@ describe('the link', () => {
   });
 
   it('carries only what the reader changed', () => {
-    const link = encodeScenario({ ...defaultScenario(), added: 25_000, addedKind: 'conversion' });
-    expect(link).toBe('add=25000&kind=conversion');
+    expect(encodeScenario({ ...defaultScenario(), income: 65_000 })).toBe('income=65000');
   });
 
   it('keeps the fragment and writes the ? only when there is a query', () => {
-    expect(scenarioUrl({ ...defaultScenario(), age: 60 }, { pathname: '/x/', hash: '#step-slope' })).toBe(
-      '/x/?age=60#step-slope',
+    expect(scenarioUrl({ ...defaultScenario(), age: 60 }, { pathname: '/x/', hash: '#step-cost' })).toBe(
+      '/x/?age=60#step-cost',
     );
   });
 
-  it('writes the spouse’s age only on a joint return', () => {
+  it('writes the second age only for a couple', () => {
     const couple = { ...defaultScenario(), spouseAge: 58 };
     expect(encodeScenario(couple)).toBe('spouse=58');
-    expect(encodeScenario({ ...couple, filingStatus: 'single' })).toBe('filing=single');
+    expect(encodeScenario({ ...couple, adults: 1 })).toBe('adults=1');
   });
 
   it('writes the premium only when the reader set one, and expansion only when off', () => {
@@ -42,13 +40,10 @@ describe('the link', () => {
 
   it('round-trips every field', () => {
     const scenario = {
-      filingStatus: 'single' as const,
+      adults: 1 as const,
       age: 61,
       spouseAge: 50,
-      ordinaryIncome: 22_500,
-      qualifiedIncome: 15_000,
-      added: 30_000,
-      addedKind: 'conversion' as const,
+      income: 37_500,
       dependents: 2,
       benchmarkPremium: 1_250,
       expansionState: false,
@@ -68,45 +63,41 @@ describe('reading a link', () => {
 
   it('clamps every figure to the slider that would have set it, and says so', () => {
     const { scenario, notes } = decodeScenario(
-      `?age=70&spouse=10&ordinary=${MAX_BASE_INCOME + 1}&qualified=-5&add=${MAX_ADDED * 2}&deps=9&premium=99999`,
+      `?age=70&spouse=10&income=${MAX_INCOME + 1}&deps=9&premium=99999`,
     );
     expect(scenario.age).toBe(MAX_ADULT_AGE);
     expect(scenario.spouseAge).toBe(MIN_ADULT_AGE);
-    expect(scenario.ordinaryIncome).toBe(MAX_BASE_INCOME);
-    expect(scenario.qualifiedIncome).toBe(0);
-    expect(scenario.added).toBe(MAX_ADDED);
+    expect(scenario.income).toBe(MAX_INCOME);
     expect(scenario.dependents).toBe(MAX_DEPENDENTS);
     expect(scenario.benchmarkPremium).toBe(MAX_PREMIUM_MONTHLY);
-    expect(notes).toHaveLength(7);
+    expect(notes).toHaveLength(5);
     expect(notes.join(' ')).toMatch(/Medicare takes over/);
     expect(notes.join(' ')).toMatch(/\$200,000/);
   });
 
-  it('answers a filing status or a kind it does not offer', () => {
-    const { scenario, notes } = decodeScenario('?filing=hoh&kind=wages');
-    expect(scenario.filingStatus).toBe('mfj');
-    expect(scenario.addedKind).toBe('harvest');
-    expect(notes).toHaveLength(2);
-    expect(notes[0]).toMatch(/hoh/);
-    expect(notes[1]).toMatch(/wages/);
+  it('answers a count of adults it does not offer', () => {
+    const { scenario, notes } = decodeScenario('?adults=3');
+    expect(scenario.adults).toBe(2);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/3 adults/);
   });
 
   it('falls back on a value that is not a number, with a note', () => {
-    const { scenario, notes } = decodeScenario('?add=lots');
-    expect(scenario.added).toBe(defaultScenario().added);
+    const { scenario, notes } = decodeScenario('?income=lots');
+    expect(scenario.income).toBe(defaultScenario().income);
     expect(notes[0]).toMatch(/“lots”/);
   });
 
   it('reads past keys it does not know', () => {
-    const { scenario, notes } = decodeScenario('?year=2025&ss=20000&utm_source=x');
+    const { scenario, notes } = decodeScenario('?year=2025&filing=mfj&kind=harvest&utm_source=x');
     expect(scenario).toEqual(defaultScenario());
     expect(notes).toEqual([]);
   });
 });
 
 describe('the engine’s view', () => {
-  it('lists two ages for a couple and one for a single filer', () => {
+  it('lists two ages for a couple and one for one adult', () => {
     expect(engineScenario({ ...defaultScenario(), spouseAge: 40 }).ages).toEqual([50, 40]);
-    expect(engineScenario({ ...defaultScenario(), filingStatus: 'single', spouseAge: 40 }).ages).toEqual([50]);
+    expect(engineScenario({ ...defaultScenario(), adults: 1, spouseAge: 40 }).ages).toEqual([50]);
   });
 });

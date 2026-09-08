@@ -51,7 +51,6 @@ describe('the national-average benchmark', () => {
 
   it('scales along the curve for other ages and adds up across people', () => {
     expect(averageBenchmarkMonthly([21], 0, 2026)).toBe(Math.round(625 / 1.278));
-    expect(averageBenchmarkMonthly([50, 50], 0, 2026)).toBe(Math.round((625 / 1.278) * 2 * 1.786));
     expect(averageBenchmarkMonthly([50, 50], 0, 2026)).toBe(1_747);
     expect(averageBenchmarkMonthly([64, 64], 0, 2026)).toBe(Math.round((625 / 1.278) * 6));
   });
@@ -59,10 +58,10 @@ describe('the national-average benchmark', () => {
   it('charges children at the child factor, and at most three of them', () => {
     const unit = 625 / 1.278;
     expect(averageBenchmarkMonthly([50], 1, 2026)).toBe(Math.round(unit * (1.786 + 0.765)));
-    expect(averageBenchmarkMonthly([50], 3, 2026)).toBe(
-      Math.round(unit * (1.786 + 3 * 0.765)),
+    expect(averageBenchmarkMonthly([50], 3, 2026)).toBe(Math.round(unit * (1.786 + 3 * 0.765)));
+    expect(averageBenchmarkMonthly([50], 5, 2026)).toBe(
+      averageBenchmarkMonthly([50], MAX_RATED_CHILDREN, 2026),
     );
-    expect(averageBenchmarkMonthly([50], 5, 2026)).toBe(averageBenchmarkMonthly([50], MAX_RATED_CHILDREN, 2026));
   });
 });
 
@@ -73,8 +72,8 @@ describe('the household’s benchmark', () => {
   });
 
   it('is the average for the household’s ages otherwise, a couple of the same age when only one is given', () => {
-    expect(benchmarkMonthlyFor({ filingStatus: 'mfj', ages: [50], year: 2026 })).toBe(1_747);
-    expect(benchmarkMonthlyFor({ filingStatus: 'single', ages: [50, 60], year: 2026 })).toBe(
+    expect(benchmarkMonthlyFor({ adults: 2, ages: [50], year: 2026 })).toBe(1_747);
+    expect(benchmarkMonthlyFor({ adults: 1, ages: [50, 60], year: 2026 })).toBe(
       averageBenchmarkMonthly([50], 0, 2026),
     );
   });

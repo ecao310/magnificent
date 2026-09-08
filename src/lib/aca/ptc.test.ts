@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COVERAGE_YEARS,
   CSR_TIERS,
   EXPANSION_FLOOR_MULTIPLE,
   FPL_YEAR_PARAMS,
   PTC_CLIFF_PERCENT,
-  TAX_YEARS,
   applicablePercentage,
   cliffCost,
   creditFloorMagi,
+  creditLostBetween,
   creditSlopeAt,
   csrTierFor,
   expectedContribution,
   fplGuidelineYear,
+  netPremiumAt,
   povertyLine,
   povertyLineFor,
   premiumTaxCredit,
@@ -26,13 +28,7 @@ import type { Scenario } from './index';
  * $50,000 of household income asking what $10,000 more costs them. Priced at
  * the national-average benchmark for two fifty-year-olds.
  */
-const COUPLE: Scenario = {
-  filingStatus: 'mfj',
-  ages: [50, 50],
-  ordinaryIncome: 10_000,
-  qualifiedIncome: 40_000,
-  year: 2026,
-};
+const COUPLE: Scenario = { adults: 2, ages: [50, 50], income: 50_000, year: 2026 };
 
 describe('the poverty line', () => {
   it('reads the guidelines published the January before the coverage year', () => {
@@ -48,10 +44,10 @@ describe('the poverty line', () => {
     expect(povertyLine(0, 2026)).toBe(15_650);
   });
 
-  it('sizes the household from the filing status and the dependents', () => {
-    expect(povertyLineFor({ filingStatus: 'single', year: 2026 })).toBe(15_650);
-    expect(povertyLineFor({ filingStatus: 'mfj', year: 2026 })).toBe(21_150);
-    expect(povertyLineFor({ filingStatus: 'mfj', dependents: 2, year: 2026 })).toBe(32_150);
+  it('sizes the household from the adults and the dependents', () => {
+    expect(povertyLineFor({ adults: 1, year: 2026 })).toBe(15_650);
+    expect(povertyLineFor({ adults: 2, year: 2026 })).toBe(21_150);
+    expect(povertyLineFor({ adults: 2, dependents: 2, year: 2026 })).toBe(32_150);
   });
 });
 
@@ -69,9 +65,7 @@ describe('the applicable percentage', () => {
   });
 
   it('interpolates linearly inside a band', () => {
-    // Halfway through 200–250%: halfway from 6.60% to 8.44%.
     expect(applicablePercentage(2.25, 2026)).toBeCloseTo(0.0752, 6);
-    // Halfway through 133–150%.
     expect(applicablePercentage(1.415, 2026)).toBeCloseTo((0.0314 + 0.0419) / 2, 6);
   });
 
@@ -89,7 +83,7 @@ describe('the applicable percentage', () => {
   });
 
   it('never falls as income rises, in either year', () => {
-    for (const year of TAX_YEARS) {
+    for (const year of COVERAGE_YEARS) {
       let last = -1;
       for (let m = 0; m <= 5; m += 0.01) {
         const here = applicablePercentage(m, year);
@@ -112,7 +106,7 @@ describe('the credit', () => {
   });
 
   it('reproduces the thread’s example: $10,000 more costs the couple about $1,700 of credit', () => {
-    const lost = premiumTaxCredit(50_000, COUPLE) - premiumTaxCredit(60_000, COUPLE);
+    const lost = creditLostBetween(50_000, 60_000, COUPLE);
     // The post said $1,716; the 2026 table and the 2025 guidelines say $1,709.
     expect(lost).toBeGreaterThan(1_690);
     expect(lost).toBeLessThan(1_730);
@@ -135,38 +129,45 @@ describe('the credit', () => {
     expect(creditFloorMagi(gap)).toBe(21_150);
     expect(premiumTaxCredit(21_149, gap)).toBe(0);
     expect(premiumTaxCredit(21_150, gap)).toBeGreaterThan(0);
-    // The same income in an expansion state is Medicaid, not the Marketplace.
     expect(premiumTaxCredit(25_000, COUPLE)).toBe(0);
     expect(premiumTaxCredit(25_000, gap)).toBeGreaterThan(0);
   });
 
-  it('has no cliff on a 2025 return, and tapers under ARPA’s 8.5% instead', () => {
+  it('has no cliff on 2025 coverage, and tapers under ARPA’s 8.5% instead', () => {
     const last = { ...COUPLE, year: 2025 as const };
     expect(ptcCliffMagi(last)).toBeNull();
     expect(cliffCost(last)).toBeNull();
     const line = povertyLineFor(last);
-    // 4 × 2 people × 2024 guidelines.
     expect(line).toBe(20_440);
-    // Just over 400% the credit is still paid: the 2025 benchmark for two
-    // fifty-year-olds is $1,389/mo, and 8.5% of $82,000 is under that.
     expect(premiumTaxCredit(4 * line + 1_000, last)).toBeGreaterThan(0);
-    // It runs out where 8.5% of income reaches the benchmark, not at a line.
-    expect(premiumTaxCredit(1_389 * 12 / 0.085 + 1, last)).toBe(0);
-  });
-
-  it('can be switched to read the table as if it had no top', () => {
-    const cliff = ptcCliffMagi(COUPLE)!;
-    expect(premiumTaxCredit(cliff + 1, COUPLE, { cliff: false })).toBeGreaterThan(0);
-    expect(premiumTaxCredit(cliff + 1, COUPLE, { cliff: true })).toBe(0);
+    expect(premiumTaxCredit((1_389 * 12) / 0.085 + 1, last)).toBe(0);
   });
 
   it('runs out before the line for a household whose share reaches the benchmark first', () => {
     // A 25-year-old’s benchmark is $491/mo, $5,892/yr; 9.96% of income
     // reaches that at $59,157, short of the $62,600 line.
-    const young: Scenario = { filingStatus: 'single', ages: [25], year: 2026 };
+    const young: Scenario = { adults: 1, ages: [25], year: 2026 };
     expect(premiumTaxCredit(59_000, young)).toBeGreaterThan(0);
     expect(premiumTaxCredit(60_000, young)).toBe(0);
     expect(cliffCost(young)).toBe(0);
+  });
+});
+
+describe('what the household pays', () => {
+  it('is its share of income under the line and the whole benchmark over it', () => {
+    expect(netPremiumAt(50_000, COUPLE)).toBeCloseTo(expectedContribution(50_000, COUPLE), 6);
+    const cliff = ptcCliffMagi(COUPLE)!;
+    expect(netPremiumAt(cliff, COUPLE)).toBeCloseTo(0.0996 * cliff, 6);
+    expect(netPremiumAt(cliff + 1, COUPLE)).toBe(20_964);
+  });
+
+  it('is nothing to quote on Medicaid, and the whole benchmark in the gap', () => {
+    expect(netPremiumAt(25_000, COUPLE)).toBeNull();
+    expect(netPremiumAt(20_000, { ...COUPLE, expansionState: false })).toBe(20_964);
+    expect(netPremiumAt(25_000, { ...COUPLE, expansionState: false })).toBeCloseTo(
+      expectedContribution(25_000, COUPLE),
+      6,
+    );
   });
 });
 
@@ -215,7 +216,7 @@ describe('the slope', () => {
     const cost = cliffCost(COUPLE)!;
     expect(cost).toBeCloseTo(20_964 - 0.0996 * cliff, 1);
     expect(cost).toBeGreaterThan(12_000);
-    expect(premiumTaxCredit(cliff, COUPLE) - premiumTaxCredit(cliff + 1, COUPLE)).toBeCloseTo(cost, 1);
+    expect(creditLostBetween(cliff, cliff + 1, COUPLE)).toBeCloseTo(cost, 1);
   });
 });
 
@@ -233,7 +234,9 @@ describe('the cost-sharing tiers', () => {
 
   it('are not offered under the floor', () => {
     expect(csrTierFor(1.2 * povertyLineFor(COUPLE), COUPLE)).toBeNull();
-    expect(csrTierFor(1.2 * povertyLineFor(COUPLE), { ...COUPLE, expansionState: false })?.actuarialValue).toBe(94);
+    expect(
+      csrTierFor(1.2 * povertyLineFor(COUPLE), { ...COUPLE, expansionState: false })?.actuarialValue,
+    ).toBe(94);
   });
 });
 
@@ -245,8 +248,8 @@ describe('the lines on the axis', () => {
     for (let i = 1; i < lines.length; i += 1) {
       expect(lines[i].magi).toBeGreaterThan(lines[i - 1].magi);
     }
-    expect(lines[0].label).toMatch(/138% FPL/);
-    expect(lines[4].label).toMatch(/400% FPL/);
+    expect(lines[0].label).toBe('138% FPL');
+    expect(lines[4].label).toBe('400% FPL');
   });
 
   it('have no cliff in 2025 and a 100% floor without expansion', () => {
@@ -272,5 +275,8 @@ describe('the assessment', () => {
     expect(over.headroom).toBe(0);
     expect(over.credit).toBe(0);
     expect(over.netPremiumAnnual).toBe(over.benchmarkAnnual);
+    const medicaid = ptcFor(25_000, COUPLE);
+    expect(medicaid.belowFloor).toBe(true);
+    expect(medicaid.netPremiumAnnual).toBeNull();
   });
 });

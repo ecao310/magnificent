@@ -23,16 +23,12 @@ export const PALETTE = {
   /** Tick labels, and the rule a hover draws down the plot. */
   inkMuted: '#6c6158',
 
-  /** The conversion curve: the next dollar as ordinary income. */
+  /** The curve: what the household pays, and the hatch under it. */
   accent: '#2769b7',
-  /** The harvested-gain curve: the next dollar as a long-term gain. */
-  emerald: '#1d7d3e',
 
-  /** The "you are here" marker, and the hatch under the block. */
+  /** The "you are here" marker. */
   amber: '#b76100',
-  /** What the year owes in tax, which is a different quantity from a rate. */
-  orange: '#b64700',
-  /** An edge of the credit: the floor, and the 400% line. */
+  /** An edge of the subsidy: the floor, and the 400% line. */
   fuchsia: '#a644a0',
   fuchsiaBright: '#852381',
   /** A cost-sharing tier boundary. */
@@ -56,8 +52,11 @@ export const CHART = {
   rule: 2,
   /** The grid, the axis, and each stroke of the hatching. */
   hairline: 1,
-  /** The hatching under the block, an engraver's diagonal at this alpha. */
+  /** The hatching under the curve, an engraver's diagonal at this alpha. */
   fill: 0.3,
-  /** The gutter the y-axis takes out of the plot's left edge; `--chart-axis` is the same 44. */
-  axis: 44,
+  /**
+   * The gutter the y-axis takes out of the plot's left edge; `--chart-axis`
+   * is the same 56. The widest label this axis draws is `$2,000`.
+   */
+  axis: 56,
 } as const;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 /**
@@ -21,9 +21,9 @@ vi.mock('recharts', async () => {
 
 import App from './App';
 import { PALETTE } from './styles/palette';
-import { chooseKind, pinPageYear, slide } from './test/pageFixtures';
+import { pinPageYear, slide } from './test/pageFixtures';
 
-/** What recharts puts in the SVG: two curves, the block, and the lines the credit draws. */
+/** What recharts puts in the SVG: the curve, the marker, and the lines the subsidy draws. */
 
 pinPageYear();
 
@@ -35,58 +35,30 @@ describe('the chart', () => {
     render(<App />);
     expect(plot()).toHaveAttribute(
       'aria-label',
-      expect.stringMatching(/as a Roth conversion and as a harvested gain, plotted against household income from \$0 to \$130,000, with the block the reader is adding hatched from \$50,000\./),
+      'Chart: what this household pays each month for the benchmark silver plan after the subsidy, plotted against household income from $0 to $130,000.',
     );
-    expect(screen.getByText(/^Household income \(\$\), the MAGI the credit is measured on\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Household income \(\$\), the MAGI the subsidy is measured on\./)).toBeInTheDocument();
   });
 
-  /** The recharts layer a curve was drawn in, read off the layer group's class. */
-  const layerOf = (kind: string): number => {
-    const line = plot().querySelector(`.curve-${kind}`) as Element;
-    const layer = line.closest('[class*="recharts-zIndex-layer_"]') as Element;
-    return Number(/recharts-zIndex-layer_(-?\d+)/.exec(layer.getAttribute('class') ?? '')?.[1]);
-  };
-
-  /**
-   * A curve raised above recharts' default layer is drawn into a portal the
-   * library creates a render cycle later, so the second curve is awaited
-   * rather than read straight off the first render.
-   */
-  it('draws both curves, the current one on top', async () => {
+  it('draws one curve in the accent, hatched underneath, with no steps', () => {
     render(<App />);
-    await waitFor(() => expect(lines('.recharts-line-curve')).toHaveLength(2));
-    expect(lines('.recharts-line-curve').map((c) => c.getAttribute('stroke')).sort()).toEqual(
-      [PALETTE.accent, PALETTE.emerald].sort(),
-    );
-    expect(layerOf('harvest')).toBeGreaterThan(layerOf('conversion'));
-    chooseKind('Roth conversion');
-    await waitFor(() => expect(layerOf('conversion')).toBeGreaterThan(layerOf('harvest')));
+    const curves = lines('.recharts-area-curve');
+    expect(curves).toHaveLength(1);
+    expect(curves[0].getAttribute('stroke')).toBe(PALETTE.accent);
+    expect(lines('.recharts-area-area')[0].getAttribute('fill')).toBe('url(#costHatch)');
+    expect(lines('.recharts-line-curve')).toHaveLength(0);
   });
 
-  it('keys the curves and marks the current one', () => {
-    render(<App />);
-    const key = screen.getByRole('list', { name: 'Key' });
-    const items = Array.from(key.querySelectorAll('li'));
-    expect(items.map((li) => li.textContent)).toEqual([
-      'Next dollar as a Roth conversion',
-      'Next dollar as a harvested gain',
-    ]);
-    expect(items[1]).toHaveClass('chart-key-current');
-    expect(items[0]).not.toHaveClass('chart-key-current');
-  });
-
-  it('draws the credit’s edges from the start and the tiers on request', () => {
+  it('draws the subsidy’s edges from the start and the tiers on request', () => {
     render(<App />);
     expect(lines('.credit-edge')).toHaveLength(2);
     expect(lines('.csr-tier')).toHaveLength(0);
-    const labels = lines('.recharts-label').map((t) => t.textContent);
-    expect(labels).toEqual(['138% FPL', '400% FPL']);
-    const button = screen.getByRole('button', { name: /^Breakpoints \(2\)$/ });
-    fireEvent.click(button);
+    expect(lines('.recharts-label').map((t) => t.textContent)).toEqual(['138% FPL', '400% FPL']);
+    fireEvent.click(screen.getByRole('button', { name: /^Breakpoints \(2\)$/ }));
     fireEvent.click(screen.getByRole('checkbox', { name: /cost-sharing tiers/i }));
     expect(lines('.csr-tier')).toHaveLength(3);
     expect(screen.getByRole('button', { name: /^Breakpoints \(5\)$/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox', { name: /the credit's edges/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /the subsidy's edges/i }));
     expect(lines('.credit-edge')).toHaveLength(0);
     expect(screen.getByRole('button', { name: /^Breakpoints \(3\)$/ })).toBeInTheDocument();
   });
@@ -94,29 +66,26 @@ describe('the chart', () => {
   it('moves the floor with the expansion switch', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('checkbox', { name: /my state expanded medicaid/i }));
-    const labels = lines('.recharts-label').map((t) => t.textContent);
-    expect(labels).toContain('100% FPL');
-    expect(labels).not.toContain('138% FPL');
+    expect(lines('.recharts-label').map((t) => t.textContent)).toContain('100% FPL');
+    expect(lines('.recharts-label').map((t) => t.textContent)).not.toContain('138% FPL');
   });
 
-  it('puts the marker where the block ends', () => {
+  it('puts the marker at the household’s income', () => {
     render(<App />);
     const hereX = () => Number(lines('.here-line .recharts-reference-line-line')[0].getAttribute('x1'));
     const edgeX = () =>
       lines('.credit-edge .recharts-reference-line-line').map((l) => Number(l.getAttribute('x1')));
     expect(lines('.here-line line')[0].getAttribute('stroke')).toBe(PALETTE.amber);
-    // $60,000 sits between the floor ($29,187) and the cliff ($84,600).
     const [floor, cliff] = edgeX();
     expect(hereX()).toBeGreaterThan(floor);
     expect(hereX()).toBeLessThan(cliff);
-    slide(/amount to add/i, 40_000);
-    // $90,000 is past the cliff.
+    slide(/household income/i, 90_000);
     expect(hereX()).toBeGreaterThan(cliff);
   });
 
-  it('widens the axis to keep the block on it', () => {
+  it('widens the axis to keep the household on it', () => {
     render(<App />);
-    slide(/amount to add/i, 150_000);
+    slide(/household income/i, 200_000);
     expect(plot()).toHaveAttribute('aria-label', expect.stringMatching(/from \$0 to \$210,000/));
   });
 });

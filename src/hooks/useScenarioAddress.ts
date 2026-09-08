@@ -9,20 +9,16 @@ import type { PageScenario } from '../lib/scenarioUrl';
  * Not a matter of taste. Browsers rate-limit the history API: Safari throws a
  * `SecurityError` on the 101st `replaceState` in 30 seconds, and Chrome and
  * Firefox silently drop the call. A range input fires a change per notch, so
- * one unhurried drag spends the whole budget, and on Safari the throw lands
- * inside an effect, where React has no boundary to catch it. A trailing
- * debounce writes where the drag *stopped*, which is the one household worth
- * carrying, and at 400ms a reader who stutters still cannot get past 75 calls
- * in the window Safari counts over.
+ * one unhurried drag spends the whole budget. A trailing debounce writes where
+ * the drag *stopped*, and at 400ms a reader who stutters still cannot get past
+ * 75 calls in the window Safari counts over.
  */
 export const ADDRESS_SETTLE_MS = 400;
 
 /**
  * Put a household in the address bar, and never take the document down over
- * it. `replaceState`, not `pushState`, so Back still leaves; the whole URL,
- * so the `#step-…` fragment survives; and a `catch`, because a browser that
- * refuses to rewrite the address has denied the reader a convenience and
- * nothing more.
+ * it: `replaceState` so Back still leaves, the whole URL so the fragment
+ * survives, and a `catch` because the address bar is a convenience.
  */
 const writeAddress = (scenario: PageScenario): void => {
   try {
@@ -44,40 +40,22 @@ export interface ScenarioAddress {
 
 /**
  * Keeps the address bar in step with the household, and copies it on request.
- *
- * Only the write waits on the debounce; arrival writes at once, because
- * nothing is being dragged on mount and because this is the write that
- * normalises the link the reader came in on. The copy status is cleared on
- * the render that changed the household, because "Copied" stops being true
- * of the clipboard the instant a control moves.
+ * Only the write waits on the debounce; arrival writes at once. The copy
+ * status is cleared on the render that changed the household.
  */
 export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
   const [canCopy] = useState(() => typeof navigator.clipboard?.writeText === 'function');
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
-  const {
-    filingStatus,
-    age,
-    spouseAge,
-    ordinaryIncome,
-    qualifiedIncome,
-    added,
-    addedKind,
-    dependents,
-    benchmarkPremium,
-    expansionState,
-  } = scenario;
+  const { adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState } = scenario;
 
   const written = useRef(false);
   useEffect(() => {
     const current: PageScenario = {
-      filingStatus,
+      adults,
       age,
       spouseAge,
-      ordinaryIncome,
-      qualifiedIncome,
-      added,
-      addedKind,
+      income,
       dependents,
       benchmarkPremium,
       expansionState,
@@ -91,34 +69,12 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
     }
     setCopyState('idle');
     return () => window.clearTimeout(timer);
-  }, [
-    filingStatus,
-    age,
-    spouseAge,
-    ordinaryIncome,
-    qualifiedIncome,
-    added,
-    addedKind,
-    dependents,
-    benchmarkPremium,
-    expansionState,
-  ]);
+  }, [adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState]);
 
   const copy = (): void => {
     /* Flush the address before reading it, so the button copies what is on
        screen rather than what was on screen 400ms ago. */
-    writeAddress({
-      filingStatus,
-      age,
-      spouseAge,
-      ordinaryIncome,
-      qualifiedIncome,
-      added,
-      addedKind,
-      dependents,
-      benchmarkPremium,
-      expansionState,
-    });
+    writeAddress({ adults, age, spouseAge, income, dependents, benchmarkPremium, expansionState });
     void navigator.clipboard
       .writeText(window.location.href)
       .then(() => setCopyState('copied'))

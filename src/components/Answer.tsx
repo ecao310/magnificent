@@ -1,65 +1,54 @@
-import type { AddedKind, BlockCost, FilingStatus, NextDollar, PtcAssessment, TaxYear } from '../lib/tax';
-import { formatCurrency, formatFpl, formatPercent } from '../lib/format';
-import { ADDED_KIND_PROSE, FILING_STATUS_PROSE, agesProse, householdProse, otherKind } from '../lib/returnProse';
+import type { Adults, CoverageYear, PtcAssessment } from '../lib/aca';
+import { formatCents, formatCurrency, formatFpl, formatPercent } from '../lib/format';
+import { ADULTS_PROSE, agesProse, householdProse } from '../lib/householdProse';
 import type { CopyState } from '../hooks/useScenarioAddress';
 
-/** The most a harvested gain can save later: the rate it would otherwise be taxed at. */
-const HARVEST_CEILING = 0.15;
-
 export interface AnswerProps {
-  year: TaxYear;
-  filingStatus: FilingStatus;
+  year: CoverageYear;
+  adults: Adults;
   ages: number[];
-  ordinaryIncome: number;
-  qualifiedIncome: number;
-  addedKind: AddedKind;
+  income: number;
   here: PtcAssessment;
-  block: BlockCost;
-  otherBlock: BlockCost;
-  next: NextDollar;
-  /** The year's federal tax with the block in it. */
-  tax: number;
+  /** What the next block of income costs in subsidy, and how big the block is. */
+  nextBlock: number;
+  nextBlockCost: number;
+  nextBlockCrossesCliff: boolean;
+  cliffCost: number | null;
   canCopy: boolean;
   copyState: CopyState;
   onCopy: () => void;
 }
 
 /**
- * The close: the reader's own answer, in one place.
- *
- * The mirror of the recap that closes step 1. That one names what was set;
- * this one says what came of it, and it is the first place the six figures a
- * reader leaves with sit together. Last before the disclaimer because it is
- * the thing a reader would screenshot, which is why it restates the household
- * above the figures.
+ * The close: the reader's own answer, in one place. The mirror of the recap
+ * that closes step 1: that one names what was set; this one says what came of
+ * it. Last before the disclaimer because it is the thing a reader would
+ * screenshot, which is why it restates the household above the figures.
  */
 export const Answer: React.FC<AnswerProps> = ({
   year,
-  filingStatus,
+  adults,
   ages,
-  ordinaryIncome,
-  qualifiedIncome,
-  addedKind,
+  income,
   here,
-  block,
-  otherBlock,
-  next,
-  tax,
+  nextBlock,
+  nextBlockCost,
+  nextBlockCrossesCliff,
+  cliffCost,
   canCopy,
   copyState,
   onCopy,
 }) => {
-  const sized = block.added > 0;
-  const nextRate = (kind: AddedKind): number =>
-    (kind === 'conversion' ? next.conversionTax : next.harvestTax) + next.credit;
-  const costRate = sized ? block.rate ?? 0 : nextRate(addedKind);
-  const creditGloss = here.belowFloor
-    ? 'Under the floor there is no credit: this household is on Medicaid, or in the gap.'
+  const monthly = here.netPremiumAnnual === null ? null : Math.round(here.netPremiumAnnual / 12);
+  const subsidyGloss = here.belowFloor
+    ? here.floorMultiple > 1
+      ? 'Under the floor: this household is eligible for Medicaid, not the subsidy.'
+      : 'Under 100% of the poverty line: no subsidy, and no Medicaid either.'
     : here.overCliff
-      ? `Over the ${formatFpl(4)} line there is no credit at all.`
+      ? `Over the ${formatFpl(4)} line there is no subsidy at all.`
       : here.credit === 0
-        ? 'The household’s share already reaches the benchmark, so nothing is left to credit.'
-        : `The benchmark less ${formatPercent(here.applicablePercentage)} of income, the household’s share at ${formatFpl(here.fplMultiple)}.`;
+        ? 'The household’s share already reaches the benchmark, so nothing is left to subsidise.'
+        : `The benchmark less ${formatPercent(here.applicablePercentage)} of income, the share the table asks for at ${formatFpl(here.fplMultiple)}.`;
 
   return (
     <section className="answer" id="answer" aria-labelledby="answer-heading">
@@ -68,13 +57,8 @@ export const Answer: React.FC<AnswerProps> = ({
         What this year costs
       </h2>
       <p className="answer-intro">
-        Priced for {year}: {FILING_STATUS_PROSE[filingStatus]}, {agesProse(ages)}, with{' '}
-        {formatCurrency(ordinaryIncome)} of ordinary income and{' '}
-        {formatCurrency(qualifiedIncome)} of qualified dividends and gains
-        {sized
-          ? `, adding ${formatCurrency(block.added)} as ${ADDED_KIND_PROSE[addedKind]}`
-          : ', adding nothing'}
-        .
+        Priced for {year}: {ADULTS_PROSE[adults]}, {agesProse(ages)}, on{' '}
+        {formatCurrency(income)} of household income.
       </p>
 
       <dl className="answer-figures">
@@ -93,63 +77,33 @@ export const Answer: React.FC<AnswerProps> = ({
 
         <div className="answer-figure">
           <dt>
-            Premium tax credit<span className="answer-line">8962 L24</span>
+            Subsidy<span className="answer-line">8962 L24</span>
           </dt>
           <dd>
             <strong>{here.credit > 0 ? formatCurrency(here.credit) : 'None'}</strong>{' '}
             <span className="answer-of">of {formatCurrency(here.benchmarkAnnual)}</span>
-            <span className="answer-gloss">{creditGloss}</span>
+            <span className="answer-gloss">{subsidyGloss}</span>
           </dd>
         </div>
 
         <div className="answer-figure">
-          <dt>Your share of the benchmark</dt>
+          <dt>You pay</dt>
           <dd>
-            <strong>{formatCurrency(here.netPremiumAnnual)}</strong>{' '}
-            <span className="answer-of">/yr</span>
-            <span className="answer-gloss">
-              {formatCurrency(Math.round(here.netPremiumAnnual / 12))} a month for the
-              second-lowest-cost silver plan. A cheaper plan costs less; the credit is the
-              same.
-            </span>
-          </dd>
-        </div>
-
-        <div className="answer-figure">
-          <dt>
-            Federal tax<span className="answer-line">1040 L16</span>
-          </dt>
-          <dd>
-            <strong>{formatCurrency(tax)}</strong>
-            <span className="answer-gloss">What this {year} return owes. Federal only.</span>
-          </dd>
-        </div>
-
-        <div className="answer-figure">
-          <dt>{sized ? 'Cost of the block' : 'Cost of the next dollar'}</dt>
-          <dd>
-            {sized ? (
+            {monthly === null ? (
               <>
-                <strong>{formatCurrency(block.total)}</strong>{' '}
-                <span className="answer-of">
-                  {formatPercent(costRate)} of {formatCurrency(block.added)}
-                </span>
+                <strong>Medicaid</strong>
                 <span className="answer-gloss">
-                  {formatCurrency(block.tax)} of tax and {formatCurrency(block.credit)} of
-                  credit given back
-                  {block.crossesCliff ? ', the whole credit among it' : ''}. As{' '}
-                  {ADDED_KIND_PROSE[otherKind(addedKind)]}: {formatCurrency(otherBlock.total)}
-                  {otherBlock.rate !== null ? `, ${formatPercent(otherBlock.rate)}` : ''}.
+                  No Marketplace premium to quote under the floor.
                 </span>
               </>
             ) : (
               <>
-                <strong>{formatPercent(costRate)}</strong>
+                <strong>{formatCurrency(monthly)}</strong>{' '}
+                <span className="answer-of">/mo</span>
                 <span className="answer-gloss">
-                  As {ADDED_KIND_PROSE[addedKind]}: {formatPercent(costRate - next.credit)} in
-                  tax and {formatPercent(next.credit)} in credit given back. As{' '}
-                  {ADDED_KIND_PROSE[otherKind(addedKind)]}:{' '}
-                  {formatPercent(nextRate(otherKind(addedKind)))}.
+                  {formatCurrency(Math.round(here.netPremiumAnnual ?? 0))} a year for the
+                  second-lowest-cost silver plan. A cheaper plan costs less; the subsidy is
+                  the same.
                 </span>
               </>
             )}
@@ -157,25 +111,61 @@ export const Answer: React.FC<AnswerProps> = ({
         </div>
 
         <div className="answer-figure">
-          <dt>Future rate to beat</dt>
+          <dt>Share of income</dt>
           <dd>
-            {addedKind === 'conversion' ? (
+            <strong>
+              {monthly === null
+                ? '—'
+                : here.overCliff || here.credit === 0
+                  ? formatPercent(income > 0 ? (here.netPremiumAnnual ?? 0) / income : 0)
+                  : formatPercent(here.applicablePercentage)}
+            </strong>
+            <span className="answer-gloss">
+              {monthly === null
+                ? 'Nothing is owed for Medicaid.'
+                : here.overCliff || here.credit === 0
+                  ? 'The whole premium, as a share of this income.'
+                  : `What the table asks a household at ${formatFpl(here.fplMultiple)} to pay toward the benchmark.`}
+            </span>
+          </dd>
+        </div>
+
+        <div className="answer-figure">
+          <dt>Next dollar</dt>
+          <dd>
+            <strong>{formatCents(here.slope)}</strong>
+            <span className="answer-gloss">
+              Of subsidy given back for each extra dollar of income. The next{' '}
+              {formatCurrency(nextBlock)} costs {formatCurrency(nextBlockCost)}
+              {nextBlockCrossesCliff ? ' — it crosses the 400% line' : ''}.
+            </span>
+          </dd>
+        </div>
+
+        <div className="answer-figure">
+          <dt>Room under the cliff</dt>
+          <dd>
+            {here.cliffMagi === null ? (
               <>
-                <strong>{formatPercent(costRate)}</strong>
+                <strong>No cliff</strong>
+                <span className="answer-gloss">This year’s table has no 400% line.</span>
+              </>
+            ) : here.overCliff ? (
+              <>
+                <strong>{formatCurrency(Math.round(here.magi - here.cliffMagi))}</strong>{' '}
+                <span className="answer-of">over</span>
                 <span className="answer-gloss">
-                  A conversion pays off only if these dollars would otherwise come out
-                  above this &mdash; brackets, the torpedo after 65 and Medicare&apos;s
-                  surcharges included.
+                  Coming back under {formatCurrency(here.cliffMagi)} restores a subsidy of{' '}
+                  {formatCurrency(cliffCost ?? 0)} at the line.
                 </span>
               </>
             ) : (
               <>
-                <strong>{formatPercent(HARVEST_CEILING)}</strong>{' '}
-                <span className="answer-of">at most</span>
+                <strong>{formatCurrency(Math.round(here.headroom ?? 0))}</strong>
                 <span className="answer-gloss">
-                  The most a harvested gain saves later is the {formatPercent(HARVEST_CEILING)}{' '}
-                  it would have been taxed at, and nothing if the shares are held to a
-                  basis step-up. Today it costs {formatPercent(costRate)}.
+                  Income can rise this far, to {formatCurrency(here.cliffMagi)}, before the
+                  dollar after it costs the {formatCurrency(cliffCost ?? 0)} of subsidy
+                  left at the line.
                 </span>
               </>
             )}

@@ -7,28 +7,17 @@ export const LeftOutExplainer: React.FC = () => (
     <div className="explainer-content">
       <ul>
         <li>
-          <strong>State income tax.</strong> Every figure here is federal. A state that
-          taxes conversions and gains adds its own rate to both curves, and one that
-          taxes neither adds nothing.
-        </li>
-        <li>
-          <strong>The rest of the return.</strong> No Social Security, no tax-exempt
-          interest, no itemising, no credits for dependents, no 3.8% net investment
-          income tax &mdash; which starts at $200,000 single and $250,000 joint, past
-          the right edge of most of these charts. The page this one follows carries
-          the benefit and the interest for a reader who has either before 65.
-        </li>
-        <li>
-          <strong>A whole year on one plan.</strong> The credit is computed monthly and
+          <strong>A whole year on one plan.</strong> The subsidy is computed monthly and
           this page prices twelve identical months. A household that starts coverage
-          mid-year, changes plans, or has one spouse turn 65 in the autumn owes and
+          mid-year, changes plans, or has one person turn 65 in the autumn owes and
           receives by the month.
         </li>
         <li>
-          <strong>Form 8962&apos;s rounding.</strong> The form rounds household income
-          to a whole percent of the poverty line before the lookup and the percentage
-          to four places after it. Both are steps of a few dollars; the smooth line is
-          drawn instead, and the return will differ from it by that much.
+          <strong>The Marketplace&apos;s rounding.</strong> Form 8962 rounds household
+          income down to a whole percent of the poverty line before the lookup and the
+          percentage to four places after it. Both are steps of a few dollars; the
+          smooth line is drawn instead, and the settled figure will differ from it by
+          that much.
         </li>
         <li>
           <strong>Where you live.</strong> The benchmark is a national average until you
@@ -38,10 +27,19 @@ export const LeftOutExplainer: React.FC = () => (
           here, which is wrong for them in their own directions.
         </li>
         <li>
-          <strong>What the credit is worth in a plan.</strong> The credit is the same
+          <strong>What the plan actually costs you.</strong> The subsidy is the same
           whichever metal the household buys, so a bronze plan costs the benchmark less
-          the credit less the gap between silver and bronze. The net premium quoted in
-          the close is the benchmark&apos;s.
+          the subsidy less the gap between silver and bronze, and a gold plan costs
+          more. The curve is the benchmark&apos;s.
+        </li>
+        <li>
+          <strong>Coverage from anywhere else.</strong> An employer plan that meets the
+          affordability test, a spouse&apos;s plan, Medicare or Medicaid each take the
+          subsidy away, and none of them is a field here.
+        </li>
+        <li>
+          <strong>Everything else a dollar of income does.</strong> The curve is the
+          subsidy alone. What the same dollar owes anywhere else is another page.
         </li>
       </ul>
     </div>

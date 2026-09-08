@@ -1,6 +1,6 @@
 # Published figures the engine is checked against
 
-Every rate, threshold and premium in `src/lib/tax/` traces to one of these.
+Every percentage, threshold and premium in `src/lib/aca/` traces to one of these.
 The tests beside each module assert the corners of each table; this file says
 where the corners came from.
 
@@ -92,17 +92,3 @@ US average monthly premium of the second-lowest-cost silver plan for a
 At most three children under 21 are rated on one policy (45 CFR
 147.102(c)(1)). States with curves of their own, or no age rating: Alabama,
 DC, Massachusetts, Minnesota, Mississippi, New York, Oregon, Utah, Vermont.
-
-## Income tax (Rev. Proc. 2024-40 and 2025-32; OBBBA standard deductions)
-
-| | 2025 single | 2025 joint | 2026 single | 2026 joint |
-| --- | --- | --- | --- | --- |
-| Standard deduction | $15,750 | $31,500 | $16,100 | $32,200 |
-| 10% bracket to | $11,925 | $23,850 | $12,400 | $24,800 |
-| 12% bracket to | $48,475 | $96,950 | $50,400 | $100,800 |
-| 22% bracket to | $103,350 | $206,700 | $105,700 | $211,400 |
-| 0% capital-gains band to | $48,350 | $96,700 | $49,450 | $98,900 |
-| 15% capital-gains band to | $533,400 | $600,050 | $545,500 | $613,700 |
-
-Brackets are of taxable income; the gains bands are measured against total
-taxable income, ordinary and gains together.
