@@ -113,8 +113,8 @@ describe('the total the return owes', () => {
 describe('the closing answer', () => {
   const answer = (): HTMLElement => document.getElementById('answer') as HTMLElement;
 
-  const intro = (): HTMLElement =>
-    answer().querySelector('.answer-intro') as HTMLElement;
+  const subline = (): HTMLElement =>
+    answer().querySelector('.answer-subline') as HTMLElement;
 
   /** One figure of the close, found by the label above it. */
   const figure = (label: string): HTMLElement =>
@@ -134,20 +134,23 @@ describe('the closing answer', () => {
     );
   };
 
-  it('ends the page, after step 2 and before the disclaimer', () => {
+  it('closes the reading column, after the chart and before the notes', () => {
     render(<App />);
     expect(
       screen.getByRole('heading', { name: /what this return costs/i, level: 2 }),
     ).toBeInTheDocument();
     expect(answer().previousElementSibling?.id).toBe('step-torpedo');
 
-    // Read in two hops rather than one, because the shell put a column
-    // between them: the close is the last thing in the reading column, the
-    // reading column is the last thing in the shell, and the disclaimer is
-    // what follows the shell. It used to be the close's own next sibling,
-    // which stopped being true when the footer started spanning both columns.
-    const shell = answer().closest('.shell') as HTMLElement;
-    expect(shell.lastElementChild?.lastElementChild).toBe(answer());
+    // The close is the last thing in the reading column; the notes follow the
+    // column, and the disclaimer follows the shell. The close used to be the
+    // last thing in the shell, which stopped being true when the notes came
+    // out of the chart's step into a section of their own under the figures.
+    const flow = answer().parentElement as HTMLElement;
+    expect(flow).toHaveClass('flow');
+    expect(flow.lastElementChild).toBe(answer());
+    expect(flow.nextElementSibling).toHaveClass('notes-section');
+    const shell = flow.parentElement as HTMLElement;
+    expect(shell).toHaveClass('shell');
     expect(shell.nextElementSibling?.tagName).toBe('FOOTER');
     expect(shell.nextElementSibling).toHaveTextContent(
       /does not constitute tax or financial advice/i,
@@ -165,27 +168,28 @@ describe('the closing answer', () => {
     );
     expect(figure('Taxable social security')).toHaveTextContent('81.13% of it');
     expect(figure('Medicare surcharge')).toHaveTextContent(
-      'None \u2014 the standard premium',
+      'None the standard premium',
     );
     expect(answer().querySelectorAll('.answer-figure')).toHaveLength(6);
   });
 
   /**
    * A screenshot of an answer with no question in it is worth nothing, so the
-   * block restates the return above the figures rather than relying on step
-   * 1's recap being in the same frame.
+   * block restates the return above the figures rather than relying on the
+   * rail's recap being in the same frame. A status line rather than a
+   * sentence: the year, the status, the age and the two incomes, dotted.
    */
   it('restates the return it prices', () => {
     render(<App />);
-    expect(intro()).toHaveTextContent(
-      'Priced for 2026: a single filer, 65 or older, with $24,852 of Social Security and $40,000 of other income.',
+    expect(subline()).toHaveTextContent(
+      '2026 return · a single filer · 65 or older · $24,852 of Social Security · $40,000 of other income',
     );
 
     // The filer is 65 as the page opens, so a joint return is one spouse 65
     // until the second box is ticked.
     fireEvent.click(screen.getByRole('radio', { name: 'Married Filing Jointly' }));
-    expect(intro()).toHaveTextContent(
-      'Priced for 2026: a married couple filing jointly, one spouse 65 or older,',
+    expect(subline()).toHaveTextContent(
+      '2026 return · a married couple filing jointly · one spouse 65 or older ·',
     );
   });
 
@@ -221,9 +225,7 @@ describe('the closing answer', () => {
       '$21,124 of $24,852',
     );
     expect(figure('Taxable social security')).toHaveTextContent('85% of it');
-    expect(figure('Medicare surcharge')).toHaveTextContent(
-      'Tier 1 of 5 \u2014 $1,148/yr',
-    );
+    expect(figure('Medicare surcharge')).toHaveTextContent('Tier 1 of 5 $1,148/yr');
   });
 
   /**
@@ -235,7 +237,7 @@ describe('the closing answer', () => {
   it('names the tier the return lands in and the year it is billed for', () => {
     render(<App />);
     const medicare = figure('Medicare surcharge');
-    expect(medicare).toHaveTextContent('None \u2014 the standard premium');
+    expect(medicare).toHaveTextContent('None the standard premium');
     expect(medicare).toHaveTextContent(
       'Billed on a 2-year lag, so this is what 2026 income sets for 2028.',
     );
@@ -251,16 +253,14 @@ describe('the closing answer', () => {
     // the return's MAGI over the first joint cliff. Two enrollees, so the tier
     // costs twice the $1,148 one filer pays for it above.
     setIncome(200_000);
-    expect(figure('Medicare surcharge')).toHaveTextContent(
-      'Tier 1 of 5 \u2014 $2,297/yr',
-    );
+    expect(figure('Medicare surcharge')).toHaveTextContent('Tier 1 of 5 $2,297/yr');
   });
 
   it('says there is nothing to drag in when step 1 sets no benefit', () => {
     render(<App />);
     setBenefit(0);
-    expect(intro()).toHaveTextContent(
-      'with no Social Security and $40,000 of other income',
+    expect(subline()).toHaveTextContent(
+      '· no Social Security · $40,000 of other income',
     );
     expect(figure('Taxable social security')).toHaveTextContent('None');
     expect(figure('Taxable social security')).toHaveTextContent(

@@ -36,13 +36,17 @@ import { Answer } from './components/Answer';
 import { BenefitStep } from './components/BenefitStep';
 import { FurtherReading } from './components/FurtherReading';
 import { Header } from './components/Header';
+import { Notes } from './components/Notes';
 import { TorpedoStep } from './components/TorpedoStep';
 
 /**
- * One worked example in two steps, in the order a reader builds it: the
- * benefit they will collect, and what the rest of their income does to it.
- * Both steps price the same return, so a figure set in step 1 is still set in
- * step 2.
+ * One return, priced three ways down the page: the curve it is standing on,
+ * the figures at the point it stands, and the notes behind them. The rail
+ * that describes the return stays beside all three.
+ *
+ * Two steps, in the order a reader builds them: the benefit they will
+ * collect, and what the rest of their income does to it. Both price the same
+ * return, so a figure set in step 1 is still set in step 2.
  *
  * The steps stay mounted and the window scrolls, where the tab strip this
  * replaced swapped one panel for another. Three reasons to scroll: a step you
@@ -70,16 +74,14 @@ import { TorpedoStep } from './components/TorpedoStep';
  * and sits in a collapsed block at the end of step 1, because it starts at $0
  * and at $0 leaves the chart identical.
  *
- * Nothing renders off the list itself any more. It carried a nav label, a
+ * Nothing renders off a list of them any more. It carried a nav label, a
  * heading and a blurb per step until the nav and the next-step box went, and
- * each of the three had exactly one reader; the headings still shown are
- * written where they are shown. What is left is the pair of facts nothing else
- * can supply — `StepId`, which the live region is keyed to, and the count the
- * step kickers number themselves out of.
+ * the count a "Step 1 of 2" kicker numbered itself out of until the kickers
+ * went too; the headings still shown are written where they are shown. What
+ * is left is the one fact nothing else can supply — `StepId`, which the live
+ * region is keyed to.
  */
-const STEPS = ['benefit', 'torpedo'] as const;
-
-type StepId = (typeof STEPS)[number];
+type StepId = 'benefit' | 'torpedo';
 
 /**
  * The point on a swept curve at the reader's own value.
@@ -464,19 +466,19 @@ const App: React.FC = () => {
 
   return (
     <div className="card">
-      {/* The way past step 1.
+      {/* The way past the rail.
 
-          Step 1 is ten controls deep before the chart begins, and a reader who
-          has already set the return — or who arrived on a link that set it for
-          them — has to tab through every one of them to reach the thing this is
-          about. So the first focusable element is the way out of that.
+          The rail is ten controls deep before the chart begins, and a reader
+          who has already set the return — or who arrived on a link that set it
+          for them — has to tab through every one of them to reach the thing
+          this is about. So the first focusable element is the way out of that.
 
           It lands on `#step-torpedo` rather than on `#answer` because the
           fragment is already how a place is named here: `scenarioUrl` keeps
           whatever fragment the reader arrived on precisely so a link can point
-          at a step, and the chart is what the steps lead to. The close sits
+          at a step, and the chart is what the steps lead to. The figures sit
           after it in reading order and one heading jump away, so landing on the
-          chart reaches both and landing on the close reaches only one.
+          chart reaches both and landing on the figures reaches only one.
 
           No handler: the target carries `tabIndex={-1}`, which is what makes a
           browser move focus into it rather than only scrolling to it. */}
@@ -502,7 +504,7 @@ const App: React.FC = () => {
       </p>
 
       {/* The main landmark, and everything that is not the title or the
-          footer: both steps and the close.
+          footer: the rail, the chart with its figures, and the notes.
 
           `.shell` is already the box that holds exactly that, so it becomes the
           landmark rather than gaining a wrapper — a second box here would be a
@@ -512,8 +514,6 @@ const App: React.FC = () => {
           one landmark there already was for the one that was missing. */}
       <main className="shell">
         <BenefitStep
-          stepNumber={1}
-          stepCount={STEPS.length}
           year={year}
           filingStatus={filingStatus}
           onFilingStatus={changeFilingStatus}
@@ -540,13 +540,10 @@ const App: React.FC = () => {
 
         <div className="flow">
           <TorpedoStep
-            stepNumber={2}
-            stepCount={STEPS.length}
             year={year}
             filingStatus={filingStatus}
             ssBenefit={ssBenefit}
             muniInterest={muniInterest}
-            seniors={seniors}
             beneficiaries={beneficiaries}
             ordinaryIncome={ordinaryIncome}
             onOrdinaryIncome={changeOrdinaryIncome}
@@ -556,11 +553,9 @@ const App: React.FC = () => {
             herePoint={herePoint}
             totalIncome={totalIncome}
             totalIncomeAt={totalIncomeAt}
-            cliffs={cliffs}
             cliffsOnChart={cliffsOnChart}
             subsidyCliff={subsidyCliff}
             subsidyCliffOnChart={subsidyCliffOnChart}
-            hereSubsidy={ptcFor(acaMagi(hereScenario), hereScenario)}
           />
 
           <Answer
@@ -584,6 +579,20 @@ const App: React.FC = () => {
             onCopy={address.copy}
           />
         </div>
+
+        {/* The working, under the figures it explains and in the same column;
+            the stylesheet puts it last when the columns collapse to one. */}
+        <Notes
+          year={year}
+          filingStatus={filingStatus}
+          ssBenefit={ssBenefit}
+          muniInterest={muniInterest}
+          seniors={seniors}
+          beneficiaries={beneficiaries}
+          cliffs={cliffs}
+          subsidyCliff={subsidyCliff}
+          hereSubsidy={ptcFor(acaMagi(hereScenario), hereScenario)}
+        />
       </main>
 
       {/* The back matter: where to read on, then the disclaimer. In the footer

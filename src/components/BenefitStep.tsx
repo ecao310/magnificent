@@ -22,8 +22,6 @@ import {
 import { ProseList } from './ProseList';
 
 export interface BenefitStepProps {
-  stepNumber: number;
-  stepCount: number;
   year: TaxYear;
   filingStatus: FilingStatus;
   onFilingStatus: (next: FilingStatus) => void;
@@ -41,18 +39,16 @@ export interface BenefitStepProps {
 }
 
 /**
- * Step 1: the return every figure after it prices — who files it, who on it
- * has reached 65, and how much Social Security it collects.
+ * The rail: the return every figure on the page prices — who files it, who
+ * on it has reached 65, and how much Social Security it collects.
  *
- * The exception that sets the shape of the step below it: with no curve of its
- * own, the return itself stands where the chart stands there, and the benefit
- * slider follows it in the control's place. Tax-exempt interest belongs to no
- * axis and sits in the collapsed block at the end, because it starts at $0 and
- * at $0 leaves every chart identical.
+ * Every control takes the whole width of the rail, because a rail this narrow
+ * has none to give away. Tax-exempt interest belongs to no axis and sits in
+ * the collapsed block at the end, because it starts at $0 and at $0 leaves
+ * every chart identical. Other income is not here: it is the axis of the
+ * chart, and the slider under the chart sets it.
  */
 export const BenefitStep: React.FC<BenefitStepProps> = ({
-  stepNumber,
-  stepCount,
   year,
   filingStatus,
   onFilingStatus,
@@ -122,9 +118,6 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
       tabIndex={-1}
       aria-labelledby="step-benefit-heading"
     >
-      <p className="step-kicker">
-        Step {stepNumber} of {stepCount}
-      </p>
       <h2 className="step-heading" id="step-benefit-heading">
         Your Social Security benefit
       </h2>
@@ -215,10 +208,6 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
       </fieldset>
 
       <div className="input-group">
-        {/* Where this figure goes on the return: Form 1040, line 6a. */}
-        <span className="line-ref" aria-hidden="true">
-          6a
-        </span>
         <div className="slider-header">
           <label htmlFor="ss-benefit">
             Annual Social Security Benefit
@@ -250,10 +239,6 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
 
       <details className="advanced-inputs">
         <summary>
-          {/* Line 2a: tax-exempt interest, which is the one input in here. */}
-          <span className="line-ref" aria-hidden="true">
-            2a
-          </span>
           <span className="advanced-label">Advanced inputs</span>
           {advanced.length > 0 ? (
             <span className="advanced-state advanced-state-set">

@@ -1,24 +1,13 @@
-import {
-  SENIOR_DEDUCTION_PHASEOUT_RATE,
-  SENIOR_DEDUCTION_PHASEOUT_START,
-  seniorDeductionPhaseoutEnd,
-} from '../lib/tax';
 import type {
   FilingStatus,
   IrmaaCliff,
   MarginalRatePoint,
-  PtcAssessment,
   PtcCliff,
   TaxYear,
 } from '../lib/tax';
 import { formatCurrency, formatPercent } from '../lib/format';
 import { BreakpointsMenu } from './BreakpointsMenu';
 import { TorpedoChart } from './TorpedoChart';
-import { IrmaaExplainer } from './explainers/IrmaaExplainer';
-import { MitigationExplainer } from './explainers/MitigationExplainer';
-import { SeniorDeductionExplainer } from './explainers/SeniorDeductionExplainer';
-import { SubsidyCliffExplainer } from './explainers/SubsidyCliffExplainer';
-import { TorpedoExplainer } from './explainers/TorpedoExplainer';
 import { useState } from 'react';
 
 /**
@@ -64,13 +53,10 @@ const axisProse = (
 };
 
 export interface TorpedoStepProps {
-  stepNumber: number;
-  stepCount: number;
   year: TaxYear;
   filingStatus: FilingStatus;
   ssBenefit: number;
   muniInterest: number;
-  seniors: number;
   beneficiaries: number;
   ordinaryIncome: number;
   onOrdinaryIncome: (next: number) => void;
@@ -82,23 +68,22 @@ export interface TorpedoStepProps {
   herePoint: MarginalRatePoint | undefined;
   totalIncome: number;
   totalIncomeAt: (otherIncome: number) => number;
-  /** Every IRMAA cliff this return has, in ascending order. */
-  cliffs: IrmaaCliff[];
-  /** The subset of them the axis reaches. */
+  /** The IRMAA cliffs the axis reaches. */
   cliffsOnChart: IrmaaCliff[];
   /** The 400% line when it is this return's to meet, and null when it is not. */
   subsidyCliff: PtcCliff | null;
   subsidyCliffOnChart: PtcCliff | null;
-  hereSubsidy: PtcAssessment;
 }
 
 /**
- * Step 2: what other income does to the benefit step 1 set.
+ * What other income does to the benefit the rail set.
  *
  * The chart, then the one control that says where on that chart the reader is
- * standing, then the collapsed explainers. Which of the two threshold lines
- * are drawn is the one piece of state that belongs to this step and nowhere
- * else — neither is income tax. The Medicare cliffs start on, because every
+ * standing: a slider inset to the plot area, so the thumb stands under the
+ * marker, and the sentence under it prices the point the marker is on. The
+ * notes are a section of their own, under the figures. Which of the two
+ * threshold lines are drawn is the one piece of state that belongs to this
+ * step and nowhere else — neither is income tax. The Medicare cliffs start on, because every
  * reader meets them sooner or later; the 400% line starts off, because it
  * belongs only to a reader still buying their own coverage. What each costs *this*
  * return is in the close rather than on the plot. Not in the query string
@@ -106,13 +91,10 @@ export interface TorpedoStepProps {
  * rather than a view of it. See `scenarioUrl`.
  */
 export const TorpedoStep: React.FC<TorpedoStepProps> = ({
-  stepNumber,
-  stepCount,
   year,
   filingStatus,
   ssBenefit,
   muniInterest,
-  seniors,
   beneficiaries,
   ordinaryIncome,
   onOrdinaryIncome,
@@ -122,11 +104,9 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
   herePoint,
   totalIncome,
   totalIncomeAt,
-  cliffs,
   cliffsOnChart,
   subsidyCliff,
   subsidyCliffOnChart,
-  hereSubsidy,
 }) => {
   const [showIrmaaLines, setShowIrmaaLines] = useState(true);
   const [showSubsidyLine, setShowSubsidyLine] = useState(false);
@@ -153,11 +133,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
   const drawnCliffs = showIrmaaLines ? cliffsOnChart : [];
   const drawnSubsidyCliff = showSubsidyLine ? subsidyCliffOnChart : null;
 
-  const phaseoutStart = SENIOR_DEDUCTION_PHASEOUT_START[filingStatus];
-  const phaseoutEnd = seniorDeductionPhaseoutEnd(filingStatus);
-  // With the age toggle off there is nothing to phase out, but the explainer
-  // still needs a rate to talk about, so describe one qualifying person.
-  const phaseoutRate = SENIOR_DEDUCTION_PHASEOUT_RATE * Math.max(1, seniors);
   const effectiveRate = (tax: number): number =>
     totalIncome > 0 ? tax / totalIncome : 0;
 
@@ -168,9 +143,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
       tabIndex={-1}
       aria-labelledby="step-torpedo-heading"
     >
-      <p className="step-kicker">
-        Step {stepNumber} of {stepCount}
-      </p>
       <h2 className="step-heading" id="step-torpedo-heading">
         The tax torpedo
       </h2>
@@ -250,38 +222,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
           ) : null}
         </p>
       </div>
-
-      {/* The notes: every explainer under one kicker, numbered by the
-          stylesheet. */}
-      <p className="notes-kicker">Notes</p>
-      <TorpedoExplainer filingStatus={filingStatus} />
-      <MitigationExplainer />
-      <IrmaaExplainer
-        firstCliffStep={cliffs[0].step}
-        beneficiaries={beneficiaries}
-        muniInterest={muniInterest}
-        year={year}
-      />
-      {/* Both halves of the condition, the same pair the Breakpoints panel
-          uses. Whether anyone on the return is still buying their own coverage
-          is the reader: nobody enrolled in Medicare can claim the credit. The
-          cliff being non-null is the statute: the 400% ceiling was suspended
-          from 2021 through 2025 and there is nothing to explain in a year
-          without one. `PAGE_TAX_YEAR` has one — but the engine still prices
-          both, so the guard stays. */}
-      {subsidyCliff && (
-        <SubsidyCliffExplainer
-          cliff={subsidyCliff}
-          here={hereSubsidy}
-          ssBenefit={ssBenefit}
-          year={year}
-        />
-      )}
-      <SeniorDeductionExplainer
-        phaseoutStart={phaseoutStart}
-        phaseoutEnd={phaseoutEnd}
-        phaseoutRate={phaseoutRate}
-      />
     </section>
   );
 };
