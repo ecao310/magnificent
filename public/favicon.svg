@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Subsidy slope">
+  <!-- The page's own shape at 16px: a rate flat under the floor, climbing in
+       a sawtooth through the table, level on the plateau from 300% to 400%,
+       and gone past the line. Paper with an ink edge, and the curve in the
+       accent — --surface, --ink and --accent from src/styles/index.css. -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7" fill="#f7f3eb" stroke="#261d16" stroke-width="1"/>
+  <path d="M4 25H8V17L12 13V19L16 15V21L20 17V21H25V26H28" fill="none" stroke="#2769b7"
+    stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
