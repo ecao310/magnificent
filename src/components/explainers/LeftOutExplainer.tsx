@@ -34,10 +34,8 @@ export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false 
         <li>
           <strong>Where you live.</strong> The benchmark is a state average, or a national
           one, until you enter your own; your county&rsquo;s figure differs. New York and
-          Vermont are priced flat, since they do not price by age; Alabama, DC,
-          Massachusetts, Minnesota, Mississippi, Oregon and Utah rate on curves of their
-          own and are priced on the federal one here. Georgia&rsquo;s partial expansion is
-          not modelled.
+          Vermont are priced flat, since they do not price by age. Georgia&rsquo;s partial
+          expansion is not modelled.
         </li>
         <li>
           <strong>Other plans.</strong> The subsidy is the same whichever plan you buy: a

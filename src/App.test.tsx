@@ -123,6 +123,14 @@ describe('the page', () => {
     expect(premiumField()).toHaveValue(1_747);
   });
 
+  it('prices a state with a curve of its own on that curve', () => {
+    render(<App />);
+    chooseState('MA');
+    // Massachusetts at 40 is $494; two fifty-year-olds are 2 × 1.741 / 1.393 of that on its 2:1 curve.
+    expect(premiumField()).toHaveValue(Math.round((494 / 1.393) * 2 * 1.741));
+    expect(screen.getByText(/on Massachusetts’s own age curve/)).toBeInTheDocument();
+  });
+
   it('prices a flat state flat', () => {
     render(<App />);
     chooseState('VT');

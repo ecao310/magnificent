@@ -62,9 +62,10 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here, year }) 
         </ul>
         <p>
           <strong>The benchmark.</strong> Unless you enter your own, it is the national
-          average scaled to your ages on the federal age curve: a 64-year-old pays three
-          times what a 21-year-old does. Your area&rsquo;s figure may be half or double
-          that. A different benchmark changes the subsidy dollar for dollar, but not what
+          average, or your state&rsquo;s, scaled to your ages on the age curve your
+          state&rsquo;s insurers use: the federal one in most states, on which a 64-year-old
+          pays three times what a 21-year-old does, or the state&rsquo;s own in the seven
+          that filed one. Your area&rsquo;s figure may be half or double that. A different benchmark changes the subsidy dollar for dollar, but not what
           you pay under the 400% line &mdash; your share is a share of income.
         </p>
         <p>

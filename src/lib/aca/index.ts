@@ -12,17 +12,24 @@ export { STATES, STATE_CODES, isStateCode } from './states';
 export type { Adults, Scenario, ResolvedScenario } from './scenario';
 export { DEFAULT_AGE, resolveScenario, expansionFor, adultAges, householdSizeFor } from './scenario';
 
-export type { BenchmarkYearParams } from './premium';
+export type { AgeCurve } from './ageCurves';
 export {
   AGE_CURVE,
   CHILD_AGE_FACTOR,
   TOP_AGE_FACTOR,
+  DEFAULT_AGE_CURVE,
+  STATE_AGE_CURVES,
+  ageCurveFor,
+  ageFactor,
+} from './ageCurves';
+
+export type { BenchmarkYearParams } from './premium';
+export {
   MAX_RATED_CHILDREN,
   MIN_ADULT_AGE,
   MAX_ADULT_AGE,
   BENCHMARK_YEAR_PARAMS,
   BENCHMARK_REFERENCE_AGE,
-  ageFactor,
   benchmarkAt40,
   averageBenchmarkMonthly,
   benchmarkMonthlyFor,

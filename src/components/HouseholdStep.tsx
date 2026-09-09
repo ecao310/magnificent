@@ -216,7 +216,9 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
             ? `Prefilled with the ${year} national average for these ages.`
             : here.ageRating === 'none'
               ? `Prefilled with the ${year} average for ${here.name}, which does not price by age.`
-              : `Prefilled with the ${year} average for ${here.name} for these ages.`}{' '}
+              : here.ageRating === 'own'
+                ? `Prefilled with the ${year} average for ${here.name} for these ages, on ${here.name}’s own age curve.`
+                : `Prefilled with the ${year} average for ${here.name} for these ages.`}{' '}
           Your Marketplace quotes your area&rsquo;s figure.
         </p>
         {benchmarkPremium !== null && benchmarkPremium !== average && (

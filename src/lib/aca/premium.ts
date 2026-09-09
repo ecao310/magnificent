@@ -5,8 +5,8 @@
  *
  * The household's own figure when the reader has one, and otherwise the
  * state's average — or the national one, with no state — scaled to the
- * household's ages along the curve every insurer in a default-curve state is
- * required to use.
+ * household's ages along the curve every insurer in the state is required
+ * to use: the federal default, or the state's own where it filed one.
  */
 import type { CoverageYear } from './types';
 import { defaultCoverageYear } from './years';
@@ -14,45 +14,10 @@ import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
 import { STATES } from './states';
 import type { StateCode } from './states';
-
-/**
- * The federal default standard age curve, 45 CFR 147.102(e) as set in CMS's
- * guidance of 16 December 2016 (Appendix I), which every state without a curve
- * of its own has used since plan year 2018.
- *
- * Age 21 is 1.000 and 64 and older is 3.000 — the 3:1 ratio the statute
- * allows — and everyone under 15 is 0.765. Indexed by age from 15 to 63, with
- * the two flat ends handled in `ageFactor`. States that rate on their own
- * curve, or not on age at all — New York and Vermont among them — are the
- * reason the reader can override the premium this produces.
- */
-export const AGE_CURVE: Readonly<Record<number, number>> = {
-  15: 0.833, 16: 0.859, 17: 0.885, 18: 0.913, 19: 0.941, 20: 0.97,
-  21: 1.0, 22: 1.0, 23: 1.0, 24: 1.0, 25: 1.004, 26: 1.024, 27: 1.048,
-  28: 1.087, 29: 1.119, 30: 1.135, 31: 1.159, 32: 1.183, 33: 1.198,
-  34: 1.214, 35: 1.222, 36: 1.23, 37: 1.238, 38: 1.246, 39: 1.262,
-  40: 1.278, 41: 1.302, 42: 1.325, 43: 1.357, 44: 1.397, 45: 1.444,
-  46: 1.5, 47: 1.563, 48: 1.635, 49: 1.706, 50: 1.786, 51: 1.865,
-  52: 1.952, 53: 2.04, 54: 2.135, 55: 2.23, 56: 2.333, 57: 2.437,
-  58: 2.548, 59: 2.603, 60: 2.714, 61: 2.81, 62: 2.873, 63: 2.952,
-};
-
-/** The factor for anyone 0 through 14, and the one applied to each dependent here. */
-export const CHILD_AGE_FACTOR = 0.765;
-
-/** The factor for anyone 64 or older: the top of the 3:1 band. */
-export const TOP_AGE_FACTOR = 3.0;
+import { ageCurveFor, ageFactor } from './ageCurves';
 
 /** At most three children under 21 are charged for on one policy (45 CFR 147.102(c)(1)). */
 export const MAX_RATED_CHILDREN = 3;
-
-/** The premium ratio for one person of a given age, on the default curve. */
-export function ageFactor(age: number): number {
-  const whole = Math.floor(age);
-  if (whole < 15) return CHILD_AGE_FACTOR;
-  if (whole >= 64) return TOP_AGE_FACTOR;
-  return AGE_CURVE[whole];
-}
 
 /** The youngest age the page offers. Under 18 a reader is somebody's dependent. */
 export const MIN_ADULT_AGE = 18;
@@ -112,12 +77,15 @@ export function benchmarkAt40(year: CoverageYear, state: StateCode | null = null
  * gives the curve's unit, and each person on the plan is that unit times
  * their own factor, children at the child factor and at most three of them.
  *
- * Two approximations, by state. Where the state does not rate on age — New
+ * The curve is the state's: the federal default in most, and in the seven
+ * that filed one, their own — see `STATE_AGE_CURVES`. KFF's figure is what
+ * a 40-year-old actually pays in the state, so dividing it by the state's
+ * own factor for 40 gives the unit the state's insurers price from.
+ *
+ * One approximation remains. Where the state does not rate on age — New
  * York and Vermont — every adult is charged the 40-year-old's figure flat,
  * and a child the child's share of it: the nearest thing the default curve
- * has to a community rate. Where the state rates on a curve of its own, the
- * default curve is used regardless, because the state's is not on file; a
- * 60-year-old in Utah or Massachusetts is priced somewhat off.
+ * has to a community rate.
  */
 export function averageBenchmarkMonthly(
   ages: number[],
@@ -126,11 +94,13 @@ export function averageBenchmarkMonthly(
   state: StateCode | null = null,
 ): number {
   const at40 = benchmarkAt40(year, state);
+  const curve = ageCurveFor(state);
   const flat = state !== null && STATES[state].ageRating === 'none';
-  const factor = (age: number): number => (flat ? ageFactor(BENCHMARK_REFERENCE_AGE) : ageFactor(age));
-  const unit = at40 / ageFactor(BENCHMARK_REFERENCE_AGE);
+  const factor = (age: number): number =>
+    ageFactor(flat ? BENCHMARK_REFERENCE_AGE : age, curve);
+  const unit = at40 / ageFactor(BENCHMARK_REFERENCE_AGE, curve);
   const adults = ages.reduce((sum, age) => sum + factor(age), 0);
-  const children = Math.min(MAX_RATED_CHILDREN, Math.max(0, dependents)) * CHILD_AGE_FACTOR;
+  const children = Math.min(MAX_RATED_CHILDREN, Math.max(0, dependents)) * curve.child;
   return Math.round(unit * (adults + children));
 }
 

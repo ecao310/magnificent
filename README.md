@@ -77,8 +77,8 @@ line; the 400% ceiling; and the benchmark premium
 from KFF's average for the state, or the national one, scaled along CMS's
 age curve. Choosing a state sets its average, its Medicaid status and, in
 Alaska and Hawaii, its poverty line. New York and Vermont, which do not price
-by age, are priced flat; the seven states with curves of their own are priced
-on the federal curve.
+by age, are priced flat; Alabama, DC, Massachusetts, Minnesota, Mississippi,
+Oregon and Utah, which rate on age curves of their own, are priced on them.
 
 The 2025 table (ARPA section 9661, extended through 2025 by the Inflation
 Reduction Act) owed nothing under 150% of the line, capped at 8.5%, with no

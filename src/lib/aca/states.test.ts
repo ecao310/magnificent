@@ -3,6 +3,7 @@ import {
   BENCHMARK_YEAR_PARAMS,
   COVERAGE_YEARS,
   STATES,
+  STATE_AGE_CURVES,
   STATE_CODES,
   expansionFor,
   isStateCode,
@@ -60,6 +61,7 @@ describe('the states', () => {
     const own = STATE_CODES.filter((code) => STATES[code].ageRating === 'own');
     expect(none).toEqual(['NY', 'VT']);
     expect(own).toEqual(['AL', 'DC', 'MA', 'MN', 'MS', 'OR', 'UT']);
+    expect(Object.keys(STATE_AGE_CURVES).sort()).toEqual(own);
   });
 
   it('put Alaska and Hawaii on their own poverty guidelines', () => {

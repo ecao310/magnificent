@@ -5,8 +5,9 @@
  *
  * Three publishers, one table. The benchmark is KFF's, the expansion status
  * is KFF's tracker, and the age rating is CMS's list of the states that do
- * not use the federal curve. Alaska and Hawaii also carry their own poverty
- * guidelines — see `guidelineFor` in `ptc.ts`.
+ * not use the federal curve — whose own curves are in `ageCurves.ts`.
+ * Alaska and Hawaii also carry their own poverty guidelines — see
+ * `guidelineFor` in `ptc.ts`.
  *
  * Two figures in the table look wrong and are not. Alaska's benchmark fell
  * from 2025 to 2026 ($1,045 to $1,032) while every other state's rose, and
@@ -51,8 +52,9 @@ export interface StateParams {
    */
   expandedMedicaid: boolean;
   /**
-   * CMS, State Specific Age Curve Variations (45 CFR 147.102(e)). Seven
-   * states and DC rate on a curve of their own; two do not rate on age.
+   * CMS, State Specific Age Curve Variations (45 CFR 147.102(e)). Six states
+   * and DC rate on a curve of their own, each on file in `ageCurves.ts`; two
+   * do not rate on age.
    */
   ageRating: AgeRating;
   guidelineRegion: GuidelineRegion;
