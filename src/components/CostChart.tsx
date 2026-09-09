@@ -15,30 +15,20 @@ import { benchmarkMonthlyFor, creditFloorMagi, ptcCliffMagi } from '../lib/aca';
 import type { CostPoint, Scenario, SubsidyLine } from '../lib/aca';
 import { formatAxisMoney, formatCurrency, formatFpl } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
+import {
+  AXIS_PROPS,
+  AXIS_TITLE,
+  HOVER_CURSOR,
+  HOVER_DOT,
+  LABEL_GAP,
+  MARGIN,
+  edgeLabelsFit,
+  incomeTicks,
+  plotWidthOf,
+  textWidth,
+  wordStandsUpright,
+} from './chartFrame';
 import { ChartTooltip } from './ChartTooltip';
-
-/**
- * How the axis is drawn, in one object rather than two copies: the frame is
- * `--edge-strong`, the mesh behind it is `--edge`, and the words are
- * `--ink-muted`.
- */
-const AXIS_PROPS = {
-  stroke: PALETTE.edgeStrong,
-  strokeWidth: CHART.hairline,
-  fontSize: CHART.label,
-  tickLine: false,
-  tick: { fill: PALETTE.inkMuted },
-} as const;
-
-/** What a hover draws: the rule down the plot, and the dot on the curve. */
-const HOVER_CURSOR = { stroke: PALETTE.inkMuted, strokeWidth: CHART.hairline } as const;
-const HOVER_DOT = { stroke: PALETTE.surface, strokeWidth: CHART.rule } as const;
-
-/** How an axis title is set, wherever one is hung. */
-const AXIS_TITLE = { fontSize: CHART.label, fill: PALETTE.inkMuted } as const;
-
-/** The plot's margins: room for a label above the top edge and a title under the axis. */
-const MARGIN = { top: 22, right: 28, left: 10, bottom: 24 } as const;
 
 /**
  * What the subsidy pays, as the band between what you pay and the full
@@ -49,16 +39,6 @@ const MARGIN = { top: 22, right: 28, left: 10, bottom: 24 } as const;
  */
 const subsidyBand = (point: CostPoint): [number, number] | null =>
   point.cost === null || point.fullPremium === null ? null : [point.cost, point.fullPremium];
-
-/**
- * The width of a run of text in the plot's mono, in pixels. IBM Plex Mono
- * advances six tenths of an em, as most monospaces do, and every label on
- * the plot is set at `CHART.label`.
- */
-const textWidth = (text: string): number => text.length * CHART.label * 0.6;
-
-/** Breathing room between two labels, or a label and an edge. */
-const LABEL_GAP = 12;
 
 /**
  * The y-axis, in round dollars: up to the benchmark rounded up to the next
@@ -72,19 +52,6 @@ function costAxis(benchmarkMonthly: number): { max: number; ticks: number[] } {
   const ticks: number[] = [];
   for (let tick = 0; tick <= max; tick += step) ticks.push(tick);
   return { max, ticks };
-}
-
-/**
- * The income axis, in round $25,000s — $50,000s once the axis runs past
- * $150,000, or once the plot is too narrow for a `$125K` every $25,000.
- */
-function incomeTicks(axisMax: number, plotWidth: number | null): number[] {
-  const crowded =
-    plotWidth !== null && (axisMax / 25_000 + 1) * (textWidth('$125K') + LABEL_GAP) > plotWidth;
-  const step = axisMax > 150_000 || crowded ? 50_000 : 25_000;
-  const ticks: number[] = [];
-  for (let tick = 0; tick <= axisMax; tick += step) ticks.push(tick);
-  return ticks;
 }
 
 export interface CostChartProps {
@@ -148,15 +115,7 @@ export const CostChart: React.FC<CostChartProps> = ({
   /* The edges are named in full when both names fit between and inside the
      plot's edges, and by their percentage otherwise. */
   const edges = lines;
-  const edgesFit = ((): boolean => {
-    if (plotWidth === null) return true;
-    const spans = edges.map((line) => ({ at: px(line.magi) as number, half: textWidth(line.label) / 2 }));
-    if (spans.some((s) => s.at - s.half < 0 || s.at + s.half > plotWidth)) return false;
-    for (let i = 1; i < spans.length; i += 1) {
-      if (spans[i].at - spans[i - 1].at < spans[i].half + spans[i - 1].half + LABEL_GAP) return false;
-    }
-    return true;
-  })();
+  const edgesFit = edgeLabelsFit(edges, px, plotWidth);
 
   /* The premium's name wraps to the band it is hung in, so a narrow band
      gets it on two or three lines rather than running across the cliff. */
@@ -171,7 +130,7 @@ export const CostChart: React.FC<CostChartProps> = ({
   /* The word over the gap stands upright when the gap is narrower than it. */
   const gapWord = expansion ? 'Medicaid' : 'No subsidy, no Medicaid';
   const gapPx = px(floorMagi);
-  const gapUpright = gapPx !== null && gapPx < textWidth(gapWord) + LABEL_GAP;
+  const gapUpright = wordStandsUpright(gapWord, gapPx);
 
   /* The marker's label goes on the clear side of the curve. On the slope
      that is the left, where the curve has already fallen away below it; when
@@ -193,14 +152,23 @@ export const CostChart: React.FC<CostChartProps> = ({
        nowhere near a label on the slope. */
     return herePx - need >= (gapUpright ? (gapPx ?? 0) : 0) ? 'left' : 'right';
   })();
-  const hereLift = onPlateau ? -(CHART.dot + 7) : hereSide === 'right' ? CHART.dot + 9 : 0;
+  /* On the slope, a label sent right goes under the dot, where the curve
+     climbs away above it — unless the dot is so near the axis that under
+     it is the axis, in which case it goes over and takes its chances. */
+  const nearAxis = hereCost !== null && hereCost < 0.12 * yAxis.max;
+  const hereLift =
+    onPlateau || (hereSide === 'right' && nearAxis)
+      ? -(CHART.dot + 7)
+      : hereSide === 'right'
+        ? CHART.dot + 9
+        : 0;
 
   return (
     <div className="chart-container" role="img" aria-label={label}>
       <ResponsiveContainer
         width="100%"
         height="100%"
-        onResize={(width) => setPlotWidth(Math.max(0, width - CHART.axis - MARGIN.left - MARGIN.right))}
+        onResize={(width) => setPlotWidth(plotWidthOf(width))}
       >
         <ComposedChart
           data={curve}

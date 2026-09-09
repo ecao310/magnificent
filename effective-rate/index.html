@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- The second page of the site, built as a second entry: vite writes it
+       to dist/effective-rate/index.html, and GitHub Pages serves the
+       directory. The favicon, the fonts and the theme colour are the root
+       page's, through the same %BASE_URL% the root page uses. -->
+  <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+  <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+  <meta name="theme-color" content="#f7f3eb" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=IBM+Plex+Mono:wght@300;400;500;600&amp;display=swap" />
+
+  <title>The All-In Rate</title>
+  <meta name="description"
+    content="Your effective tax rate on a Marketplace plan at every income, with the premium after the subsidy counted as the tax it works like, and the 400% line.">
+
+  <!-- The card, as the root page's: what the page is, not the reader's own
+       household. No image of its own yet — a card without one shows the
+       title and the description. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Subsidy Slope" />
+  <meta property="og:title" content="The All-In Rate" />
+  <meta property="og:description"
+    content="Federal income tax and the ACA premium after the subsidy, added up as a share of household income at every income — and what the 400% line does to it. Priced for your household." />
+  <meta property="og:url" content="https://ecao310.github.io%BASE_URL%effective-rate/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="The All-In Rate" />
+  <meta name="twitter:description"
+    content="Federal income tax and the ACA premium after the subsidy, added up as a share of household income at every income — and what the 400% line does to it. Priced for your household." />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/rate.tsx"></script>
+</body>
+
+</html>

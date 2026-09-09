@@ -2,6 +2,7 @@ import type { Adults, CoverageYear, PtcAssessment, StateCode } from '../lib/aca'
 import { formatCents, formatCurrency, formatFpl, formatPercent } from '../lib/format';
 import { householdPhrase } from '../lib/householdProse';
 import type { CopyState } from '../hooks/useScenarioAddress';
+import { ShareLink } from './ShareLink';
 
 export interface AnswerProps {
   year: CoverageYear;
@@ -163,20 +164,7 @@ export const Answer: React.FC<AnswerProps> = ({
         </div>
       </dl>
 
-      <div className="answer-share">
-        {canCopy && (
-          <button type="button" className="answer-share-button" onClick={onCopy}>
-            Copy link
-          </button>
-        )}
-        <p className="answer-share-status" aria-live="polite" aria-atomic="true">
-          {copyState === 'copied'
-            ? 'Link copied.'
-            : copyState === 'failed'
-              ? 'Couldn’t copy — the address bar holds the same link.'
-              : ''}
-        </p>
-      </div>
+      <ShareLink canCopy={canCopy} copyState={copyState} onCopy={onCopy} />
     </section>
   );
 };

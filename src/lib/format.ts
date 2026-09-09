@@ -32,3 +32,6 @@ export const formatFpl = (multiple: number): string => `${Math.round(multiple * 
 /** Short enough for an axis tick, and still money: $25,000 as `$25K`. */
 export const formatAxisMoney = (value: number): string =>
   value === 0 ? '$0' : `$${Math.round(value / 1_000)}K`;
+
+/** A share of income as an axis tick, whole: 0.1 as `10%`. */
+export const formatAxisPercent = (rate: number): string => `${Math.round(rate * 100)}%`;

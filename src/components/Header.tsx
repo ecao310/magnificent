@@ -1,4 +1,9 @@
 export interface HeaderProps {
+  title: string;
+  /** The sentence under the title that says what the page draws. */
+  deck: React.ReactNode;
+  /** The other page, with this household already in its address. */
+  sibling: { href: string; label: string };
   /**
    * What the link asked for and could not have, if anything. Dismissible
    * because it describes the arrival rather than the household.
@@ -8,18 +13,24 @@ export interface HeaderProps {
 }
 
 /**
- * The masthead: the title, the deck, and what the link that opened the page
- * could not honour. The note is in here rather than loose above the columns
- * because it is about the arrival, the same thing the title and the deck are.
+ * The masthead: the title, the deck, the way to the other page, and what
+ * the link that opened this one could not honour. The note is in here
+ * rather than loose above the columns because it is about the arrival, the
+ * same thing the title and the deck are.
  */
-export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => (
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  deck,
+  sibling,
+  linkNotes,
+  onDismissNotes,
+}) => (
   <header className="masthead">
     <div className="masthead-body">
-      <h1>The ACA Subsidy Slope</h1>
-      <p className="subtitle">
-        On an ACA plan, you pay a set share of your household income and
-        the subsidy pays the rest. When household income reaches 400% of the
-        poverty line, the subsidy ends abruptly (the ACA subsidy cliff).
+      <h1>{title}</h1>
+      <p className="subtitle">{deck}</p>
+      <p className="masthead-nav">
+        <a href={sibling.href}>{sibling.label}</a>
       </p>
     </div>
 

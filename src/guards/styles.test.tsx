@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import App from '../App';
+import RateApp from '../RateApp';
 import { CHART, PALETTE } from '../styles/palette';
 
 /**
@@ -135,6 +136,19 @@ describe('the selectors', () => {
       '.answer-figure dd',
       '.explainer h3',
       '.chart-slider .slider-readout',
+      '.notes-section .explainer',
+    ];
+    for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();
+  });
+
+  it('render on the rate page too', () => {
+    render(<RateApp />);
+    const reachable = [
+      '.masthead-nav a',
+      '.chart-figure .chart-key',
+      '.chart-key .chart-key-swatch',
+      '.chart-slider .slider-readout',
+      '.answer-figure dd',
       '.notes-section .explainer',
     ];
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();

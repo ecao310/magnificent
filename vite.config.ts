@@ -24,6 +24,15 @@ export default defineConfig({
   base: '/super-duper-broccoli/',
   build: {
     rollupOptions: {
+      /* Two pages, two entries: the site's root and the rate page under it.
+         Each is an html file at the path it is served from, so the build
+         writes dist/effective-rate/index.html and Pages serves the
+         directory. `the front door` in src/guards/meta.test.tsx reads this
+         list to learn which URLs under the site the README may name. */
+      input: {
+        cost: 'index.html',
+        rate: 'effective-rate/index.html',
+      },
       output: {
         codeSplitting: {
           groups: CHUNKS.map((name) => ({

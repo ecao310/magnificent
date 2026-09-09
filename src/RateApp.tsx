@@ -1,67 +1,49 @@
 import { useMemo, useState } from 'react';
-import {
-  cliffCost as cliffCostFor,
-  costCurve,
-  creditLostBetween,
-  ptcCliffMagi,
-  ptcFor,
-  subsidyLines,
-} from './lib/aca';
-import { formatCurrency } from './lib/format';
+import { subsidyLines } from './lib/aca';
+import { FILING_STATUS_PROSE, allInFor, rateAxis as rateAxisFor, rateCurve } from './lib/tax';
 import { householdPhrase } from './lib/householdProse';
 import { pageHref } from './lib/pages';
-import { readoutText } from './lib/readout';
+import { rateReadoutText } from './lib/rateReadout';
 import { useHousehold } from './hooks/useHousehold';
 import type { Moved } from './hooks/useHousehold';
 import { useSettledReading } from './hooks/useSettledReading';
-import { Answer } from './components/Answer';
-import { CostStep, NEXT_BLOCK } from './components/CostStep';
 import { FurtherReading } from './components/FurtherReading';
 import { Header } from './components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
-import { Notes } from './components/Notes';
+import { RateAnswer } from './components/rate/RateAnswer';
+import { RateNotes } from './components/rate/RateNotes';
+import { RateStep } from './components/rate/RateStep';
 
 /**
- * One household, priced three ways down the page: the curve it is standing
- * on, the figures at the point it stands, and the notes behind them. The rail
- * that describes the household stays beside all three.
+ * The second page: the same household, and what it hands over all in —
+ * federal income tax and the premium after the subsidy — as a share of its
+ * income, across every income. The rail, the address bar and the household
+ * are the cost page's; the curve, the figures and the notes are this one's.
  */
-const App: React.FC = () => {
-  /**
-   * Whose reading the live region is carrying, or null before the reader has
-   * moved anything. One region, keyed to the control last touched, so a drag
-   * is one announcement and arrival is none.
-   */
+const RateApp: React.FC = () => {
   const [announceFrom, announce] = useState<Moved | null>(null);
 
   const h = useHousehold({ onMove: announce });
   const { year, income, scenario, axisMax, curveStep } = h;
 
-  /** The one curve: what you pay, month by month, across every income. */
+  /** The one curve: tax and premium as shares of income, across every income. */
   const curve = useMemo(
-    () => costCurve(scenario, { maxMagi: axisMax, step: curveStep }),
+    () => rateCurve(scenario, { maxMagi: axisMax, step: curveStep }),
     [scenario, axisMax, curveStep],
   );
 
-  const here = useMemo(() => ptcFor(income, scenario), [income, scenario]);
+  const here = useMemo(() => allInFor(income, scenario), [income, scenario]);
   const lines = useMemo(() => subsidyLines(scenario), [scenario]);
-  const cliffCost = useMemo(() => cliffCostFor(scenario), [scenario]);
+  const rateAxis = useMemo(() => rateAxisFor(curve, here.allInShare), [curve, here.allInShare]);
 
-  /** What the next $10,000 of income would cost in subsidy, cliff included if it is crossed. */
-  const nextBlockCost = Math.round(creditLostBetween(income, income + NEXT_BLOCK, scenario));
-  const cliffMagi = ptcCliffMagi(scenario);
-  const nextBlockCrossesCliff =
-    cliffMagi !== null && income <= cliffMagi && income + NEXT_BLOCK > cliffMagi;
-
-  /** What the live region will read out, once whatever changed it has settled. */
   const reading = ((): string => {
     switch (announceFrom) {
       case 'household':
-        return `${year} coverage for ${householdPhrase(h.adults, h.ages, h.state)}, benchmark ${formatCurrency(
-          here.benchmarkMonthly,
-        )} a month.`;
+        return `${year} for ${householdPhrase(h.adults, h.ages, h.state)}, ${
+          FILING_STATUS_PROSE[here.filingStatus]
+        }.`;
       case 'income':
-        return readoutText(here);
+        return rateReadoutText(here);
       default:
         return '';
     }
@@ -71,22 +53,23 @@ const App: React.FC = () => {
 
   return (
     <div className="card">
-      <a className="skip-link" href="#step-cost">
+      <a className="skip-link" href="#step-rate">
         Skip to the chart
       </a>
 
       <Header
-        title="The ACA Subsidy Slope"
+        title="The All-In Rate"
         deck={
           <>
-            On an ACA plan, you pay a set share of your household income and the subsidy
-            pays the rest. When household income reaches 400% of the poverty line, the
-            subsidy ends abruptly (the ACA subsidy cliff).
+            On an ACA plan, what you pay for coverage is a set share of your income, and
+            the subsidy takes back a slice of every dollar you earn. Add that to federal
+            income tax and this is what a household really hands over at every income
+            &mdash; and what happens to it at the 400% line.
           </>
         }
         sibling={{
-          href: pageHref('rate', h.pageScenario),
-          label: 'Also: your effective tax rate, premium included →',
+          href: pageHref('cost', h.pageScenario),
+          label: '← Back to the subsidy slope: what you pay each month',
         }}
         linkNotes={h.linkNotes}
         onDismissNotes={h.dismissNotes}
@@ -114,10 +97,11 @@ const App: React.FC = () => {
         />
 
         <div className="flow">
-          <CostStep
+          <RateStep
             scenario={scenario}
             curve={curve}
             axisMax={axisMax}
+            rateAxis={rateAxis}
             income={income}
             onIncome={h.setIncome}
             incomeSliderStep={Math.max(500, curveStep)}
@@ -125,24 +109,20 @@ const App: React.FC = () => {
             here={here}
           />
 
-          <Answer
+          <RateAnswer
             year={year}
             adults={h.adults}
             ages={h.ages}
             state={h.state}
             income={income}
             here={here}
-            nextBlock={NEXT_BLOCK}
-            nextBlockCost={nextBlockCost}
-            nextBlockCrossesCliff={nextBlockCrossesCliff}
-            cliffCost={cliffCost}
             canCopy={h.address.canCopy}
             copyState={h.address.copyState}
             onCopy={h.address.copy}
           />
         </div>
 
-        <Notes year={year} scenario={scenario} here={here} cliffCost={cliffCost} />
+        <RateNotes year={year} here={here} />
       </main>
 
       <footer>
@@ -150,11 +130,12 @@ const App: React.FC = () => {
         <p>
           Educational only; not insurance, tax or financial advice. Figures are modelled
           from published HHS, IRS and CMS numbers and a national- or state-average premium
-          unless you enter your own.
+          unless you enter your own. The tax is the federal return with nothing unusual on
+          it; see the notes for what is left out.
         </p>
       </footer>
     </div>
   );
 };
 
-export default App;
+export default RateApp;

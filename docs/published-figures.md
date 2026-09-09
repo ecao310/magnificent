@@ -1,8 +1,9 @@
 # Published figures the engine is checked against
 
-Every percentage, threshold and premium in `src/lib/aca/` traces to one of these.
-The tests beside each module assert the corners of each table; this file says
-where the corners came from.
+Every percentage, threshold and premium in `src/lib/aca/`, and every bracket
+and deduction in `src/lib/tax/`, traces to one of these. The tests beside
+each module assert the corners of each table; this file says where the
+corners came from.
 
 ## Poverty guidelines (HHS)
 
@@ -161,3 +162,51 @@ At most three children under 21 are rated on one policy (45 CFR
 Minnesota, Mississippi, Oregon, Utah — priced on the federal curve here.
 States with no age rating: New York, Vermont — priced flat at the 40-year-old
 figure. CMS, State Specific Age Curve Variations.
+
+## Federal income tax (IRC 1(j), 63(c), 24)
+
+The rate page's return: the standard deduction and the ordinary-income
+schedule by filing status, and the child tax credit. The 2025 brackets are
+Rev. Proc. 2024-40's; the 2025 standard deductions are the larger ones
+section 70102 of Pub. L. 119-21 (the One Big Beautiful Bill Act) set for
+2025 after the revenue procedure had published. The 2026 figures are Rev.
+Proc. 2025-32 (sections 3.01 and 3.16), the first set indexed under the
+OBBBA, which gave the 10% and 12% brackets an extra inflation adjustment.
+
+| Standard deduction | Single | Head of household | Married filing jointly |
+| --- | --- | --- | --- |
+| 2025 | $15,750 | $23,625 | $31,500 |
+| 2026 | $16,100 | $24,150 | $32,200 |
+
+Taxable income at the top of each band, 2025:
+
+| Rate | Single | Head of household | Married filing jointly |
+| --- | --- | --- | --- |
+| 10% | $11,925 | $17,000 | $23,850 |
+| 12% | $48,475 | $64,850 | $96,950 |
+| 22% | $103,350 | $103,350 | $206,700 |
+| 24% | $197,300 | $197,300 | $394,600 |
+| 32% | $250,525 | $250,500 | $501,050 |
+| 35% | $626,350 | $626,350 | $751,600 |
+| 37% | over | over | over |
+
+And 2026:
+
+| Rate | Single | Head of household | Married filing jointly |
+| --- | --- | --- | --- |
+| 10% | $12,400 | $17,700 | $24,800 |
+| 12% | $50,400 | $67,450 | $100,800 |
+| 22% | $105,700 | $105,700 | $211,400 |
+| 24% | $201,775 | $201,775 | $403,550 |
+| 32% | $256,225 | $256,200 | $512,450 |
+| 35% | $640,600 | $640,600 | $768,700 |
+| 37% | over | over | over |
+
+The child tax credit is $2,200 per qualifying child in both years: section
+70104 of the OBBBA set it there for taxable years after 2024 and indexed it
+from 2026, and Rev. Proc. 2025-32 section 3.04 leaves it at $2,200. It
+phases out at $50 for each $1,000 of modified AGI over $200,000 ($400,000 on
+a joint return), 24(b)(2), thresholds not indexed. The engine draws the
+phase-out as the 5% line those steps approximate, and takes the credit only
+against tax owed: the refundable additional child tax credit ($1,700 per
+child in both years) is left out with the other refundable credits.

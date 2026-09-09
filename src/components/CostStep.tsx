@@ -1,10 +1,8 @@
-import { Fragment } from 'react';
-import { MAX_INCOME } from '../lib/scenarioUrl';
 import type { CostPoint, PtcAssessment, Scenario, SubsidyLine } from '../lib/aca';
 import { formatCurrency } from '../lib/format';
 import { readoutParts } from '../lib/readout';
 import { CostChart } from './CostChart';
-import { MoneyField } from './MoneyField';
+import { IncomeSlider } from './IncomeSlider';
 
 /** How far past the household's income the figures look, to price the slope in dollars. */
 export const NEXT_BLOCK = 10_000;
@@ -73,42 +71,13 @@ export const CostStep: React.FC<CostStepProps> = ({
         />
       </figure>
 
-      <div className="input-group chart-slider">
-        <div className="slider-header">
-          <label htmlFor="income">Household income for the year</label>
-          <MoneyField
-            id="income"
-            className="amber"
-            value={income}
-            min={0}
-            max={MAX_INCOME}
-            step={100}
-            onCommit={onIncome}
-          />
-        </div>
-        <input
-          id="income-slider"
-          aria-label="Household income for the year"
-          aria-valuetext={formatCurrency(income)}
-          type="range"
-          min={0}
-          max={axisMax}
-          step={incomeSliderStep}
-          value={Math.min(income, axisMax)}
-          onChange={(e) => onIncome(Number(e.target.value))}
-          className="slider-amber"
-        />
-        <div className="slider-range-labels">
-          <span>$0</span>
-          <span>{formatCurrency(axisMax)}</span>
-        </div>
-
-        <p className="slider-readout">
-          {readoutParts(here).map((part, i) => (
-            <Fragment key={i}>{part.strong ? <strong>{part.text}</strong> : part.text}</Fragment>
-          ))}
-        </p>
-      </div>
+      <IncomeSlider
+        income={income}
+        onIncome={onIncome}
+        axisMax={axisMax}
+        step={incomeSliderStep}
+        readout={readoutParts(here)}
+      />
     </section>
   );
 };

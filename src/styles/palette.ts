@@ -62,6 +62,8 @@ export const CHART = {
   fill: 0.3,
   /** The wash over what the subsidy pays, which every other mark reads through. */
   tint: 0.1,
+  /** The wash under income tax on the rate page: ink, thinned to a band the hatch above it stands out from. */
+  wash: 0.16,
   /**
    * The gutter the y-axis takes out of the plot's left edge; `--chart-axis`
    * is the same 76. The widest label this axis draws is `$2,000`, and the

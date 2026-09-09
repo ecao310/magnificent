@@ -203,6 +203,19 @@ h1 {
   color: var(--ink-soft);
 }
 
+/* The way to the other page, set as a kicker under the deck: mono, small,
+   and the one link in the masthead. It carries the household with it. */
+.masthead-nav {
+  margin: 0.875rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+
+.masthead-nav a {
+  text-decoration-thickness: 1px;
+}
+
 /* ───── The shell ──────────────────────────────────────────────────────────
  *
  * The household in a column that stays put, and the curve, the figures and
@@ -676,6 +689,70 @@ fieldset.filing-status legend {
 .chart-container {
   height: 400px;
   width: 100%;
+}
+
+/* ───── The key ─────────────────────────────────────────────────────────────
+ *
+ * Under the rate plot only: three marks is one more than a plot can name in
+ * place. Each swatch is the mark it stands for, drawn with the same ground
+ * — the ink rule, the accent hatch at the hatch's own alpha, the ink wash —
+ * so the key is a sample of the plot rather than a legend beside it. Inset
+ * to the plot area the way the slider is, so it starts under the y-axis.
+ */
+.chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.5rem;
+  margin: 0.5rem 0 0;
+  padding-left: calc(var(--chart-axis) + 10px);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.chart-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-key-swatch {
+  position: relative;
+  display: inline-block;
+  width: 1.5rem;
+  height: 0.75rem;
+  overflow: hidden;
+}
+
+.chart-key-line {
+  height: 0;
+  border-top: 3px solid var(--ink);
+}
+
+/* The hatch: the accent, on a diagonal, thinned to the plot's own alpha by
+   the pseudo-element's opacity rather than by a second colour. */
+.chart-key-hatch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent) 0 1px,
+    transparent 1px 6px
+  );
+  opacity: 0.6;
+}
+
+.chart-key-wash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink-muted);
+  opacity: 0.16;
+}
+
+.chart-key-wash {
+  border-top: 1px solid var(--ink-muted);
 }
 
 /* The plot's own words are set in the mono, at the one size `CHART.label`
@@ -1314,7 +1391,8 @@ footer p {
     height: 320px;
   }
 
-  .chart-slider {
+  .chart-slider,
+  .chart-key {
     padding-left: 0;
     padding-right: 0;
   }

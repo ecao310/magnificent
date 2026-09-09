@@ -8,9 +8,12 @@ every extra dollar of income, the rate climbs in a sawtooth to 19, drops to
 subsidy at once.
 
 One page: what you pay at every household income, the subsidy at any point
-on hover, and the price of the next dollar and the next $10,000.
+on hover, and the price of the next dollar and the next $10,000. A second
+page adds federal income tax to the premium and draws the two as one rate.
 
 **Live:** https://ecao310.github.io/super-duper-broccoli/
+
+**The all-in rate:** https://ecao310.github.io/super-duper-broccoli/effective-rate/
 
 Companion to [How Much Can You Take Out This Year?](https://ecao310.github.io/congenial-octo-spork/),
 which drew the 400% line without pricing it.
@@ -33,6 +36,35 @@ Four figures follow: You pay, Subsidy, Each extra $1 of income costs, and
 Room before the cliff. Below them, five notes: How the subsidy is figured,
 The slope, The 400% cliff — back since 2026, The Medicaid line, and What is
 left out.
+
+## The second page: the all-in rate
+
+The premium under the 400% line is a set share of income that the statute
+fixes and the return settles, and every extra dollar gives some of the
+subsidy back — a tax in everything but the name. The rate page puts it on
+the same side of the ledger as federal income tax and draws the two stacked,
+as shares of household income at every income: a grey wash for the tax, the
+cost page's blue hatch for the premium, and an ink line along the top for
+the whole. The jump in that line at 400% is the page.
+
+The same rail, the same slider and the same address bar: the link between
+the two pages carries the household across. Four figures follow — All in,
+Federal income tax, Each extra $1 of income costs (tax and subsidy
+together), and Premium after subsidy — and three notes: How the rate is
+figured, Why the premium counts as a tax, and What is left out.
+
+`src/lib/tax/` prices the return with nothing unusual on it: the standard
+deduction, the rate schedule and the child tax credit, for 2025 and 2026,
+by filing status. The status is read off the household — two adults file
+jointly, one adult with children is a head of household, one adult alone is
+single — and the income is the subsidy's own, taken as all ordinary. The
+child tax credit is taken only against tax owed, so the rate is never
+negative, and its phase-out is drawn as the 5% line the statute's $50 steps
+approximate. Payroll tax, state tax, refundable credits and every deduction
+but the standard one are left out, and the third note says so. Under the
+subsidy's floor the page draws no premium at all — Medicaid has none, and
+the full premium against an income under the poverty line is not a rate
+anyone pays — so the line stops there and the tax runs on alone.
 
 ## What is priced
 
@@ -80,6 +112,8 @@ standing, not what the household is.
 `public/og-cover.png` — static, so it shows the opening household, not the
 reader's own. The curve is real: `scripts/og-cover.mjs` bundles `costCurve`
 out of `src/lib`, samples it for that household, and rasterises the result.
+The rate page's card has no image of its own yet; it shows its title and
+description.
 
 ```bash
 node scripts/og-cover.mjs   # rewrites public/og-cover.png and public/apple-touch-icon.png
@@ -102,12 +136,15 @@ npm run build    # tsc -b && vite build
 
 | Path | What it is |
 | --- | --- |
-| `src/App.tsx` | The composition root: the household in state, and the sections it hands the derived figures to. |
-| `src/components/` | The two steps, the chart and its tooltip, the money field, the figures, the notes, the reading list. |
-| `src/hooks/` | The address bar's debounce and the live region's. |
-| `src/lib/aca/` | Every figure on the page — the only place a percentage, threshold or premium is written down. One module per chapter, behind `index.ts`. |
-| `src/lib/scenarioUrl.ts` | The household, encoded into the address bar and clamped back out. |
-| `src/lib/format.ts`, `householdProse.ts`, `furtherReading.ts`, `readout.ts` | Rendering a figure, describing a household, the reading list, the readout. |
+| `index.html`, `effective-rate/index.html` | The two pages' documents: one vite entry each, served from the paths they sit at. |
+| `src/App.tsx`, `src/RateApp.tsx` | The two composition roots: each takes the household from `useHousehold` and hands its own curve, figures and notes the derived figures. |
+| `src/components/` | The rail, the cost page's chart, tooltip, figures and notes, and what both pages share: the header, the slider, the copy button, the chart frame. |
+| `src/components/rate/` | The rate page's chart, tooltip, step, figures and notes. |
+| `src/hooks/` | The household in state, the address bar's debounce and the live region's. |
+| `src/lib/aca/` | Every subsidy figure — the only place a percentage, threshold or premium is written down. One module per chapter, behind `index.ts`. |
+| `src/lib/tax/` | The return: the schedule, the deduction and the child tax credit by year and status, and the tax and the premium added up. |
+| `src/lib/scenarioUrl.ts`, `pages.ts` | The household, encoded into the address bar and clamped back out, and the link from each page to the other. |
+| `src/lib/format.ts`, `householdProse.ts`, `furtherReading.ts`, `readout.ts`, `rateReadout.ts` | Rendering a figure, describing a household, the reading list, the two readouts. |
 | `src/styles/` | `index.css` and the palette subset the chart hands to SVG. |
 | `src/guards/` | Tests holding down what nothing else reads: the link preview, this README, the stylesheet. |
 | `src/test/` | Test setup and shared fixtures. |
