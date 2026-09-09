@@ -25,13 +25,14 @@ import { PAGE_COVERAGE_YEAR, costCurve } from './lib/aca';
 import type { Scenario } from './lib/aca';
 import { CHART, PALETTE } from './styles/palette';
 import { defaultScenario, engineScenario } from './lib/scenarioUrl';
-import { chooseState, pinPageYear, slide, typeMoney } from './test/pageFixtures';
+import { INCOME, chooseState, pinPageYear, slide, typeMoney } from './test/pageFixtures';
 
 /** What recharts puts in the SVG: the two bands, the marker, and the two edges the subsidy draws. */
 
 pinPageYear();
 
-const plot = (): HTMLElement => screen.getByRole('img', { name: /^Chart:/ });
+/** The cost chart: the first of the two, named for what it draws. */
+const plot = (): HTMLElement => screen.getByRole('img', { name: /^Chart: what you pay/ });
 const marks = (selector: string): Element[] => Array.from(plot().querySelectorAll(selector));
 
 describe('the chart', () => {
@@ -72,9 +73,9 @@ describe('the chart', () => {
 
   it('carries no key and no switch under the plot', () => {
     render(<App />);
-    expect(document.querySelector('figure.chart-figure')).not.toBeNull();
-    expect(document.querySelector('figure.chart-figure figcaption')).toBeNull();
-    expect(document.querySelector('figure.chart-figure input')).toBeNull();
+    expect(document.querySelector('#step-cost figure.chart-figure')).not.toBeNull();
+    expect(document.querySelector('#step-cost figure.chart-figure figcaption')).toBeNull();
+    expect(document.querySelector('#step-cost figure.chart-figure input')).toBeNull();
   });
 
   it('shades the gap under the floor, and moves the floor to 100% for a state that did not expand', () => {
@@ -106,11 +107,11 @@ describe('the chart', () => {
     expect(hereX()).toBeGreaterThan(floor);
     expect(hereX()).toBeLessThan(cliff);
 
-    slide(/household income/i, 90_000);
+    slide(INCOME, 90_000);
     expect(hereX()).toBeGreaterThan(cliff);
     expect(marks('.here-dot')).toHaveLength(1);
 
-    slide(/household income/i, 25_000);
+    slide(INCOME, 25_000);
     expect(hereX()).toBeLessThan(floor);
     expect(marks('.here-line')).toHaveLength(1);
     expect(marks('.here-dot')).toHaveLength(0);
@@ -118,9 +119,9 @@ describe('the chart', () => {
 
   it('gives the slider the plot’s own axis, and widens both to keep a typed income on it', () => {
     render(<App />);
-    const slider = screen.getByRole('slider', { name: /household income/i });
+    const slider = screen.getByRole('slider', { name: INCOME });
     expect(slider).toHaveAttribute('max', '130000');
-    typeMoney(/household income/i, 200_000);
+    typeMoney(INCOME, 200_000);
     expect(slider).toHaveAttribute('max', '210000');
   });
 });

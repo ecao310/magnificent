@@ -203,19 +203,6 @@ h1 {
   color: var(--ink-soft);
 }
 
-/* The way to the other page, set as a kicker under the deck: mono, small,
-   and the one link in the masthead. It carries the household with it. */
-.masthead-nav {
-  margin: 0.875rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-}
-
-.masthead-nav a {
-  text-decoration-thickness: 1px;
-}
-
 /* ───── The shell ──────────────────────────────────────────────────────────
  *
  * The household in a column that stays put, and the curve, the figures and
@@ -1078,6 +1065,98 @@ footer p {
   outline-offset: 0.75rem;
 }
 
+/* ───── The chooser ─────────────────────────────────────────────────────────
+ *
+ * Which chart is on the page, chosen directly above it: two stamped boxes
+ * in the segmented control's vocabulary — a hairline of ink around paper,
+ * the one showing filled with ink — so the pair reads as one of two, the
+ * way the rail's own choosers do. A name in mono over a gloss in the serif:
+ * what the chart is called, and what it draws, so a reader knows what the
+ * other one is for before choosing it. The boxes share the row while there
+ * is room for both and stack when there is not.
+ *
+ * Its own rules rather than `.segmented`'s, because that control's rule for
+ * its inner span would set the gloss in mono and centre both lines.
+ */
+.chart-chooser {
+  margin: 0 0 1.75rem;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.chart-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chart-choice {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.chart-choice input[type='radio'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chart-choice-box {
+  display: block;
+  padding: 0.625rem 0.875rem 0.6875rem;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chart-choice-name {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chart-choice-gloss {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* The chart showing: filled, and its gloss knocked out with it. */
+.chart-choice input[type='radio']:checked + .chart-choice-box {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.chart-choice input[type='radio']:checked + .chart-choice-box .chart-choice-gloss {
+  color: var(--surface);
+}
+
+.chart-choice:hover input[type='radio']:not(:checked) + .chart-choice-box {
+  background: var(--surface-hover);
+}
+
+.chart-choice input[type='radio']:focus-visible + .chart-choice-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* A section heading: the chart's, and the figures' below it. */
 .step-heading {
   font-size: 2.125rem;
@@ -1320,6 +1399,25 @@ footer p {
   outline-offset: 2px;
 }
 
+/* ───── A word for the reader who cannot see the page ──────────────────────
+
+   Clipped the way the live reading is, and for the same reason: the chart
+   chooser's legend names the group for a screen reader — "Chart" — and the
+   two boxes name themselves for everyone else, so the word is in the
+   accessibility tree and nowhere on the page. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ───── The collapse ────────────────────────────────────────────────────────
  *
  * Two steps down. Below 1200px the page's own margins halve. Below 1100px the
@@ -1497,6 +1595,7 @@ footer p {
      something will open. */
 
   .reading,
+  .chart-chooser,
   .answer-share-button,
   .link-note button,
   .reset-button,

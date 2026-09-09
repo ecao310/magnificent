@@ -15,23 +15,31 @@ vi.mock('recharts', async () => {
   };
 });
 
-import RateApp from './RateApp';
+import App from './App';
 import { RateTooltip } from './components/rate/RateTooltip';
 import { rateCurve } from './lib/tax';
 import { CHART, PALETTE } from './styles/palette';
 import { defaultScenario, engineScenario } from './lib/scenarioUrl';
-import { chooseState, pinPageYear, slide } from './test/pageFixtures';
+import { INCOME, chooseChart, chooseState, pinPageYear, slide } from './test/pageFixtures';
 
-/** What recharts puts in the SVG: the two bands, the line along their top, the marker, and the subsidy's edges. */
+/** What recharts puts in the SVG once the rate chart is chosen: the two bands, the line along their top, the marker, and the subsidy's edges. */
 
 pinPageYear();
 
-const plot = (): HTMLElement => screen.getByRole('img', { name: /^Chart:/ });
+/** The page, with the rate chart chosen. */
+const renderRate = (): void => {
+  render(<App />);
+  chooseChart('Your effective rate');
+};
+
+/** The rate chart, named for what it draws. */
+const plot = (): HTMLElement => screen.getByRole('img', { name: /^Chart: federal income tax/ });
 const marks = (selector: string): Element[] => Array.from(plot().querySelectorAll(selector));
 
 describe('the rate chart', () => {
-  it('draws both axes, the rate one in tens', () => {
-    render(<RateApp />);
+  it('is the one plot on the page once chosen, and draws both axes, the rate one in tens', () => {
+    renderRate();
+    expect(screen.getAllByRole('img', { name: /^Chart:/ })).toHaveLength(1);
     expect(marks('.recharts-cartesian-axis')).toHaveLength(2);
     const ticks = marks('.recharts-cartesian-axis-tick-value').map((t) => t.textContent);
     expect(ticks).toContain('10%');
@@ -40,7 +48,7 @@ describe('the rate chart', () => {
   });
 
   it('stacks the premium’s hatch on the tax’s wash, and rules the whole in ink along the top', () => {
-    render(<RateApp />);
+    renderRate();
     const areas = marks('.recharts-area-area');
     expect(areas).toHaveLength(2);
     const [tax, premium] = areas;
@@ -54,8 +62,8 @@ describe('the rate chart', () => {
   });
 
   it('names its three marks in a key under the plot', () => {
-    render(<RateApp />);
-    const key = document.querySelector('figure.chart-figure figcaption.chart-key') as HTMLElement;
+    renderRate();
+    const key = document.querySelector('#step-rate figure.chart-figure figcaption.chart-key') as HTMLElement;
     expect(key).not.toBeNull();
     const items = Array.from(key.querySelectorAll('.chart-key-item')).map((i) => i.textContent);
     expect(items).toEqual(['All in', 'Premium after subsidy', 'Federal income tax']);
@@ -65,7 +73,7 @@ describe('the rate chart', () => {
   });
 
   it('draws the subsidy’s edges and the gap, and moves the floor for a state that did not expand', () => {
-    render(<RateApp />);
+    renderRate();
     expect(marks('.credit-edge')).toHaveLength(2);
     expect(marks('.gap-area')).toHaveLength(1);
     const floorX = (): number => Number(marks('.credit-edge line')[0].getAttribute('x1'));
@@ -75,17 +83,17 @@ describe('the rate chart', () => {
   });
 
   it('stands the marker on the line at the household’s income, and drops the dot under the floor', () => {
-    render(<RateApp />);
+    renderRate();
     const hereX = (): number => Number(marks('.here-line line')[0].getAttribute('x1'));
     const dot = (): Element | undefined => marks('.here-dot circle')[0];
     expect(dot()?.getAttribute('fill')).toBe(PALETTE.amber);
     expect(Number(dot()?.getAttribute('cx'))).toBeCloseTo(hereX(), 6);
     expect(plot().textContent).toContain('You · 11.5%');
 
-    slide(/household income/i, 90_000);
+    slide(INCOME, 90_000);
     expect(plot().textContent).toContain('You · 30.4%');
 
-    slide(/household income/i, 25_000);
+    slide(INCOME, 25_000);
     expect(marks('.here-line')).toHaveLength(1);
     expect(marks('.here-dot')).toHaveLength(0);
   });

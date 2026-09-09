@@ -4,6 +4,9 @@ import { formatCurrency } from '../lib/format';
 import type { ReadoutPart } from '../lib/readout';
 import { MoneyField } from './MoneyField';
 
+/** What the control is called, on the page and to a screen reader. */
+export const INCOME_LABEL = 'Household income for the year';
+
 export interface IncomeSliderProps {
   income: number;
   onIncome: (next: number) => void;
@@ -18,7 +21,11 @@ export interface IncomeSliderProps {
  * The one control that says where on the chart you are: a slider inset to
  * the plot area, so the thumb stands under the marker, and a field for a
  * figure nobody wants to drag to. The sentence under them prices the point
- * the marker is on, in whatever terms the page above it is drawn in.
+ * the marker is on, in whatever terms the chart above it is drawn in.
+ *
+ * There is one household income and two charts of it, but one chart on the
+ * page at a time, so this stands under whichever is showing and the income
+ * it sets is the same one the other chart will open on.
  */
 export const IncomeSlider: React.FC<IncomeSliderProps> = ({
   income,
@@ -29,7 +36,7 @@ export const IncomeSlider: React.FC<IncomeSliderProps> = ({
 }) => (
   <div className="input-group chart-slider">
     <div className="slider-header">
-      <label htmlFor="income">Household income for the year</label>
+      <label htmlFor="income">{INCOME_LABEL}</label>
       <MoneyField
         id="income"
         className="amber"
@@ -42,7 +49,7 @@ export const IncomeSlider: React.FC<IncomeSliderProps> = ({
     </div>
     <input
       id="income-slider"
-      aria-label="Household income for the year"
+      aria-label={INCOME_LABEL}
       aria-valuetext={formatCurrency(income)}
       type="range"
       min={0}

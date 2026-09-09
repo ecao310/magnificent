@@ -1,7 +1,13 @@
 import type { Adults, CoverageYear, StateCode } from '../../lib/aca';
 import { FILING_STATUS_PROSE } from '../../lib/tax';
 import type { AllInAssessment } from '../../lib/tax';
-import { formatAxisPercent, formatCents, formatCurrency, formatFpl, formatPercent } from '../../lib/format';
+import {
+  formatAxisPercent,
+  formatCents,
+  formatCurrency,
+  formatFpl,
+  formatPercent,
+} from '../../lib/format';
 import { householdPhrase } from '../../lib/householdProse';
 import type { CopyState } from '../../hooks/useScenarioAddress';
 import { ShareLink } from '../ShareLink';
@@ -19,9 +25,14 @@ export interface RateAnswerProps {
 }
 
 /**
- * The four figures the page is for, at the income the marker is standing
- * on: the rate all in, the income tax in it, what the next dollar costs in
- * tax and subsidy together, and the premium in it.
+ * The four figures under the rate chart, at the income the marker is
+ * standing on: the rate all in, the income tax in it, what the next dollar
+ * costs in tax and subsidy together, and the premium's share of income.
+ *
+ * The premium is a share here rather than the monthly figure the cost
+ * chart's block gives: this block is about what the rate is made of, and
+ * the figure that answers that is the share. The monthly figure is in the
+ * gloss under it.
  */
 export const RateAnswer: React.FC<RateAnswerProps> = ({
   year,
@@ -38,15 +49,15 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
   const monthly = here.premium === null ? null : Math.round(here.premium / 12);
 
   const premiumGloss =
-    here.premium === null || here.premiumShare === null
+    monthly === null
       ? ''
       : ptc.overCliff
-        ? `${formatPercent(here.premiumShare)} of income: the full premium, over the 400% line.`
+        ? `${formatCurrency(monthly)}/mo: the full premium, over the 400% line.`
         : ptc.credit === 0
-          ? `${formatPercent(here.premiumShare)} of income: your share already covers the full premium.`
-          : `${formatPercent(here.premiumShare)} of income after a subsidy of ${formatCurrency(
-              Math.round(ptc.credit / 12),
-            )}/mo.`;
+          ? `${formatCurrency(monthly)}/mo: your share already covers the full premium.`
+          : `${formatCurrency(monthly)}/mo, ${formatCurrency(
+              Math.round(here.premium ?? 0),
+            )} a year, after a subsidy of ${formatCurrency(Math.round(ptc.credit / 12))}/mo.`;
 
   return (
     <section className="answer" id="answer" aria-labelledby="answer-heading">
@@ -127,9 +138,9 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
         </div>
 
         <div className="answer-figure">
-          <dt>Premium after subsidy</dt>
+          <dt>The plan’s share of income</dt>
           <dd>
-            {monthly === null ? (
+            {monthly === null || here.premiumShare === null ? (
               <>
                 <strong>{ptc.floorMultiple > 1 ? 'Medicaid' : 'None'}</strong>
                 <span className="answer-gloss">
@@ -142,8 +153,8 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
               </>
             ) : (
               <>
-                <strong>{formatCurrency(monthly)}</strong>
-                <span className="answer-of">/mo</span>
+                <strong>{formatPercent(here.premiumShare)}</strong>
+                <span className="answer-of">of income</span>
                 <span className="answer-gloss">{premiumGloss}</span>
               </>
             )}

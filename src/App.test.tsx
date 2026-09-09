@@ -2,7 +2,9 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from './App';
 import {
+  INCOME,
   chooseAdults,
+  chooseChart,
   chooseChildren,
   chooseState,
   incomeField,
@@ -27,6 +29,47 @@ describe('the page', () => {
     const hero = screen.getByRole('heading', { name: /the aca subsidy slope/i, level: 1 });
     const subtitle = hero.nextElementSibling as HTMLElement;
     expect(subtitle).toHaveClass('subtitle');
+  });
+
+  it('offers the two charts above the chart, the cost chart chosen, and swaps them in place', () => {
+    render(<App />);
+    const chooser = screen.getByRole('group', { name: 'Chart' });
+    const choices = within(chooser).getAllByRole('radio');
+    expect(choices.map((c) => c.getAttribute('aria-label'))).toEqual(['What you pay', 'Your effective rate']);
+    expect(choices[0]).toBeChecked();
+    expect(choices[0]).toHaveAccessibleDescription('The benchmark plan after the subsidy');
+    expect(choices[1]).toHaveAccessibleDescription('Income tax and premium as one rate');
+    // Directly above the chart it chooses, in the reading column.
+    const flow = document.querySelector('.flow') as HTMLElement;
+    expect(flow.firstElementChild).toBe(chooser);
+    expect(chooser.nextElementSibling).toHaveAttribute('id', 'step-cost');
+    expect(document.getElementById('step-rate')).toBeNull();
+    expect(screen.getByRole('link', { name: /skip to the chart/i })).toHaveAttribute('href', '#step-cost');
+
+    chooseChart('Your effective rate');
+    expect(choices[1]).toBeChecked();
+    expect(document.getElementById('step-cost')).toBeNull();
+    expect(chooser.nextElementSibling).toHaveAttribute('id', 'step-rate');
+    expect(screen.getByRole('heading', { name: 'Your effective rate', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /skip to the chart/i })).toHaveAttribute('href', '#step-rate');
+    // The choice is where the reader is standing, so it goes in the fragment, without a reload.
+    expect(window.location.hash).toBe('#step-rate');
+    chooseChart('What you pay');
+    expect(window.location.hash).toBe('');
+    expect(document.getElementById('step-cost')).not.toBeNull();
+  });
+
+  it('opens on the chart the fragment names, and keeps the income across a swap', () => {
+    window.history.replaceState(null, '', '/?income=65000#step-rate');
+    render(<App />);
+    expect(screen.getByRole('radio', { name: 'Your effective rate' })).toBeChecked();
+    expect(document.getElementById('step-rate')).not.toBeNull();
+    expect(incomeField()).toHaveValue(65_000);
+    slide(INCOME, 70_000);
+    chooseChart('What you pay');
+    expect(incomeField()).toHaveValue(70_000);
+    expect(screen.getByRole('slider', { name: INCOME })).toHaveValue('70000');
+    expect(window.location.search).toBe('?income=65000');
   });
 
   it('has a main, a footer, and the household, the chart and the figures in order', () => {
@@ -54,7 +97,7 @@ describe('the page', () => {
     expect(screen.getByRole('radio', { name: '0 children' })).toBeChecked();
     expect(screen.getByRole('slider', { name: 'Age' })).toHaveValue('50');
     expect(screen.getByRole('slider', { name: "Spouse's age" })).toHaveValue('50');
-    expect(screen.getByRole('slider', { name: /household income/i })).toHaveValue('50000');
+    expect(screen.getByRole('slider', { name: INCOME })).toHaveValue('50000');
     expect(incomeField()).toHaveValue(50_000);
     expect(premiumField()).toHaveValue(1_747);
     expect(screen.getByRole('combobox', { name: 'State' })).toHaveValue('');
@@ -101,8 +144,8 @@ describe('the page', () => {
 
   it('takes a typed income, and holds a half-typed one until the field is left', () => {
     render(<App />);
-    const slider = screen.getByRole('slider', { name: /household income/i });
-    typeMoney(/household income/i, 65_000);
+    const slider = screen.getByRole('slider', { name: INCOME });
+    typeMoney(INCOME, 65_000);
     expect(slider).toHaveValue('65000');
     // Past the end of the field: not priced until the field is left, then clamped.
     fireEvent.change(incomeField(), { target: { value: '999999' } });
@@ -155,7 +198,7 @@ describe('the page', () => {
     expect(screen.getByRole('radio', { name: 'One adult' })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'State' })).toHaveValue('TX');
     expect(screen.getByRole('slider', { name: 'Age' })).toHaveValue('64');
-    expect(screen.getByRole('slider', { name: /household income/i })).toHaveValue('30000');
+    expect(screen.getByRole('slider', { name: INCOME })).toHaveValue('30000');
     const note = screen.getByRole('status');
     expect(within(note).getAllByRole('listitem')).toHaveLength(1);
     fireEvent.click(within(note).getByRole('button', { name: 'Dismiss' }));

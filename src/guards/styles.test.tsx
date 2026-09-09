@@ -1,9 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import App from '../App';
-import RateApp from '../RateApp';
 import { CHART, PALETTE } from '../styles/palette';
 
 /**
@@ -132,6 +131,7 @@ describe('the selectors', () => {
   it('render on the page where a default render can reach them', () => {
     render(<App />);
     const reachable = [
+      '.chart-chooser .chart-choice-box',
       '.step-config .input-group',
       '.answer-figure dd',
       '.explainer h3',
@@ -141,16 +141,11 @@ describe('the selectors', () => {
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();
   });
 
-  it('render on the rate page too', () => {
-    render(<RateApp />);
-    const reachable = [
-      '.masthead-nav a',
-      '.chart-figure .chart-key',
-      '.chart-key .chart-key-swatch',
-      '.chart-slider .slider-readout',
-      '.answer-figure dd',
-      '.notes-section .explainer',
-    ];
+  it('render under the rate chart once it is chosen', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Your effective rate' }));
+    const reachable = ['.chart-figure .chart-key', '.chart-key .chart-key-swatch', '.chart-slider .slider-readout'];
     for (const selector of reachable) expect(document.querySelector(selector), selector).not.toBeNull();
   });
+
 });

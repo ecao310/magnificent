@@ -10,14 +10,12 @@ import { FURTHER_READING } from '../lib/furtherReading';
  */
 const root = process.cwd();
 const html = readFileSync(resolve(root, 'index.html'), 'utf8');
-const rateHtml = readFileSync(resolve(root, 'effective-rate/index.html'), 'utf8');
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
 const workflow = readFileSync(resolve(root, '.github/workflows/deploy.yml'), 'utf8');
 const viteConfig = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
 
-const metaIn = (doc: string, attr: 'name' | 'property', key: string): string | undefined =>
-  new RegExp(`<meta\\s+${attr}="${key}"\\s+content="([^"]*)"`, 's').exec(doc)?.[1];
-const meta = (attr: 'name' | 'property', key: string): string | undefined => metaIn(html, attr, key);
+const meta = (attr: 'name' | 'property', key: string): string | undefined =>
+  new RegExp(`<meta\\s+${attr}="${key}"\\s+content="([^"]*)"`, 's').exec(html)?.[1];
 
 describe('the link preview', () => {
   it('names itself, describes itself and carries a card', () => {
@@ -67,31 +65,11 @@ describe('the cover', () => {
 });
 
 describe('the search snippet', () => {
-  it('is short enough to be shown whole on a result page, on both pages', () => {
-    for (const doc of [html, rateHtml]) {
-      const description = metaIn(doc, 'name', 'description') ?? '';
-      expect(description.length).toBeGreaterThan(50);
-      expect(description.length).toBeLessThanOrEqual(160);
-    }
-  });
-});
+  const description = meta('name', 'description') ?? '';
 
-describe('the second page', () => {
-  it('is the rate page, at the path the build writes it to', () => {
-    expect(rateHtml).toMatch(/<title>The All-In Rate<\/title>/);
-    expect(rateHtml).toMatch(/src="\/src\/rate\.tsx"/);
-    expect(metaIn(rateHtml, 'property', 'og:url')).toBe(
-      'https://ecao310.github.io%BASE_URL%effective-rate/',
-    );
-    expect(rateHtml).toMatch(/href="%BASE_URL%favicon\.svg"/);
-    expect(rateHtml).toMatch(/href="%BASE_URL%apple-touch-icon\.png"/);
-  });
-
-  it('says the same thing on both card surfaces', () => {
-    expect(metaIn(rateHtml, 'name', 'twitter:title')).toBe(metaIn(rateHtml, 'property', 'og:title'));
-    expect(metaIn(rateHtml, 'name', 'twitter:description')).toBe(
-      metaIn(rateHtml, 'property', 'og:description'),
-    );
+  it('is short enough to be shown whole on a result page', () => {
+    expect(description.length).toBeGreaterThan(50);
+    expect(description.length).toBeLessThanOrEqual(160);
   });
 });
 
@@ -110,15 +88,6 @@ describe('the front door', () => {
     [env.PRODUCTION_BRANCH]: `https://ecao310.github.io${base}`,
     [env.PREVIEW_BRANCH]: `https://ecao310.github.io${env.PREVIEW_BASE}`,
   };
-  /**
-   * The pages under each root: every nested html entry the build is given,
-   * `effective-rate/index.html` as `effective-rate/`. A README may name a
-   * root, or a page under one, and nothing else.
-   */
-  const pages = Array.from(viteConfig.matchAll(/'([\w-]+(?:\/[\w-]+)*)\/index\.html'/g)).map(
-    (m) => `${m[1]}/`,
-  );
-  const published = Object.values(publishes).flatMap((url) => [url, ...pages.map((page) => url + page)]);
 
   it('is published by one workflow, from the branches it declares', () => {
     expect(env.PRODUCTION_BRANCH).toBe('main');
@@ -140,11 +109,10 @@ describe('the front door', () => {
   });
 
   it('names no Pages URL that no workflow publishes', () => {
-    expect(pages).toContain('effective-rate/');
     const named = Array.from(readme.matchAll(/https:\/\/ecao310\.github\.io\/super-duper-broccoli\/\S*/g)).map(
       (m) => m[0].replace(/[).,]+$/, ''),
     );
-    for (const url of named) expect(published).toContain(url);
+    for (const url of named) expect(Object.values(publishes)).toContain(url);
   });
 });
 

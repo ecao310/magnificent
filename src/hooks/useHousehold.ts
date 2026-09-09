@@ -21,7 +21,7 @@ export interface HouseholdOptions {
   onMove?: (moved: Moved) => void;
 }
 
-/** The household as a page holds it, with everything both pages derive from it. */
+/** The household as the page holds it, with everything both charts derive from it. */
 export interface Household {
   /** The year every figure on the page is priced for. See `PAGE_COVERAGE_YEAR`. */
   year: CoverageYear;
@@ -60,13 +60,12 @@ export interface Household {
 
 /**
  * One household, read out of the address bar once and held in state, with
- * the derived figures both pages price from it: the engine's view of it,
- * the axis it needs, and the address bar kept in step.
+ * the derived figures both charts price from it: the engine's view of it,
+ * the axis they share, and the address bar kept in step.
  *
- * Both pages hold the same seven values and derive the same things from
- * them, so this is written once and each page adds its own curve on top.
- * The setters report which kind of control moved, so a page can decide what
- * its live region reads out.
+ * Apart from the composition root because what is here is the household
+ * and what is there is the page. The setters report which kind of control
+ * moved, so the live region can decide what to read out.
  */
 export function useHousehold({ onMove }: HouseholdOptions = {}): Household {
   /** The household this opened with, read out of the address bar once. */

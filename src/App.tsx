@@ -7,24 +7,46 @@ import {
   ptcFor,
   subsidyLines,
 } from './lib/aca';
+import { chartFor, chartFromFragment, fragmentFor } from './lib/charts';
+import type { ChartId } from './lib/charts';
+import { allInFor, rateAxis as rateAxisFor, rateCurve } from './lib/tax';
 import { formatCurrency } from './lib/format';
 import { householdPhrase } from './lib/householdProse';
-import { pageHref } from './lib/pages';
+import { rateReadoutText } from './lib/rateReadout';
 import { readoutText } from './lib/readout';
 import { useHousehold } from './hooks/useHousehold';
 import type { Moved } from './hooks/useHousehold';
 import { useSettledReading } from './hooks/useSettledReading';
 import { Answer } from './components/Answer';
+import { ChartChooser } from './components/ChartChooser';
 import { CostStep, NEXT_BLOCK } from './components/CostStep';
 import { FurtherReading } from './components/FurtherReading';
 import { Header } from './components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
 import { Notes } from './components/Notes';
+import { RateAnswer } from './components/rate/RateAnswer';
+import { RateStep } from './components/rate/RateStep';
 
 /**
- * One household, priced three ways down the page: the curve it is standing
- * on, the figures at the point it stands, and the notes behind them. The rail
- * that describes the household stays beside all three.
+ * Put the chosen chart in the address bar as the fragment, and never take
+ * the document down over it: `replaceState`, so Back still leaves and
+ * nothing scrolls, and a `catch` because the address bar is a convenience.
+ */
+const writeChart = (chart: ChartId): void => {
+  try {
+    const { pathname, search } = window.location;
+    window.history.replaceState(window.history.state, '', `${pathname}${search}${fragmentFor(chart)}`);
+  } catch {
+    /* The address bar is a convenience, and the reading outranks it. */
+  }
+};
+
+/**
+ * One household, priced down the page: the chart the reader has chosen —
+ * what the household pays, or what that comes to with income tax on top —
+ * the figures at the point it stands on that chart, and the notes behind
+ * them. The rail that describes the household stays beside all three, and
+ * the other chart is one click away, in place.
  */
 const App: React.FC = () => {
   /**
@@ -34,24 +56,40 @@ const App: React.FC = () => {
    */
   const [announceFrom, announce] = useState<Moved | null>(null);
 
+  /** Which chart is showing: what the fragment asked for, the cost chart by default. */
+  const [chart, setChart] = useState<ChartId>(() => chartFromFragment(window.location.hash));
+  const choose = (next: ChartId): void => {
+    setChart(next);
+    writeChart(next);
+  };
+
   const h = useHousehold({ onMove: announce });
   const { year, income, scenario, axisMax, curveStep } = h;
 
-  /** The one curve: what you pay, month by month, across every income. */
+  /** The first curve: what you pay, month by month, across every income. */
   const curve = useMemo(
     () => costCurve(scenario, { maxMagi: axisMax, step: curveStep }),
     [scenario, axisMax, curveStep],
   );
+  /** The second: tax and premium as shares of income, across the same axis. */
+  const rates = useMemo(
+    () => rateCurve(scenario, { maxMagi: axisMax, step: curveStep }),
+    [scenario, axisMax, curveStep],
+  );
 
   const here = useMemo(() => ptcFor(income, scenario), [income, scenario]);
+  const rate = useMemo(() => allInFor(income, scenario), [income, scenario]);
   const lines = useMemo(() => subsidyLines(scenario), [scenario]);
   const cliffCost = useMemo(() => cliffCostFor(scenario), [scenario]);
+  const rateAxis = useMemo(() => rateAxisFor(rates, rate.allInShare), [rates, rate.allInShare]);
 
   /** What the next $10,000 of income would cost in subsidy, cliff included if it is crossed. */
   const nextBlockCost = Math.round(creditLostBetween(income, income + NEXT_BLOCK, scenario));
   const cliffMagi = ptcCliffMagi(scenario);
   const nextBlockCrossesCliff =
     cliffMagi !== null && income <= cliffMagi && income + NEXT_BLOCK > cliffMagi;
+
+  const incomeSliderStep = Math.max(500, curveStep);
 
   /** What the live region will read out, once whatever changed it has settled. */
   const reading = ((): string => {
@@ -61,7 +99,7 @@ const App: React.FC = () => {
           here.benchmarkMonthly,
         )} a month.`;
       case 'income':
-        return readoutText(here);
+        return chart === 'rate' ? rateReadoutText(rate) : readoutText(here);
       default:
         return '';
     }
@@ -71,26 +109,11 @@ const App: React.FC = () => {
 
   return (
     <div className="card">
-      <a className="skip-link" href="#step-cost">
+      <a className="skip-link" href={`#${chartFor(chart).section}`}>
         Skip to the chart
       </a>
 
-      <Header
-        title="The ACA Subsidy Slope"
-        deck={
-          <>
-            On an ACA plan, you pay a set share of your household income and the subsidy
-            pays the rest. When household income reaches 400% of the poverty line, the
-            subsidy ends abruptly (the ACA subsidy cliff).
-          </>
-        }
-        sibling={{
-          href: pageHref('rate', h.pageScenario),
-          label: 'Also: your effective tax rate, premium included →',
-        }}
-        linkNotes={h.linkNotes}
-        onDismissNotes={h.dismissNotes}
-      />
+      <Header linkNotes={h.linkNotes} onDismissNotes={h.dismissNotes} />
 
       <p className="live-reading" aria-live="polite" aria-atomic="true">
         {announcement}
@@ -114,35 +137,74 @@ const App: React.FC = () => {
         />
 
         <div className="flow">
-          <CostStep
-            scenario={scenario}
-            curve={curve}
-            axisMax={axisMax}
-            income={income}
-            onIncome={h.setIncome}
-            incomeSliderStep={Math.max(500, curveStep)}
-            lines={lines}
-            here={here}
-          />
+          <ChartChooser chart={chart} onChart={choose} />
 
-          <Answer
-            year={year}
-            adults={h.adults}
-            ages={h.ages}
-            state={h.state}
-            income={income}
-            here={here}
-            nextBlock={NEXT_BLOCK}
-            nextBlockCost={nextBlockCost}
-            nextBlockCrossesCliff={nextBlockCrossesCliff}
-            cliffCost={cliffCost}
-            canCopy={h.address.canCopy}
-            copyState={h.address.copyState}
-            onCopy={h.address.copy}
-          />
+          {chart === 'cost' ? (
+            <>
+              <CostStep
+                scenario={scenario}
+                curve={curve}
+                axisMax={axisMax}
+                income={income}
+                onIncome={h.setIncome}
+                incomeSliderStep={incomeSliderStep}
+                lines={lines}
+                here={here}
+              />
+
+              <Answer
+                year={year}
+                adults={h.adults}
+                ages={h.ages}
+                state={h.state}
+                income={income}
+                here={here}
+                nextBlock={NEXT_BLOCK}
+                nextBlockCost={nextBlockCost}
+                nextBlockCrossesCliff={nextBlockCrossesCliff}
+                cliffCost={cliffCost}
+                canCopy={h.address.canCopy}
+                copyState={h.address.copyState}
+                onCopy={h.address.copy}
+              />
+            </>
+          ) : (
+            <>
+              <RateStep
+                scenario={scenario}
+                curve={rates}
+                axisMax={axisMax}
+                rateAxis={rateAxis}
+                income={income}
+                onIncome={h.setIncome}
+                incomeSliderStep={incomeSliderStep}
+                lines={lines}
+                here={rate}
+              />
+
+              <RateAnswer
+                year={year}
+                adults={h.adults}
+                ages={h.ages}
+                state={h.state}
+                income={income}
+                here={rate}
+                canCopy={h.address.canCopy}
+                copyState={h.address.copyState}
+                onCopy={h.address.copy}
+              />
+            </>
+          )}
         </div>
 
-        <Notes year={year} scenario={scenario} here={here} cliffCost={cliffCost} />
+        <Notes
+          chart={chart}
+          year={year}
+          scenario={scenario}
+          here={here}
+          cliffCost={cliffCost}
+          rate={rate}
+        />
       </main>
 
       <footer>

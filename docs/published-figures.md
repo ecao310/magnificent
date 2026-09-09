@@ -165,7 +165,7 @@ figure. CMS, State Specific Age Curve Variations.
 
 ## Federal income tax (IRC 1(j), 63(c), 24)
 
-The rate page's return: the standard deduction and the ordinary-income
+The rate chart's return: the standard deduction and the ordinary-income
 schedule by filing status, and the child tax credit. The 2025 brackets are
 Rev. Proc. 2024-40's; the 2025 standard deductions are the larger ones
 section 70102 of Pub. L. 119-21 (the One Big Beautiful Bill Act) set for

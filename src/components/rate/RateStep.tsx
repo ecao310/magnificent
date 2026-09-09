@@ -26,11 +26,13 @@ export interface RateStepProps {
 
 /**
  * What you hand over, all in, across every income, and where on that curve
- * you are standing.
+ * you are standing: the second chart of the same household, in the first
+ * one's place when the reader chooses it.
  *
  * The chart, a key under it — three marks is one more than a plot can name
- * in place — and then the one control that says where on the plot you are.
- * The sentence under the slider prices the point the marker is on.
+ * in place — and then the one control that says where on it you are. The
+ * sentence under the slider prices the point the marker is on, in this
+ * chart's terms.
  */
 export const RateStep: React.FC<RateStepProps> = ({
   scenario,

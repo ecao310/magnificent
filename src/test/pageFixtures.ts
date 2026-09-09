@@ -30,21 +30,28 @@ export const chooseState = (code: string): void => {
   fireEvent.change(screen.getByRole('combobox', { name: 'State' }), { target: { value: code } });
 };
 
+/** The income control's name: the same under either chart, since only one chart is on the page at a time. */
+export const INCOME = 'Household income for the year';
+
+/** Put the other chart on the page, by the name the chooser gives it. */
+export const chooseChart = (name: 'What you pay' | 'Your effective rate'): void => {
+  fireEvent.click(screen.getByRole('radio', { name }));
+};
+
 /** Move a slider to a value. */
-export const slide = (name: RegExp, value: number): void => {
+export const slide = (name: RegExp | string, value: number): void => {
   fireEvent.change(screen.getByRole('slider', { name }), { target: { value: String(value) } });
 };
 
-/** Type a dollar figure into one of the two number fields and leave it, as a reader would. */
-export const typeMoney = (name: RegExp, value: number): void => {
+/** Type a dollar figure into one of the number fields and leave it, as a reader would. */
+export const typeMoney = (name: RegExp | string, value: number): void => {
   const field = screen.getByRole('spinbutton', { name });
   fireEvent.change(field, { target: { value: String(value) } });
   fireEvent.blur(field);
 };
 
-/** The income field under the chart. */
-export const incomeField = (): HTMLInputElement =>
-  screen.getByRole('spinbutton', { name: /household income for the year/i });
+/** The income field under the cost chart. */
+export const incomeField = (): HTMLInputElement => screen.getByRole('spinbutton', { name: INCOME });
 
 /** The premium field in the rail. */
 export const premiumField = (): HTMLInputElement =>

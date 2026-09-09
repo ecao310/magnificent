@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { pinPageYear, slide } from './test/pageFixtures';
+import { INCOME, pinPageYear, slide } from './test/pageFixtures';
 
 /** The four figures the page is for, at the income the marker stands on, and the link that carries them. */
 
@@ -15,14 +15,14 @@ describe('the figures', () => {
     render(<App />);
     const heading = screen.getByRole('heading', { name: 'Your numbers at $50,000', level: 2 });
     expect(heading.nextElementSibling).toHaveClass('answer-subline');
-    expect(document.querySelectorAll('.answer-figure')).toHaveLength(4);
+    expect(document.querySelectorAll('#answer .answer-figure')).toHaveLength(4);
   });
 
   it('copies the address, flushed first, and says so', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     render(<App />);
-    slide(/household income/i, 65_000);
+    slide(INCOME, 65_000);
     const button = screen.getByRole('button', { name: 'Copy link' });
     expect(shareStatus()).toBeEmptyDOMElement();
     fireEvent.click(button);
