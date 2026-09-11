@@ -111,7 +111,7 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
   subsidyCliff,
   subsidyCliffOnChart,
 }) => {
-  const [showIrmaaLines, setShowIrmaaLines] = useState(true);
+  const [showIrmaaLines, setShowIrmaaLines] = useState(false);
   const [showSubsidyLine, setShowSubsidyLine] = useState(false);
 
   /**

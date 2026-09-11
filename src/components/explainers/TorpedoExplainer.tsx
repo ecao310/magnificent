@@ -20,8 +20,8 @@ export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
       <div className="explainer-content">
         <p>
           Social Security benefits are not taxed dollar-for-dollar. The taxable
-          share depends on <strong>provisional income</strong> — other income
-          plus half of your social security benefit. Once provisional income passes{' '}
+          share depends on <strong>provisional income</strong> (100% of other income
+          plus 50% of your social security benefit). Once provisional income passes{' '}
           {formatCurrency(ssBase50)}, each extra dollar of other income also
           drags up to 50&cent; of benefits into taxable income; past{' '}
           {formatCurrency(ssBase85)}, it drags in up to 85&cent;.

@@ -189,10 +189,9 @@ describe('What a hovered point is worth', () => {
 });
 
 /**
- * The IRMAA cliffs are drawn as the page opens and the 400% line waits to be
- * asked for; the panel behind the Breakpoints button is where either is
- * switched. Opening it is the first act of every test below, so it has a
- * helper of its own.
+ * Neither threshold is drawn as the page opens; the panel behind the
+ * Breakpoints button is where either is switched on. Opening it is the first
+ * act of every test below, so it has a helper of its own.
  */
 const openBreakpointsPanel = (): HTMLElement => {
   fireEvent.click(screen.getByRole('button', { name: /^Breakpoints/ }));
@@ -202,8 +201,8 @@ const openBreakpointsPanel = (): HTMLElement => {
 describe('the Breakpoints panel on the torpedo chart', () => {
   it('opens with the panel shut and no key on the page', () => {
     render(<App />);
-    // The lines are on the plot on arrival (App.chart.test.tsx holds those);
-    // the panel is not, and neither is a paragraph of key under the plot.
+    // No line is on the plot on arrival (App.chart.test.tsx holds that);
+    // the panel is not either, and neither is a paragraph of key under it.
     expect(
       screen.queryByRole('group', { name: /Health insurance breakpoints/ }),
     ).not.toBeInTheDocument();
@@ -218,17 +217,17 @@ describe('the Breakpoints panel on the torpedo chart', () => {
     expect(document.querySelector('.chart-key-swatch')).toBeNull();
   });
 
-  it('offers both switches, the IRMAA one ticked, and counts what it draws', () => {
+  it('offers both switches, neither ticked, and counts what it draws', () => {
     render(<App />);
     const button = screen.getByRole('button', { name: /^Breakpoints/ });
-    // Three IRMAA cliffs fit the default axis and are drawn on arrival, so
-    // the button opens with that number to report.
-    expect(button).toHaveAccessibleName('Breakpoints (3)');
+    // Nothing is drawn on arrival, so the button opens with no number to
+    // report.
+    expect(button).toHaveAccessibleName('Breakpoints');
 
     openBreakpointsPanel();
     expect(button).toHaveAttribute('aria-expanded', 'true');
     const irmaa = screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' });
-    expect(irmaa).toBeChecked();
+    expect(irmaa).not.toBeChecked();
     // The 400% switch is only offered to a reader still buying their own
     // coverage, and the page opens with the filer on Medicare.
     expect(
@@ -237,10 +236,13 @@ describe('the Breakpoints panel on the torpedo chart', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
     const subsidy = screen.getByRole('checkbox', { name: '400% poverty-line cliff' });
     expect(subsidy).not.toBeChecked();
-    expect(button).toHaveAccessibleName('Breakpoints (3)');
+    expect(button).toHaveAccessibleName('Breakpoints');
 
-    // One 400% line on top of the three: the count is of marks on the chart,
-    // not of ticked boxes — and with the IRMAA switch off it is the one line.
+    // Three IRMAA cliffs fit the default axis, and one 400% line on top of
+    // them: the count is of marks on the chart, not of ticked boxes — and
+    // with the IRMAA switch off again it is the one line.
+    fireEvent.click(irmaa);
+    expect(button).toHaveAccessibleName('Breakpoints (3)');
     fireEvent.click(subsidy);
     expect(button).toHaveAccessibleName('Breakpoints (4)');
     fireEvent.click(irmaa);
@@ -275,6 +277,7 @@ describe('the Breakpoints panel on the torpedo chart', () => {
     // stretched to the couple's phaseout, which would reach two cliffs.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
     openBreakpointsPanel();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Married Filing Jointly' }));
     // The joint tier-1 threshold is past the right edge, so the switch is on
     // and the chart is unchanged — and with the panel's notes gone the count
@@ -346,7 +349,7 @@ describe('the IRMAA cliff lines on the torpedo chart', () => {
     // The disclosure is the only prose left that names the panel, now that the
     // panel carries none of its own — so it has to name it correctly.
     expect(irmaaExplainer()).toHaveTextContent(
-      'draws the thresholds as red dashed lines, and Breakpoints in the corner of the plot switches them off',
+      'Breakpoints in the corner of the plot draws the thresholds as red dashed lines',
     );
   });
 
@@ -452,8 +455,8 @@ describe('the 400% poverty-line cliff under the torpedo chart', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
     openBreakpointsPanel();
-    // The IRMAA lines off, so the count below is the 400% line's alone.
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' }));
+    // The IRMAA lines are off on arrival, so the count below is the 400%
+    // line's alone.
     const subsidy = screen.getByRole('checkbox', { name: '400% poverty-line cliff' });
     fireEvent.click(subsidy);
     expect(screen.getByRole('button', { name: /^Breakpoints/ })).toHaveAccessibleName(

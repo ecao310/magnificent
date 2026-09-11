@@ -38,13 +38,11 @@ export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => 
   return (
     <header className="masthead">
       <div className="masthead-body">
-        <h1>Income Taxes in Retirement</h1>
+        <h1>Income Tax in Retirement</h1>
         <p className="subtitle">
-          Many think of income tax rates as monotonically increasing, starting
-          at 10% and climbing to 37%. However, because of how income tax works
-          with Social Security, your marginal rate forms a
-          torpedo shape, increasing and then decreasing. Use this tool to calculate
-          your marginal tax rate based on your social security benefit.
+          Because of how income tax works
+          with Social Security, tax rates form a
+          torpedo shape, increasing and then decreasing.
         </p>
       </div>
 
