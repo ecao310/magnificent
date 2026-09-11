@@ -81,6 +81,9 @@ export interface TorpedoStepProps {
  * The chart, then the one control that says where on that chart the reader is
  * standing: a slider inset to the plot area, so the thumb stands under the
  * marker, and the sentence under it prices the point the marker is on. The
+ * plot is a cursor too — a tap, a click or a finger drawn along it moves the
+ * same marker — so on a phone the slider is the second way rather than the
+ * only one. The
  * notes are a section of their own, under the figures. Which of the two
  * threshold lines are drawn is the one piece of state that belongs to this
  * step and nowhere else — neither is income tax. The Medicare cliffs start on, because every
@@ -148,7 +151,8 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
       </h2>
       <p className="step-deck">
         The marginal rate on the next dollar of other income, plotted against
-        total income.
+        total income. Tap or drag along the curve to move your marker; hover it
+        for the figures at any income.
       </p>
 
       <figure className="chart-figure">
@@ -163,6 +167,9 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
         <TorpedoChart
           curve={curve}
           axisDomain={axisDomain}
+          axisMax={axisMax}
+          incomeStep={incomeSliderStep}
+          onIncome={onOrdinaryIncome}
           here={totalIncome}
           totalIncomeAt={totalIncomeAt}
           cliffs={drawnCliffs}
@@ -182,19 +189,24 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
           <label htmlFor="ordinary-income">Other Income (excluding Social Security)</label>
           <span className="slider-value amber">{formatCurrency(ordinaryIncome)}</span>
         </div>
-        <input
-          id="ordinary-income"
-          type="range"
-          min={0}
-          max={axisMax}
-          step={incomeSliderStep}
-          value={ordinaryIncome}
-          onChange={(e) => onOrdinaryIncome(Number(e.target.value))}
-          className="slider-amber"
-        />
-        <div className="slider-range-labels">
-          <span>$0</span>
-          <span>{formatCurrency(axisMax)}</span>
+        {/* The track and its end labels, in a box of their own so the phone
+            rules can keep them inset to the plot while the label above and
+            the sentence below take the whole measure. */}
+        <div className="chart-slider-track">
+          <input
+            id="ordinary-income"
+            type="range"
+            min={0}
+            max={axisMax}
+            step={incomeSliderStep}
+            value={ordinaryIncome}
+            onChange={(e) => onOrdinaryIncome(Number(e.target.value))}
+            className="slider-amber"
+          />
+          <div className="slider-range-labels">
+            <span>$0</span>
+            <span>{formatCurrency(axisMax)}</span>
+          </div>
         </div>
 
         {/* No "You are here." lead. Three things already say that this

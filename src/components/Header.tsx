@@ -9,6 +9,9 @@ export interface HeaderProps {
   onDismissNotes: () => void;
 }
 
+/** How many settings were adjusted, in a word. */
+const COUNTS = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+
 /**
  * The masthead: the title and the deck, and what the link that opened the
  * page did.
@@ -17,35 +20,55 @@ export interface HeaderProps {
  * the arrival rather than about the return — the same thing the title and the
  * deck are — and because content outside every landmark is content a reader
  * jumping by landmark never lands on.
+ *
+ * The note is two lines, and says how much was adjusted; one adjustment is
+ * named in full under it, and more than one are folded behind a summary,
+ * because on a phone a list of three took the whole first screen from the
+ * chart.
  */
-export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => (
-  <header className="masthead">
-    <div className="masthead-body">
-      <h1>Income Taxes in Retirement</h1>
-      <p className="subtitle">
-        Many think of income tax rates as monotonically increasing, starting
-        at 10% and climbing to 37%. However, because of how income tax works
-        with Social Security, your marginal rate forms a
-        torpedo shape, increasing and then decreasing. Use this tool to calculate
-        your marginal tax rate based on your social security benefit.
-      </p>
-    </div>
-
-    {linkNotes.length > 0 && (
-      <div className="link-note" role="status">
-        <p>
-          <strong>This link asked for something this page could not show.</strong>{' '}
-          Everything else in it came through as sent.
+export const Header: React.FC<HeaderProps> = ({ linkNotes, onDismissNotes }) => {
+  const count = linkNotes.length;
+  const list = (
+    <ul>
+      {linkNotes.map((note) => (
+        <li key={note}>{note}</li>
+      ))}
+    </ul>
+  );
+  return (
+    <header className="masthead">
+      <div className="masthead-body">
+        <h1>Income Taxes in Retirement</h1>
+        <p className="subtitle">
+          Many think of income tax rates as monotonically increasing, starting
+          at 10% and climbing to 37%. However, because of how income tax works
+          with Social Security, your marginal rate forms a
+          torpedo shape, increasing and then decreasing. Use this tool to calculate
+          your marginal tax rate based on your social security benefit.
         </p>
-        <ul>
-          {linkNotes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-        <button type="button" onClick={onDismissNotes}>
-          Dismiss
-        </button>
       </div>
-    )}
-  </header>
-);
+
+      {count > 0 && (
+        <div className="link-note" role="status">
+          <p>
+            <strong>This link asked for something this page could not show.</strong>{' '}
+            {count === 1
+              ? 'One setting was adjusted; everything else in it came through as sent.'
+              : `${COUNTS[count] ?? count} settings were adjusted; everything else in it came through as sent.`}
+          </p>
+          {count === 1 ? (
+            list
+          ) : (
+            <details className="link-note-list">
+              <summary>What changed</summary>
+              {list}
+            </details>
+          )}
+          <button type="button" onClick={onDismissNotes}>
+            Dismiss
+          </button>
+        </div>
+      )}
+    </header>
+  );
+};
