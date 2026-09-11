@@ -37,6 +37,17 @@ const metaTags: Record<string, string> = Object.fromEntries(
 const hrefs = (html.match(/href="([^"]+)"/g) ?? []).map((h) => h.slice(6, -1));
 
 /**
+ * The origin the card's absolute URLs are built on, as `.env` declares it.
+ * Vite reads the same file, so this is what `%VITE_SITE_ORIGIN%` becomes in
+ * any build that does not set the variable itself — both GitHub Pages builds.
+ * netlify.toml sets it to Netlify's own `URL` for the build it publishes.
+ */
+const siteOrigin = /^VITE_SITE_ORIGIN=(\S+)/m.exec(readFileSync(root('.env'), 'utf8'))?.[1];
+
+/** How the card addresses itself: the origin placeholder, then the base one. */
+const ORIGIN_AND_BASE = /^%VITE_SITE_ORIGIN%%BASE_URL%/;
+
+/**
  * A PNG's own idea of its size, straight out of the IHDR chunk: 8 bytes of
  * signature, then a 4-byte length and the `IHDR` tag, then width and height as
  * big-endian 32-bit integers. Cheaper than a dependency, and it is the only
@@ -75,14 +86,18 @@ describe('the link preview', () => {
   });
 
   /* A crawler fetches the card out of band, with no page to resolve a
-     relative path against. `%BASE_URL%` is how the origin-relative half stays
-     right in both builds — vite writes `/congenial-octo-spork/` into
-     production and `/congenial-octo-spork/preview/` into the preview, so the
-     preview's card is its own rather than production's. */
-  it('gives the crawler absolute URLs, built through the base', () => {
+     relative path against. So the URLs are absolute, and both halves are
+     placeholders vite fills at build time. `%BASE_URL%` is how the path stays
+     right across builds — `/congenial-octo-spork/` in production,
+     `/congenial-octo-spork/preview/` in the preview, so the preview's card is
+     its own rather than production's, and `/` on Netlify. `%VITE_SITE_ORIGIN%`
+     is how the origin does: the GitHub Pages one from `.env` unless the build
+     sets it, which netlify.toml does, to the Netlify domain. */
+  it('gives the crawler absolute URLs, built through the origin and the base', () => {
     for (const key of ['og:url', 'og:image', 'twitter:image']) {
-      expect(metaTags[key]).toMatch(/^https:\/\/[^/]+%BASE_URL%/);
+      expect(metaTags[key]).toMatch(ORIGIN_AND_BASE);
     }
+    expect(siteOrigin).toMatch(/^https:\/\/[^/]+$/);
   });
 
   it('asks the origin for nothing outside the base', () => {
@@ -98,7 +113,7 @@ describe('the cover', () => {
   it('ships every file the document links to', () => {
     const linked = [
       ...hrefs.filter((h) => h.startsWith('%BASE_URL%')).map((h) => h.replace('%BASE_URL%', '')),
-      metaTags['og:image'].replace(/^https:\/\/[^/]+%BASE_URL%/, ''),
+      metaTags['og:image'].replace(ORIGIN_AND_BASE, ''),
     ];
     for (const file of linked) {
       expect(existsSync(root(`public/${file}`))).toBe(true);
@@ -342,6 +357,12 @@ describe('the front door', () => {
     expect(described.map((d) => d.url)).toContain(liveUrl);
   });
 
+  /* The card's default origin is the one every URL above is on, so a Pages
+     build addresses its card to the site it is. */
+  it('addresses the card to the origin the README links to', () => {
+    expect(siteOrigin).toBe(ORIGIN);
+  });
+
   it('names no Pages URL that no workflow publishes', () => {
     const published = new Set(publishes.map((p) => `${ORIGIN}${p.base}`));
     const named = new Set(
@@ -352,5 +373,38 @@ describe('the front door', () => {
 
     expect([...named].filter((u) => !published.has(u))).toEqual([]);
     expect(named).toEqual(published);
+  });
+});
+
+/**
+ * The second place the site is published from, held to the one thing that
+ * has to differ from the first.
+ *
+ * `the front door` above holds the GitHub Pages deploy, where
+ * `vite.config.ts`'s `base` is `/congenial-octo-spork/` because that is where
+ * a Pages site lives. Netlify serves the same build from the root of its own
+ * domain, and a build made with that `base` asks it for
+ * `/congenial-octo-spork/assets/…` — a 404 for everything but index.html,
+ * which is an empty page. So netlify.toml builds with `--base=/` on the
+ * command line, the same override deploy.yml uses for /preview/, and hands
+ * the card Netlify's own `URL` in place of the Pages origin `.env` defaults
+ * to. Tests run first, as they do in deploy.yml, so nothing publishes that
+ * fails them. What netlify.toml cannot say — which branches Netlify builds,
+ * and whether the site is public — lives in its dashboard, and nothing here
+ * can read it.
+ */
+describe('the Netlify build', () => {
+  const toml = readFileSync(root('netlify.toml'), 'utf8');
+  const command = /^\s*command\s*=\s*(['"])(.*)\1\s*$/m.exec(toml)?.[2] ?? '';
+
+  it('publishes what vite builds', () => {
+    expect(toml).toMatch(/^\s*publish\s*=\s*['"]dist['"]/m);
+  });
+
+  it('builds at the domain root, on its own origin, after the tests', () => {
+    expect(command).toMatch(/\bvite build\b.*--base=\/(?:\s|$)/);
+    expect(command).toMatch(/VITE_SITE_ORIGIN="?\$URL"?\s+npx vite build/);
+    expect(command.indexOf('npm run test')).toBeGreaterThanOrEqual(0);
+    expect(command.indexOf('npm run test')).toBeLessThan(command.indexOf('vite build'));
   });
 });

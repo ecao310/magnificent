@@ -141,7 +141,7 @@ longer the rate the arithmetic reaches.
 ```bash
 npm install
 npm run dev      # start dev server
-npm run test     # vitest, 398 tests
+npm run test     # vitest, 402 tests
 npm run lint     # eslint
 npm run build    # tsc -b && vite build
 ```
@@ -186,6 +186,18 @@ serves `main`, and `dev` never needs to be merged to be seen. A broken `dev`
 does not hold `main` back — pushed from `main`, a preview that fails its tests
 or build is logged and production ships without it; pushed from `dev`, it
 fails the run and nothing is published.
+
+`main` is also built by Netlify, from `netlify.toml`, and served at the root
+of its own domain: https://magnificent-fi.netlify.app . That build is the
+Pages one with one difference. A Pages site lives under
+`/congenial-octo-spork/`, and `vite.config.ts`'s `base` says so; a Netlify
+site is the whole domain, so the build there is passed `--base=/` on the
+command line, and the link-preview card is addressed to Netlify's own `URL`
+rather than the GitHub Pages origin that `.env` gives `VITE_SITE_ORIGIN`.
+Tests run first there too, so a `main` that fails them publishes nowhere.
+`the Netlify build` in `src/guards/meta.test.ts` reads `netlify.toml` and
+holds it to that. What the file cannot say — which branches Netlify builds,
+and whether the site is public — lives in its dashboard.
 
 `the front door` in `src/guards/meta.test.ts` holds this section to that
 file: it reads each "push to `branch`" sentence above and the URL it gives,
