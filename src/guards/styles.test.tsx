@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import App from '../App';
+import { RAIL_COLLAPSES_AT } from '../components/HouseholdStep';
 import { CHART, PALETTE } from '../styles/palette';
 
 /**
@@ -78,6 +79,12 @@ describe('the palette', () => {
       const used = new RegExp(`var\\(${token}\\)`).test(uncommented) || painted.has(screenTokens[token]);
       expect(used, `${token} is spent somewhere`).toBe(true);
     }
+  });
+});
+
+describe('the fold', () => {
+  it('happens at the width the stylesheet collapses the columns', () => {
+    expect(uncommented).toMatch(new RegExp(`@media \\(max-width: ${RAIL_COLLAPSES_AT}px\\)`));
   });
 });
 

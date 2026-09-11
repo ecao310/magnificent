@@ -48,6 +48,12 @@ which drew the 400% line without pricing it.
    the slider under it, or type a number to move it — and the button under
    the figures sends the household as a link.
 
+On a wide screen the household is a column beside the chart. On one column
+— a phone, or a window under 1100px — it folds to a row under the title that
+names the household in a phrase ("A couple, both 50 · national average ·
+benchmark $1,747/mo") with a *Change* button; tapping it opens the same
+controls in place, directly above the chart they move.
+
 ## The rate
 
 The premium under the 400% line is a set share of income that the statute

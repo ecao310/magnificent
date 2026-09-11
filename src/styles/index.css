@@ -278,6 +278,79 @@ h1 {
   border-bottom: 1px solid var(--ink);
 }
 
+/* ───── The fold ────────────────────────────────────────────────────────────
+ *
+ * On one column the rail is a `details` under the masthead, and this is its
+ * closed row: the heading, the household in a phrase under it, and a stamped
+ * word at the right that says what a tap does. Under the masthead's own
+ * hairline and over an ink rule, the way the rail's list opens, so the row
+ * reads as the rail folded rather than as a note. Open, the body takes over
+ * the bottom rule, and the first item drops its top one so the row and the
+ * list share a hairline.
+ */
+.household-sheet > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'heading toggle'
+    'gloss toggle';
+  column-gap: 1rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid var(--ink);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.household-sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.household-sheet > summary .step-heading {
+  grid-area: heading;
+  margin: 0;
+}
+
+.household-sheet-gloss {
+  grid-area: gloss;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.household-sheet-toggle {
+  grid-area: toggle;
+  padding: 0.4375rem 0.75rem;
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.household-sheet[open] .household-sheet-toggle {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.household-sheet[open] > summary {
+  border-bottom-color: var(--edge);
+}
+
+.household-sheet-body .filing-status:first-of-type {
+  border-top: none;
+}
+
+.household-sheet > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
 label {
   font-size: 1.0625rem;
   font-weight: 500;
@@ -1421,12 +1494,13 @@ footer p {
 /* ───── The collapse ────────────────────────────────────────────────────────
  *
  * Two steps down. Below 1200px the page's own margins halve. Below 1100px the
- * two columns become one, and the order is set rather than left to the
- * markup: the chart and the figures first, because they are what the reader
- * came for; the controls that move them second; the notes last. 1100 rather
+ * two columns become one, in the markup's own order: the rail first, folded
+ * to a row (`.household-sheet` above) so it costs the chart one line rather
+ * than a screen; the chart and the figures; the notes last. 1100 rather
  * than lower because the rail is 22.5rem and the gutter 4rem, so under it the
  * reading column — and the plot in it — would be narrower than the rail is
- * tall.
+ * tall. `RAIL_COLLAPSES_AT` in HouseholdStep.tsx is the same number, and the
+ * component folds at it.
  *
  * Last in the screen half on purpose — a media query adds no specificity, so
  * a rule it overrides has to be above it in the file or the override silently
@@ -1441,15 +1515,10 @@ footer p {
 @media (max-width: 1100px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 2.5rem;
-  }
-
-  .flow {
-    order: 1;
+    row-gap: 1.75rem;
   }
 
   .step-config {
-    order: 2;
     position: static;
     max-height: none;
     overflow: visible;
@@ -1457,7 +1526,6 @@ footer p {
   }
 
   .notes-section {
-    order: 3;
     grid-column: auto;
   }
 }
@@ -1493,6 +1561,28 @@ footer p {
   .chart-key {
     padding-left: 0;
     padding-right: 0;
+  }
+
+  /* The chooser as a strip: the two names side by side and the glosses off,
+     so the pair costs the chart one row rather than two boxes. The gloss is
+     still what the radio is described by, off screen or not. */
+  .chart-choice {
+    display: flex;
+    flex-basis: 0;
+  }
+
+  /* Both boxes as tall as the taller name, and the name centred in each. */
+  .chart-choice-box {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 0.5rem;
+    text-align: center;
+  }
+
+  .chart-choice-gloss {
+    display: none;
   }
 
   .answer-figures {
