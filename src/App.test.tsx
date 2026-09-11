@@ -35,7 +35,7 @@ describe('App', () => {
   it('leads with what the page is for rather than with the settings', () => {
     render(<App />);
     const hero = screen.getByRole('heading', {
-      name: /income taxes in retirement/i,
+      name: /income tax in retirement/i,
       level: 1,
     });
     expect(hero).toBeInTheDocument();
@@ -457,7 +457,7 @@ describe('App', () => {
     expect(
       screen.getByText(
         'Total income ($), including $24,852 of Social Security and ' +
-          '$5,000 of municipal interest.',
+        '$5,000 of municipal interest.',
       ),
     ).toBeInTheDocument();
   });
@@ -821,8 +821,8 @@ describe('the charts as images', () => {
     // about which of the two they control.
     expect(chart('torpedo').getAttribute('aria-label')).toBe(
       'Chart: the marginal tax rate on the next dollar of other income, ' +
-        'plotted against total income from $24,852 to $199,852 — a fixed ' +
-        '$24,852 of Social Security plus $0 to $175,000 of other income.',
+      'plotted against total income from $24,852 to $199,852 — a fixed ' +
+      '$24,852 of Social Security plus $0 to $175,000 of other income.',
     );
     // The axis is sized to the return, and the label follows it in — the
     // $175,000 is the senior deduction's phaseout, and a filer under 65 has
@@ -960,7 +960,7 @@ describe('scenario recap', () => {
     render(<App />);
     expect(scenarioRecap()).toHaveTextContent(
       'One year’s return: 2026 brackets and standard deduction, a single ' +
-        'filer, 65 or older, collecting $24,852 of Social Security per year.',
+      'filer, 65 or older, collecting $24,852 of Social Security per year.',
     );
   });
 
@@ -973,8 +973,8 @@ describe('scenario recap', () => {
     );
     expect(scenarioRecap()).toHaveTextContent(
       'One year’s return: 2026 brackets and standard deduction, a married ' +
-        'couple filing jointly, one spouse 65 or older, collecting $48,000 of Social ' +
-        'Security per year.',
+      'couple filing jointly, one spouse 65 or older, collecting $48,000 of Social ' +
+      'Security per year.',
     );
   });
 
@@ -1029,7 +1029,7 @@ describe('scenario recap', () => {
     });
     expect(scenarioRecap()).toHaveTextContent(
       'collecting $24,852 of Social Security per year. Plus $5,000 in ' +
-        'municipal interest.',
+      'municipal interest.',
     );
 
     fireEvent.change(screen.getByLabelText('Tax-Exempt (Municipal) Interest'), {
@@ -1055,8 +1055,8 @@ describe('scenario recap', () => {
     });
     expect(scenarioRecap()).toHaveTextContent(
       'One year’s return: 2026 brackets and standard deduction, a married ' +
-        'couple filing jointly, one spouse 65 or older, collecting $38,500 ' +
-        'of Social Security per year. Plus $3,750 in municipal interest.',
+      'couple filing jointly, one spouse 65 or older, collecting $38,500 ' +
+      'of Social Security per year. Plus $3,750 in municipal interest.',
     );
   });
 
@@ -1087,7 +1087,7 @@ describe('scenario recap', () => {
     });
     expect(scenarioRecap()).toHaveTextContent(
       'collecting no Social Security at all. Plus $5,000 in municipal ' +
-        'interest.',
+      'interest.',
     );
   });
 });

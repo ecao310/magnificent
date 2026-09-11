@@ -33,9 +33,9 @@ itself stands where the chart stands beside it.
    senior-deduction phaseout is in the curve, because it is tax. The IRMAA
    cliffs and the 400% poverty-line cliff are not: they are a Medicare premium
    and a Marketplace credit, so both are priced for the reader's own income in
-   the chart's tooltip. The IRMAA cliffs are drawn across the axis from the
-   start; the 400% line only when the **Breakpoints** button in the corner of
-   the plot is asked for it. Every figure under it is a federal one.
+   the chart's tooltip. Neither is drawn until the **Breakpoints** button in
+   the corner of the plot is asked for it. Every figure under it is a federal
+   one.
 
    A dashed amber marker stands at your income — click or tap the chart,
    drag a finger along it, or drag the slider under it to move it — and the

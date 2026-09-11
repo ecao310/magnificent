@@ -89,13 +89,14 @@ const herePositions = (container: HTMLElement): number[] =>
 /**
  * Ask step 2 for both threshold lines, for a reader not yet on Medicare.
  *
- * The IRMAA cliffs are drawn as the page opens; the 400% line is not, because
- * it belongs to a reader still buying their own coverage — and the page opens
- * with the filer at 65, for whom the switch is not even offered. So this
- * takes the filer back under 65 first, which also puts the axis back on the
+ * Neither line is drawn as the page opens: the plot arrives as the curve and
+ * the reader's own marker, and every threshold waits to be asked for. The
+ * 400% line is not even offered to the filer the page opens with, who is 65
+ * — it belongs to a reader still buying their own coverage. So this takes
+ * the filer back under 65 first, which also puts the axis back on the
  * $150,000 every dollar figure below is written against, and then asks for
- * the second line. Every test below is about where a line lands once both
- * are drawn.
+ * both lines. Every test below is about where a line lands once both are
+ * drawn.
  *
  * The panel is shut again afterwards. It is not a dialog and nothing traps
  * focus in it, but leaving it open puts two more checkboxes in the same
@@ -105,19 +106,21 @@ const showBothThresholds = (): void => {
   fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
   const open = screen.getByRole('button', { name: /^Breakpoints/ });
   fireEvent.click(open);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' }));
   fireEvent.click(screen.getByRole('checkbox', { name: '400% poverty-line cliff' }));
   fireEvent.click(open);
 };
 
 describe('IRMAA cliffs on the ordinary-income chart', () => {
-  it('opens with the IRMAA cliffs drawn and the 400% line waiting to be asked for', () => {
+  it('opens with no threshold drawn, both waiting to be asked for', () => {
     const { container } = render(<App />);
-    // The default render is the curve, the reader's own marker and the three
-    // Medicare cliffs the default axis reaches. The 400% line is the one
-    // threshold that waits: it belongs to a reader still buying their own
-    // coverage, and a return on Medicare has no use for it.
-    expect(cliffPositions(container)).toHaveLength(3);
-    expect(screen.getAllByText(/^IRMAA [123]$/)).toHaveLength(3);
+    // The default render is the curve and the reader's own marker, and
+    // nothing else: the three Medicare cliffs the default axis reaches are
+    // behind a switch, and so is the 400% line — which is not even offered
+    // to a return on Medicare, since it belongs to a reader still buying
+    // their own coverage.
+    expect(cliffPositions(container)).toHaveLength(0);
+    expect(screen.queryByText(/^IRMAA [123]$/)).not.toBeInTheDocument();
     expect(subsidyPositions(container)).toHaveLength(0);
     expect(screen.queryByText('400% FPL')).not.toBeInTheDocument();
     expect(herePositions(container).length).toBeGreaterThan(0);
@@ -373,17 +376,21 @@ describe('the \u201cyou are here\u201d marker', () => {
     expect(container.querySelectorAll('text.here-label')).toHaveLength(0);
 
     // Stated as the whole plot rather than as this one label: as the page
-    // opens, the only words over the curve besides the axis's own numbers are
-    // the three cliffs' names, each on the line it names. Anything else
-    // appearing there is a regression worth hearing about.
+    // opens, the only words over the curve are the axis's own numbers. The
+    // cliffs' names arrive with their lines, behind the Breakpoints switch,
+    // and anything else appearing there is a regression worth hearing about.
     const words = Array.from(container.querySelectorAll('.recharts-wrapper text'));
     // Guards the extractor: a plot that rendered no text would pass vacuously.
     expect(words.length).toBeGreaterThan(5);
-    expect(
-      words
+    const wordsOffTheAxis = (): string[] =>
+      Array.from(container.querySelectorAll('.recharts-wrapper text'))
         .filter((t) => !t.classList.contains('recharts-cartesian-axis-tick-value'))
-        .map((t) => t.textContent),
-    ).toEqual(['IRMAA 1', 'IRMAA 2', 'IRMAA 3']);
+        .map((t) => t.textContent ?? '');
+    expect(wordsOffTheAxis()).toEqual([]);
+
+    // And once the lines are asked for, each cliff's name and nothing more.
+    showBothThresholds();
+    expect(wordsOffTheAxis()).toEqual(['IRMAA 1', 'IRMAA 2', 'IRMAA 3', '400% FPL']);
   });
 
   it('moves with its own slider', () => {
@@ -542,9 +549,11 @@ describe('the chart register', () => {
 
     expect(container.querySelectorAll('.recharts-cartesian-grid-horizontal')).toHaveLength(1);
     expect(container.querySelectorAll('.recharts-cartesian-grid-vertical')).toHaveLength(0);
-    // Two dashes and no third: the reader's own marker is a `6 4`, and every
-    // cliff — the three IRMAA lines the page opens with, and the 400% line
-    // behind its switch — is a `4 4`.
+    // The page opens with one dashed line, the reader's own marker, at `6 4`.
+    expect(drawnWith(container, 'stroke-dasharray')).toEqual(['6 4']);
+    // Two dashes and no third once every cliff is switched on: the three
+    // IRMAA lines and the 400% line are all a `4 4`.
+    showBothThresholds();
     expect(drawnWith(container, 'stroke-dasharray').sort()).toEqual(['4 4', '6 4']);
   });
 
