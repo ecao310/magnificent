@@ -43,16 +43,19 @@ export const slide = (name: RegExp | string, value: number): void => {
   fireEvent.change(screen.getByRole('slider', { name }), { target: { value: String(value) } });
 };
 
-/** Type a dollar figure into one of the number fields and leave it, as a reader would. */
+/** Type a dollar figure into one of the money fields and leave it, as a reader would. */
 export const typeMoney = (name: RegExp | string, value: number): void => {
-  const field = screen.getByRole('spinbutton', { name });
+  const field = screen.getByRole('textbox', { name });
   fireEvent.change(field, { target: { value: String(value) } });
   fireEvent.blur(field);
 };
 
+/** The figure a money field holds, read past its separators. */
+export const money = (field: HTMLInputElement): number => Number(field.value.replace(/[^\d]/g, ''));
+
 /** The income field under the cost chart. */
-export const incomeField = (): HTMLInputElement => screen.getByRole('spinbutton', { name: INCOME });
+export const incomeField = (): HTMLInputElement => screen.getByRole('textbox', { name: INCOME });
 
 /** The premium field in the rail. */
 export const premiumField = (): HTMLInputElement =>
-  screen.getByRole('spinbutton', { name: /benchmark plan premium/i });
+  screen.getByRole('textbox', { name: /benchmark plan premium/i });

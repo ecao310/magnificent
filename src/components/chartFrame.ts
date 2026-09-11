@@ -35,6 +35,50 @@ export const AXIS_TITLE = { fontSize: CHART.label, fill: PALETTE.inkMuted } as c
 export const MARGIN = { top: 22, right: 28, left: 10, bottom: 24 } as const;
 
 /**
+ * The frame a plot is drawn in: the gutter the y-axis takes, the margins
+ * around the plot, and whether the axes carry their titles.
+ */
+export interface Frame {
+  axis: number;
+  margin: { top: number; right: number; left: number; bottom: number };
+  titles: boolean;
+}
+
+/** The frame on a wide screen: titled axes, and room for them. */
+export const WIDE_FRAME: Frame = { axis: CHART.axis, margin: MARGIN, titles: true };
+
+/**
+ * The frame on a phone. On a 390px screen the wide frame left the curve
+ * 228px to be drawn in, so here the axis titles come off — the heading
+ * over the plot and the slider's label under it say the same two things —
+ * the gutter narrows to its labels, and the margins close up. What is
+ * left is the plot.
+ */
+export const NARROW_FRAME: Frame = {
+  axis: CHART.axisNarrow,
+  margin: { top: 22, right: 16, left: 4, bottom: 4 },
+  titles: false,
+};
+
+/**
+ * The width under which a plot takes the narrow frame: the same 640 the
+ * stylesheet's phone rules turn on at, so the slider's inset under the
+ * plot and the gutter it is inset to change together. `the fold` in
+ * styles.test.tsx holds the two to one number.
+ */
+export const NARROW_MAX_WIDTH = 640;
+export const NARROW_QUERY = `(max-width: ${NARROW_MAX_WIDTH}px)`;
+
+/**
+ * Where a hover means something: a pointer that can rest on the curve
+ * without pressing it. A finger cannot, so on a touchscreen the plot draws
+ * no hover reading and a touch moves the marker instead.
+ */
+export const HOVER_QUERY = '(hover: hover) and (pointer: fine)';
+
+export const frameFor = (narrow: boolean): Frame => (narrow ? NARROW_FRAME : WIDE_FRAME);
+
+/**
  * The width of a run of text in the plot's mono, in pixels. IBM Plex Mono
  * advances six tenths of an em, as most monospaces do, and every label on
  * the plot is set at `CHART.label`.
@@ -76,10 +120,50 @@ export function edgeLabelsFit(
   return true;
 }
 
+/**
+ * Whether the marker's label, hung on one side of its dot at the top of the
+ * plot, would run into the label over an edge of the subsidy. Only the top
+ * of the plot is crowded — the edges are named there — so this is asked
+ * only of a label lifted to it.
+ */
+export function labelMeetsEdge(
+  side: 'left' | 'right',
+  herePx: number,
+  labelWidth: number,
+  edges: SubsidyLine[],
+  edgeLabel: (line: SubsidyLine) => string,
+  px: (magi: number) => number | null,
+): boolean {
+  const [from, to] = side === 'left' ? [herePx - labelWidth, herePx] : [herePx, herePx + labelWidth];
+  return edges.some((line) => {
+    const at = px(line.magi);
+    if (at === null) return false;
+    const half = textWidth(edgeLabel(line)) / 2;
+    return from < at + half + LABEL_GAP && to > at - half - LABEL_GAP;
+  });
+}
+
 /** A word laid over a stretch of axis stands upright when the stretch is narrower than it. */
 export const wordStandsUpright = (word: string, stretchPx: number | null): boolean =>
   stretchPx !== null && stretchPx < textWidth(word) + LABEL_GAP;
 
-/** The plot area's width, from the width recharts measured: the y-axis gutter and the margins taken off. */
-export const plotWidthOf = (width: number): number =>
-  Math.max(0, width - CHART.axis - MARGIN.left - MARGIN.right);
+/** The plot area's width, from the width of the box the chart is drawn in: the y-axis gutter and the margins taken off. */
+export const plotWidthOf = (width: number, frame: Frame = WIDE_FRAME): number =>
+  Math.max(0, width - frame.axis - frame.margin.left - frame.margin.right);
+
+/** The income a pointer on the plot is nearest, rounded to this. */
+export const POINTER_STEP = 500;
+
+/**
+ * The income under a pointer: `x` is its distance from the left edge of
+ * the box the chart is drawn in, `width` the box's width. Off the plot to
+ * either side is the end of the axis on that side; before the box has a
+ * width there is no answer.
+ */
+export function incomeAtX(x: number, width: number, axisMax: number, frame: Frame): number | null {
+  const plot = plotWidthOf(width, frame);
+  if (plot <= 0) return null;
+  const share = (x - frame.margin.left - frame.axis) / plot;
+  const raw = Math.min(1, Math.max(0, share)) * axisMax;
+  return Math.round(raw / POINTER_STEP) * POINTER_STEP;
+}

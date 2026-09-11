@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 import { RAIL_COLLAPSES_AT } from './components/HouseholdStep';
 import { formatCurrency } from './lib/format';
-import { chooseAdults, chooseChildren, chooseState, pinPageYear, premiumField } from './test/pageFixtures';
+import { chooseAdults, chooseChildren, chooseState, money, pinPageYear, premiumField } from './test/pageFixtures';
 
 /**
  * The rail on a narrow screen: folded to a row under the masthead that
@@ -69,7 +69,7 @@ describe('the fold', () => {
     chooseAdults('One adult');
     chooseChildren(2);
     chooseState('TX');
-    const benchmark = formatCurrency(Number(premiumField().value));
+    const benchmark = formatCurrency(money(premiumField()));
     expect(row).toHaveTextContent(`One adult, aged 50, with 2 children · Texas · benchmark ${benchmark}/mo`);
   });
 

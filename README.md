@@ -8,9 +8,9 @@ every extra dollar of income, the rate climbs in a sawtooth to 19, drops to
 subsidy at once.
 
 One page, two charts of the same household, one showing at a time: what
-you pay at every household income, the subsidy at any point on hover, and
-the price of the next dollar and the next $10,000; or federal income tax
-and the premium added up and drawn as one rate.
+you pay at every household income, the subsidy at any point under the
+pointer, and the price of the next dollar and the next $10,000; or federal
+income tax and the premium added up and drawn as one rate.
 
 **Live:** https://ecao310.github.io/super-duper-broccoli/
 
@@ -44,15 +44,21 @@ which drew the 400% line without pricing it.
      rate is figured, Why the premium counts as a tax, and What is left out,
      on both sides.
 
-   Either way a "You" marker sits at your income — click the chart, drag
-   the slider under it, or type a number to move it — and the button under
-   the figures sends the household as a link.
+   Either way a "You" marker sits at your income — click or tap the chart,
+   drag a finger along it, drag the slider under it, or type a number to
+   move it — and the button under the figures sends the household as a
+   link. The hover reading over the curve is drawn only for a pointer that
+   can hover; a finger moves the marker instead, and the sentence under
+   the slider is its reading.
 
 On a wide screen the household is a column beside the chart. On one column
 — a phone, or a window under 1100px — it folds to a row under the title that
 names the household in a phrase ("A couple, both 50 · national average ·
 benchmark $1,747/mo") with a *Change* button; tapping it opens the same
-controls in place, directly above the chart they move.
+controls in place, directly above the chart they move. The plot itself
+takes a narrower frame under 640px — no axis titles, a gutter no wider
+than its labels — and the premium line is named in a key under the plot
+rather than on it.
 
 ## The rate
 

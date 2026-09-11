@@ -55,8 +55,8 @@ export const RateStep: React.FC<RateStepProps> = ({
       </h2>
       <p className="step-deck">
         Federal income tax and the benchmark plan&rsquo;s premium after the subsidy, together,
-        as a share of household income at every income. Tap or hover the curve for the split
-        at any income.
+        as a share of household income at every income. Tap or drag along the curve to move
+        your marker; hover it for the split at any income.
       </p>
 
       <figure className="chart-figure">

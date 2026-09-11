@@ -6,10 +6,10 @@ const canAsk = (): boolean => typeof window !== 'undefined' && typeof window.mat
 /**
  * Whether a media query holds, kept current as the window changes: rotate a
  * phone and the answer moves. Where there is no `matchMedia` to ask — a
- * server, a test — the answer is no, which is the wide layout, the one the
- * markup is written for.
+ * server, a test — the answer is `fallback`: no by default, which is the
+ * wide layout, the one the markup is written for.
  */
-export function useMediaQuery(query: string): boolean {
+export function useMediaQuery(query: string, fallback = false): boolean {
   const subscribe = useCallback(
     (onChange: () => void): (() => void) => {
       if (!canAsk()) return () => {};
@@ -19,6 +19,9 @@ export function useMediaQuery(query: string): boolean {
     },
     [query],
   );
-  const read = useCallback((): boolean => canAsk() && window.matchMedia(query).matches, [query]);
-  return useSyncExternalStore(subscribe, read, () => false);
+  const read = useCallback(
+    (): boolean => (canAsk() ? window.matchMedia(query).matches : fallback),
+    [query, fallback],
+  );
+  return useSyncExternalStore(subscribe, read, () => fallback);
 }

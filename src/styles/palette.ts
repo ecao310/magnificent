@@ -70,4 +70,10 @@ export const CHART = {
    * rotated title stands to the left of it.
    */
   axis: 76,
+  /**
+   * The same gutter on a phone, where the rotated title is dropped and the
+   * gutter is only as wide as `$5,000` and a tick's breathing room;
+   * `--chart-axis-narrow` is the same 56.
+   */
+  axisNarrow: 56,
 } as const;

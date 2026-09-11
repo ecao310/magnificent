@@ -17,15 +17,20 @@ import type { Scenario, SubsidyLine } from '../../lib/aca';
 import type { RatePoint } from '../../lib/tax';
 import { formatAxisMoney, formatAxisPercent, formatFpl, formatPercent } from '../../lib/format';
 import { CHART, PALETTE } from '../../styles/palette';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { usePlotPointer } from '../../hooks/usePlotPointer';
 import {
   AXIS_PROPS,
   AXIS_TITLE,
   HOVER_CURSOR,
   HOVER_DOT,
+  HOVER_QUERY,
   LABEL_GAP,
-  MARGIN,
+  NARROW_QUERY,
   edgeLabelsFit,
+  frameFor,
   incomeTicks,
+  labelMeetsEdge,
   plotWidthOf,
   textWidth,
   wordStandsUpright,
@@ -70,7 +75,9 @@ export interface RateChartProps {
  *
  * Under the floor there is no premium to stack — Medicaid, or the coverage
  * gap — so the hatch and the line stop and the wash runs on alone. The
- * same labels the cost page fits to its plot are fitted here the same way.
+ * same labels the cost page fits to its plot are fitted here the same way,
+ * the same narrow frame is taken on a phone, and the same pointer moves
+ * the marker: a click, a tap, or a finger drawn along the plot.
  */
 export const RateChart: React.FC<RateChartProps> = ({
   curve,
@@ -88,13 +95,22 @@ export const RateChart: React.FC<RateChartProps> = ({
   const floorMagi = Math.round(creditFloorMagi(scenario));
   const cliffMagi = ptcCliffMagi(scenario);
 
-  /** The plot area's width in pixels once measured, or null before the first measurement. */
-  const [plotWidth, setPlotWidth] = useState<number | null>(null);
+  const narrow = useMediaQuery(NARROW_QUERY);
+  const frame = frameFor(narrow);
+  const hoverable = useMediaQuery(HOVER_QUERY, true);
+  const pointer = usePlotPointer({ axisMax, frame, onIncome });
+
+  /** The width of the box the chart is drawn in, or null before the first measurement. */
+  const [width, setWidth] = useState<number | null>(null);
+  /** The plot area's width in pixels: the box less the frame. */
+  const plotWidth = width === null ? null : plotWidthOf(width, frame);
   const px = (magi: number): number | null =>
     plotWidth === null ? null : (magi / axisMax) * plotWidth;
 
   const edges = lines;
   const edgesFit = edgeLabelsFit(edges, px, plotWidth);
+  const edgeLabel = (line: SubsidyLine): string =>
+    edgesFit ? line.label : formatFpl(line.multiple);
 
   /* The word over the gap stands upright when the gap is narrower than it. */
   const gapWord = expansion ? 'Medicaid' : 'No subsidy, no Medicaid';
@@ -120,30 +136,40 @@ export const RateChart: React.FC<RateChartProps> = ({
   })();
   /* Under the line, a label sent right goes under the dot, where the line
      climbs away above it — unless the dot is so near the axis that under
-     it is the axis, in which case it goes over and takes its chances. */
+     it is the axis, in which case it goes over and takes its chances. Over
+     the line it goes over the dot — unless the dot stands so near the top
+     of the plot that the label would meet the name of an edge there, in
+     which case it goes under. */
   const nearAxis = hereRate !== null && hereRate < 0.12 * rateAxis.max;
-  const hereLift =
-    pastCliff || (hereSide === 'right' && nearAxis)
-      ? -(CHART.dot + 7)
-      : hereSide === 'right'
-        ? CHART.dot + 9
-        : 0;
+  const nearTop = hereRate !== null && hereRate > 0.85 * rateAxis.max;
+  const meetsEdge =
+    pastCliff &&
+    nearTop &&
+    herePx !== null &&
+    labelMeetsEdge(hereSide, herePx, textWidth(hereLabel) + CHART.dot + 5, edges, edgeLabel, px);
+  const hereLift = pastCliff
+    ? meetsEdge
+      ? CHART.dot + 9
+      : -(CHART.dot + 7)
+    : hereSide === 'right'
+      ? nearAxis
+        ? -(CHART.dot + 7)
+        : CHART.dot + 9
+      : 0;
 
   return (
-    <div className="chart-container" role="img" aria-label={label}>
-      <ResponsiveContainer
-        width="100%"
-        height="100%"
-        onResize={(width) => setPlotWidth(plotWidthOf(width))}
-      >
-        <ComposedChart
-          data={curve}
-          margin={MARGIN}
-          onClick={(e: { activeLabel?: string | number }) => {
-            const at = Number(e?.activeLabel);
-            if (Number.isFinite(at)) onIncome(Math.round(at / 500) * 500);
-          }}
-        >
+    <div
+      className="chart-container"
+      role="img"
+      aria-label={label}
+      ref={pointer.ref}
+      onPointerDown={pointer.onPointerDown}
+      onPointerMove={pointer.onPointerMove}
+      onPointerUp={pointer.onPointerUp}
+      onPointerCancel={pointer.onPointerCancel}
+    >
+      <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
+        <ComposedChart data={curve} margin={frame.margin}>
           <defs>
             {/* The cost page's hatch, for the same thing it stands for there:
                 what the household pays for the plan. */}
@@ -173,32 +199,42 @@ export const RateChart: React.FC<RateChartProps> = ({
             domain={axisDomain}
             ticks={incomeTicks(axisMax, plotWidth)}
             tickFormatter={formatAxisMoney}
-            label={{
-              ...AXIS_TITLE,
-              value: 'Household income for the year',
-              position: 'insideBottom',
-              offset: -4,
-            }}
+            label={
+              frame.titles
+                ? {
+                    ...AXIS_TITLE,
+                    value: 'Household income for the year',
+                    position: 'insideBottom',
+                    offset: -4,
+                  }
+                : undefined
+            }
           />
           <YAxis
             {...AXIS_PROPS}
             tickFormatter={formatAxisPercent}
-            width={CHART.axis}
+            width={frame.axis}
             domain={[0, rateAxis.max]}
             ticks={rateAxis.ticks}
-            label={{
-              ...AXIS_TITLE,
-              value: 'Share of income',
-              angle: -90,
-              position: 'insideLeft',
-            }}
+            label={
+              frame.titles
+                ? {
+                    ...AXIS_TITLE,
+                    value: 'Share of income',
+                    angle: -90,
+                    position: 'insideLeft',
+                  }
+                : undefined
+            }
           />
-          <Tooltip
-            cursor={HOVER_CURSOR}
-            allowEscapeViewBox={{ x: false, y: true }}
-            wrapperStyle={{ maxWidth: 'calc(100vw - 3rem)' }}
-            content={<RateTooltip scenario={scenario} />}
-          />
+          {hoverable && (
+            <Tooltip
+              cursor={HOVER_CURSOR}
+              allowEscapeViewBox={{ x: false, y: true }}
+              wrapperStyle={{ maxWidth: 'calc(100vw - 3rem)' }}
+              content={<RateTooltip scenario={scenario} />}
+            />
+          )}
 
           {/* Federal income tax, at the bottom of the stack. */}
           <Area
@@ -249,7 +285,7 @@ export const RateChart: React.FC<RateChartProps> = ({
               strokeDasharray="2 3"
               strokeWidth={CHART.hairline}
               label={{
-                value: edgesFit ? line.label : formatFpl(line.multiple),
+                value: edgeLabel(line),
                 position: 'top',
                 fill: PALETTE.inkSoft,
                 fontSize: CHART.label,
@@ -273,7 +309,7 @@ export const RateChart: React.FC<RateChartProps> = ({
             stroke={PALETTE.edgeStrong}
             strokeWidth={CHART.line}
             dot={false}
-            activeDot={HOVER_DOT}
+            activeDot={hoverable ? HOVER_DOT : false}
             connectNulls={false}
             isAnimationActive={false}
           />

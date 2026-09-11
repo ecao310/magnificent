@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import App from '../App';
+import { NARROW_MAX_WIDTH } from '../components/chartFrame';
 import { RAIL_COLLAPSES_AT } from '../components/HouseholdStep';
 import { CHART, PALETTE } from '../styles/palette';
 
@@ -86,11 +87,20 @@ describe('the fold', () => {
   it('happens at the width the stylesheet collapses the columns', () => {
     expect(uncommented).toMatch(new RegExp(`@media \\(max-width: ${RAIL_COLLAPSES_AT}px\\)`));
   });
+
+  it('narrows the plot at the width the stylesheet turns its phone rules on', () => {
+    expect(uncommented).toMatch(new RegExp(`@media \\(max-width: ${NARROW_MAX_WIDTH}px\\)`));
+  });
 });
 
 describe('the chart metrics', () => {
   it('give the y-axis the gutter the stylesheet reserves for it', () => {
     expect(/--chart-axis:\s*(\d+)px/.exec(stylesheet)?.[1]).toBe(String(CHART.axis));
+  });
+
+  it('give it the narrow gutter on a phone, and inset the slider to that one', () => {
+    expect(/--chart-axis-narrow:\s*(\d+)px/.exec(stylesheet)?.[1]).toBe(String(CHART.axisNarrow));
+    expect(uncommented).toMatch(/margin-left: calc\(var\(--chart-axis-narrow\) \+ 4px\)/);
   });
 });
 

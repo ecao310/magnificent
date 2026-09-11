@@ -15,15 +15,20 @@ import { benchmarkMonthlyFor, creditFloorMagi, ptcCliffMagi } from '../lib/aca';
 import type { CostPoint, Scenario, SubsidyLine } from '../lib/aca';
 import { formatAxisMoney, formatCurrency, formatFpl } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { usePlotPointer } from '../hooks/usePlotPointer';
 import {
   AXIS_PROPS,
   AXIS_TITLE,
   HOVER_CURSOR,
   HOVER_DOT,
+  HOVER_QUERY,
   LABEL_GAP,
-  MARGIN,
+  NARROW_QUERY,
   edgeLabelsFit,
+  frameFor,
   incomeTicks,
+  labelMeetsEdge,
   plotWidthOf,
   textWidth,
   wordStandsUpright,
@@ -88,7 +93,13 @@ export interface CostChartProps {
  * named in full where there is room for both names and by their percentage
  * where there is not, and a gap too narrow for its word turns the word
  * upright. Before the first measurement everything is set as if the plot
- * were wide.
+ * were wide. On a phone it takes the narrow frame — no axis titles, a
+ * gutter no wider than its labels — and the premium's name comes off the
+ * plot and into the key under it.
+ *
+ * The plot is its own cursor: a click or a tap moves the marker to the
+ * income under the pointer, and a finger drawn along the plot drags it. The
+ * hover reading is drawn only where there is a pointer that can hover.
  */
 export const CostChart: React.FC<CostChartProps> = ({
   curve,
@@ -107,8 +118,15 @@ export const CostChart: React.FC<CostChartProps> = ({
   const floorMagi = Math.round(creditFloorMagi(scenario));
   const cliffMagi = ptcCliffMagi(scenario);
 
-  /** The plot area's width in pixels once measured, or null before the first measurement. */
-  const [plotWidth, setPlotWidth] = useState<number | null>(null);
+  const narrow = useMediaQuery(NARROW_QUERY);
+  const frame = frameFor(narrow);
+  const hoverable = useMediaQuery(HOVER_QUERY, true);
+  const pointer = usePlotPointer({ axisMax, frame, onIncome });
+
+  /** The width of the box the chart is drawn in, or null before the first measurement. */
+  const [width, setWidth] = useState<number | null>(null);
+  /** The plot area's width in pixels: the box less the frame. */
+  const plotWidth = width === null ? null : plotWidthOf(width, frame);
   const px = (magi: number): number | null =>
     plotWidth === null ? null : (magi / axisMax) * plotWidth;
 
@@ -116,6 +134,8 @@ export const CostChart: React.FC<CostChartProps> = ({
      plot's edges, and by their percentage otherwise. */
   const edges = lines;
   const edgesFit = edgeLabelsFit(edges, px, plotWidth);
+  const edgeLabel = (line: SubsidyLine): string =>
+    edgesFit ? line.label : formatFpl(line.multiple);
 
   /* The premium's name wraps to the band it is hung in, so a narrow band
      gets it on two or three lines rather than running across the cliff. */
@@ -154,30 +174,40 @@ export const CostChart: React.FC<CostChartProps> = ({
   })();
   /* On the slope, a label sent right goes under the dot, where the curve
      climbs away above it — unless the dot is so near the axis that under
-     it is the axis, in which case it goes over and takes its chances. */
+     it is the axis, in which case it goes over and takes its chances. On
+     the plateau it goes over the line — unless the line runs so near the
+     top of the plot that the label would meet the name of an edge there,
+     in which case it goes under. */
   const nearAxis = hereCost !== null && hereCost < 0.12 * yAxis.max;
-  const hereLift =
-    onPlateau || (hereSide === 'right' && nearAxis)
-      ? -(CHART.dot + 7)
-      : hereSide === 'right'
-        ? CHART.dot + 9
-        : 0;
+  const nearTop = monthly > 0.85 * yAxis.max;
+  const meetsEdge =
+    onPlateau &&
+    nearTop &&
+    herePx !== null &&
+    labelMeetsEdge(hereSide, herePx, textWidth(hereLabel) + CHART.dot + 5, edges, edgeLabel, px);
+  const hereLift = onPlateau
+    ? meetsEdge
+      ? CHART.dot + 9
+      : -(CHART.dot + 7)
+    : hereSide === 'right'
+      ? nearAxis
+        ? -(CHART.dot + 7)
+        : CHART.dot + 9
+      : 0;
 
   return (
-    <div className="chart-container" role="img" aria-label={label}>
-      <ResponsiveContainer
-        width="100%"
-        height="100%"
-        onResize={(width) => setPlotWidth(plotWidthOf(width))}
-      >
-        <ComposedChart
-          data={curve}
-          margin={MARGIN}
-          onClick={(e: { activeLabel?: string | number }) => {
-            const at = Number(e?.activeLabel);
-            if (Number.isFinite(at)) onIncome(Math.round(at / 500) * 500);
-          }}
-        >
+    <div
+      className="chart-container"
+      role="img"
+      aria-label={label}
+      ref={pointer.ref}
+      onPointerDown={pointer.onPointerDown}
+      onPointerMove={pointer.onPointerMove}
+      onPointerUp={pointer.onPointerUp}
+      onPointerCancel={pointer.onPointerCancel}
+    >
+      <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
+        <ComposedChart data={curve} margin={frame.margin}>
           <defs>
             {/* The engraver's hatch under the curve: a diagonal hairline in
                 the curve's own blue, at `CHART.fill`. */}
@@ -207,32 +237,42 @@ export const CostChart: React.FC<CostChartProps> = ({
             domain={axisDomain}
             ticks={incomeTicks(axisMax, plotWidth)}
             tickFormatter={formatAxisMoney}
-            label={{
-              ...AXIS_TITLE,
-              value: 'Household income for the year',
-              position: 'insideBottom',
-              offset: -4,
-            }}
+            label={
+              frame.titles
+                ? {
+                    ...AXIS_TITLE,
+                    value: 'Household income for the year',
+                    position: 'insideBottom',
+                    offset: -4,
+                  }
+                : undefined
+            }
           />
           <YAxis
             {...AXIS_PROPS}
             tickFormatter={formatCurrency}
-            width={CHART.axis}
+            width={frame.axis}
             domain={[0, yAxis.max]}
             ticks={yAxis.ticks}
-            label={{
-              ...AXIS_TITLE,
-              value: 'You pay per month',
-              angle: -90,
-              position: 'insideLeft',
-            }}
+            label={
+              frame.titles
+                ? {
+                    ...AXIS_TITLE,
+                    value: 'You pay per month',
+                    angle: -90,
+                    position: 'insideLeft',
+                  }
+                : undefined
+            }
           />
-          <Tooltip
-            cursor={HOVER_CURSOR}
-            allowEscapeViewBox={{ x: false, y: true }}
-            wrapperStyle={{ maxWidth: 'calc(100vw - 3rem)' }}
-            content={<ChartTooltip scenario={scenario} />}
-          />
+          {hoverable && (
+            <Tooltip
+              cursor={HOVER_CURSOR}
+              allowEscapeViewBox={{ x: false, y: true }}
+              wrapperStyle={{ maxWidth: 'calc(100vw - 3rem)' }}
+              content={<ChartTooltip scenario={scenario} />}
+            />
+          )}
 
           {/* What the subsidy pays: everything between the curve and the
               premium. Drawn first, so the hatch stands on top of it. */}
@@ -255,23 +295,27 @@ export const CostChart: React.FC<CostChartProps> = ({
             strokeWidth={CHART.hairline}
           />
           {/* The premium line's name, hung inside the band it is the ceiling
-              of — the one stretch of the plot the curve never reaches. */}
-          <ReferenceArea
-            className="premium-label"
-            x1={floorMagi}
-            x2={cliffMagi ?? axisMax}
-            y1={0}
-            y2={monthly}
-            fill="none"
-            label={{
-              value: premiumLabel,
-              position: 'insideTop',
-              offset: 6,
-              width: premiumLabelWidth,
-              fill: PALETTE.inkSoft,
-              fontSize: CHART.label,
-            }}
-          />
+              of — the one stretch of the plot the curve never reaches. On a
+              phone the band is too narrow to hang anything in, and the key
+              under the plot names the line instead. */}
+          {!narrow && (
+            <ReferenceArea
+              className="premium-label"
+              x1={floorMagi}
+              x2={cliffMagi ?? axisMax}
+              y1={0}
+              y2={monthly}
+              fill="none"
+              label={{
+                value: premiumLabel,
+                position: 'insideTop',
+                offset: 6,
+                width: premiumLabelWidth,
+                fill: PALETTE.inkSoft,
+                fontSize: CHART.label,
+              }}
+            />
+          )}
 
           {/* The stretch of axis with no Marketplace plan on it, named once. */}
           <ReferenceArea
@@ -297,7 +341,7 @@ export const CostChart: React.FC<CostChartProps> = ({
               strokeDasharray="2 3"
               strokeWidth={CHART.hairline}
               label={{
-                value: edgesFit ? line.label : formatFpl(line.multiple),
+                value: edgeLabel(line),
                 position: 'top',
                 fill: PALETTE.inkSoft,
                 fontSize: CHART.label,
@@ -322,7 +366,7 @@ export const CostChart: React.FC<CostChartProps> = ({
             fill="url(#costHatch)"
             fillOpacity={1}
             connectNulls={false}
-            activeDot={HOVER_DOT}
+            activeDot={hoverable ? HOVER_DOT : false}
             isAnimationActive={false}
           />
 

@@ -8,6 +8,7 @@ import {
   chooseChildren,
   chooseState,
   incomeField,
+  money,
   pinPageYear,
   premiumField,
   slide,
@@ -64,10 +65,10 @@ describe('the page', () => {
     render(<App />);
     expect(screen.getByRole('radio', { name: 'Your effective rate' })).toBeChecked();
     expect(document.getElementById('step-rate')).not.toBeNull();
-    expect(incomeField()).toHaveValue(65_000);
+    expect(money(incomeField())).toBe(65_000);
     slide(INCOME, 70_000);
     chooseChart('What you pay');
-    expect(incomeField()).toHaveValue(70_000);
+    expect(money(incomeField())).toBe(70_000);
     expect(screen.getByRole('slider', { name: INCOME })).toHaveValue('70000');
     expect(window.location.search).toBe('?income=65000');
   });
@@ -98,8 +99,8 @@ describe('the page', () => {
     expect(screen.getByRole('slider', { name: 'Age' })).toHaveValue('50');
     expect(screen.getByRole('slider', { name: "Spouse's age" })).toHaveValue('50');
     expect(screen.getByRole('slider', { name: INCOME })).toHaveValue('50000');
-    expect(incomeField()).toHaveValue(50_000);
-    expect(premiumField()).toHaveValue(1_747);
+    expect(money(incomeField())).toBe(50_000);
+    expect(money(premiumField())).toBe(1_747);
     expect(screen.getByRole('combobox', { name: 'State' })).toHaveValue('');
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Use the average' })).not.toBeInTheDocument();
@@ -118,25 +119,25 @@ describe('the page', () => {
     render(<App />);
     chooseState('TX');
     // Texas at 40 is $661; two fifty-year-olds are 2 × 1.786 / 1.278 of that.
-    expect(premiumField()).toHaveValue(1_847);
+    expect(money(premiumField())).toBe(1_847);
     chooseState('');
-    expect(premiumField()).toHaveValue(1_747);
+    expect(money(premiumField())).toBe(1_747);
   });
 
   it('prices a state with a curve of its own on that curve', () => {
     render(<App />);
     chooseState('MA');
     // Massachusetts at 40 is $494; two fifty-year-olds are 2 × 1.741 / 1.393 of that on its 2:1 curve.
-    expect(premiumField()).toHaveValue(Math.round((494 / 1.393) * 2 * 1.741));
+    expect(money(premiumField())).toBe(Math.round((494 / 1.393) * 2 * 1.741));
     expect(screen.getByText(/on Massachusetts’s own age curve/)).toBeInTheDocument();
   });
 
   it('prices a flat state flat', () => {
     render(<App />);
     chooseState('VT');
-    expect(premiumField()).toHaveValue(2_598);
+    expect(money(premiumField())).toBe(2_598);
     slide(/^spouse's age$/i, 62);
-    expect(premiumField()).toHaveValue(2_598);
+    expect(money(premiumField())).toBe(2_598);
   });
 
   it('keeps a typed premium across a change of state, and offers the state’s average back', () => {
@@ -144,10 +145,10 @@ describe('the page', () => {
     chooseState('TX');
     typeMoney(/benchmark plan premium/i, 1_000);
     chooseState('FL');
-    expect(premiumField()).toHaveValue(1_000);
+    expect(money(premiumField())).toBe(1_000);
     fireEvent.click(screen.getByRole('button', { name: 'Use the average' }));
     // Florida at 40 is $683.
-    expect(premiumField()).toHaveValue(Math.round((683 / 1.278) * 2 * 1.786));
+    expect(money(premiumField())).toBe(Math.round((683 / 1.278) * 2 * 1.786));
   });
 
   it('takes a typed income, and holds a half-typed one until the field is left', () => {
@@ -167,7 +168,7 @@ describe('the page', () => {
     chooseAdults('One adult');
     expect(screen.queryByRole('slider', { name: "Spouse's age" })).not.toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Age' })).toHaveValue('50');
-    expect(premiumField()).toHaveValue(873);
+    expect(money(premiumField())).toBe(873);
   });
 
   it('reprices the benchmark for a couple’s second age', () => {
@@ -175,7 +176,7 @@ describe('the page', () => {
     slide(/^spouse's age$/i, 62);
     expect(screen.getByRole('slider', { name: "Spouse's age" })).toHaveValue('62');
     // 1.786 + 2.873 = 4.659 units × $489.045 = $2,278.46.
-    expect(premiumField()).toHaveValue(2_278);
+    expect(money(premiumField())).toBe(2_278);
   });
 
   it('counts the children on the strip and prices them into the benchmark', () => {
@@ -183,21 +184,21 @@ describe('the page', () => {
     expect(screen.getAllByRole('radio', { name: /child/ })).toHaveLength(6);
     chooseChildren(2);
     expect(screen.getByRole('radio', { name: '2 children' })).toBeChecked();
-    expect(premiumField().valueAsNumber).toBeGreaterThan(1_747);
+    expect(money(premiumField())).toBeGreaterThan(1_747);
   });
 
   it('takes a benchmark premium typed in, and offers the average back', () => {
     render(<App />);
     typeMoney(/benchmark plan premium/i, 1_000);
-    expect(premiumField()).toHaveValue(1_000);
+    expect(money(premiumField())).toBe(1_000);
     const reset = screen.getByRole('button', { name: 'Use the average' });
     expect(reset).toHaveClass('reset-button');
     fireEvent.click(reset);
-    expect(premiumField()).toHaveValue(1_747);
+    expect(money(premiumField())).toBe(1_747);
     expect(screen.queryByRole('button', { name: 'Use the average' })).not.toBeInTheDocument();
     // Past the top of the field: clamped when the field is left.
     typeMoney(/benchmark plan premium/i, 9_000);
-    expect(premiumField()).toHaveValue(6_000);
+    expect(money(premiumField())).toBe(6_000);
   });
 
   it('reads a household out of the link and notes what it adjusted', () => {
