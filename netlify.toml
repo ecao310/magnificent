@@ -1,0 +1,26 @@
+# How Netlify builds the site, which is the second place it is published from:
+# .github/workflows/deploy.yml publishes GitHub Pages, and the README's
+# Deployment section describes both.
+#
+# The two builds differ in one thing. A Pages site lives under
+# /congenial-octo-spork/, so vite.config.ts's `base` says so — and a build
+# made with that `base` asks a Netlify domain for
+# /congenial-octo-spork/assets/…, which is a 404 for every file but
+# index.html. A Netlify site is the whole domain, so this one is passed
+# `--base=/` on the command line, the same override deploy.yml uses for the
+# /preview/ build, and the link-preview card's absolute URLs are built on
+# Netlify's own `URL` (the primary domain, custom domain included) in place of
+# the GitHub Pages origin that .env gives VITE_SITE_ORIGIN.
+#
+# Tests run first for the same reason they do in deploy.yml: a build that
+# fails its tests does not publish. `the Netlify build` in
+# src/guards/meta.test.ts reads this file and holds it to all of that.
+
+[build]
+  publish = "dist"
+  command = 'npm run test && npx tsc -b && VITE_SITE_ORIGIN="$URL" npx vite build --base=/'
+
+[build.environment]
+  # Vite 8 needs Node 20.19+ or 22.12+. Pinned so that a change to the build
+  # image's default cannot change the build.
+  NODE_VERSION = "24"

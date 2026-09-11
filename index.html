@@ -40,21 +40,25 @@
        `?filing=mfj&income=90000` with nothing saying what it showed.
 
        The card is deliberately *not* the reader's own scenario. This page is
-       static files on GitHub Pages: no server sees the query string, so no
+       static files, on GitHub Pages and on Netlify: no server sees the query
+       string, so no
        preview can be rendered from it, and a card that quoted figures would
        be quoting the default's figures at everyone who shared a link. So it
        says what the page is, and the figures stay on the page.
 
        Absolute URLs, because a crawler will not resolve a relative og:image —
-       assembled from the origin plus %BASE_URL% so the preview build under
-       /preview/ points at its own copy rather than production's. -->
+       assembled from %VITE_SITE_ORIGIN% plus %BASE_URL%, both filled in by
+       vite at build time. The base is what makes the preview build under
+       /preview/ point at its own copy rather than production's; the origin is
+       the GitHub Pages one .env declares unless the build sets it, which
+       netlify.toml does, to the Netlify domain. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Tax Torpedo" />
   <meta property="og:title" content="How Much Can You Take Out This Year?" />
   <meta property="og:description"
     content="The next dollar out of an IRA rarely costs what its bracket says. See where Social Security's tax torpedo turns 12% into 22.2% — drawn across every income level for your own return." />
-  <meta property="og:url" content="https://ecao310.github.io%BASE_URL%" />
-  <meta property="og:image" content="https://ecao310.github.io%BASE_URL%og-cover.png" />
+  <meta property="og:url" content="%VITE_SITE_ORIGIN%%BASE_URL%" />
+  <meta property="og:image" content="%VITE_SITE_ORIGIN%%BASE_URL%og-cover.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -65,7 +69,7 @@
   <meta name="twitter:title" content="How Much Can You Take Out This Year?" />
   <meta name="twitter:description"
     content="The next dollar out of an IRA rarely costs what its bracket says. See where Social Security's tax torpedo turns 12% into 22.2% — drawn across every income level for your own return." />
-  <meta name="twitter:image" content="https://ecao310.github.io%BASE_URL%og-cover.png" />
+  <meta name="twitter:image" content="%VITE_SITE_ORIGIN%%BASE_URL%og-cover.png" />
 </head>
 
 <body>
