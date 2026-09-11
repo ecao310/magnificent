@@ -2,6 +2,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import App from '../App';
+import { RAIL_COLLAPSES_AT } from '../components/BenefitStep';
+import { NARROW_MAX_WIDTH } from '../components/chartFrame';
 import { CHART, PALETTE } from '../styles/palette';
 
 /**
@@ -401,6 +403,28 @@ describe('the palette', () => {
 });
 
 /**
+ * Two widths the markup has to know as well as the stylesheet.
+ *
+ * The rail folds to a row at the width the columns collapse to one, and the
+ * plot takes its narrow frame at the width the phone rules turn on: each is
+ * a `matchMedia` in a component and an `@media` in the sheet, and the two
+ * copies of a number drift the same silent way two copies of a colour do.
+ */
+describe('the fold', () => {
+  it('happens at the width the stylesheet collapses the columns', () => {
+    expect(screenBlock(stylesheet)).toMatch(
+      new RegExp(`@media \\(max-width: ${RAIL_COLLAPSES_AT}px\\)`),
+    );
+  });
+
+  it('narrows the plot at the width the stylesheet turns its phone rules on', () => {
+    expect(screenBlock(stylesheet)).toMatch(
+      new RegExp(`@media \\(max-width: ${NARROW_MAX_WIDTH}px\\)`),
+    );
+  });
+});
+
+/**
  * `CHART` is the second copy of two of the page's measures, held to the first
  * the same way `PALETTE` is — by a test, because a stale number renders as
  * quietly as a stale colour.
@@ -603,7 +627,7 @@ const mediaBlock = (css: string, prelude: string): string => {
 
 /** The block that collapses the two columns into one. */
 const collapseBlock = (css: string): string =>
-  mediaBlock(css, '@media (max-width: 1100px)');
+  mediaBlock(css, `@media (max-width: ${RAIL_COLLAPSES_AT}px)`);
 
 /** The other ground: the same page on paper. */
 const printBlock = (css: string): string => mediaBlock(css, '@media print');

@@ -18,6 +18,9 @@ import type {
 } from '../lib/tax';
 import { formatCompact } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { usePlotPointer } from '../hooks/usePlotPointer';
+import { HOVER_QUERY, NARROW_QUERY, frameFor } from './chartFrame';
 import { ChartTooltip } from './ChartTooltip';
 
 /**
@@ -102,6 +105,12 @@ export interface TorpedoChartProps {
   curve: MarginalRatePoint[];
   /** The x-axis span, read off the curve's own ends. */
   axisDomain: [number, number];
+  /** The right edge of the other income swept across the axis. */
+  axisMax: number;
+  /** The slider's step, which a tap or a drag on the plot is rounded to. */
+  incomeStep: number;
+  /** Moves the reader's marker: a tap, a click, or a finger drawn along the plot. */
+  onIncome: (next: number) => void;
   /** Where the reader is standing, in the total income the axis is drawn in. */
   here: number;
   /** Places a threshold given in other income on the axis the chart plots. */
@@ -125,10 +134,19 @@ export interface TorpedoChartProps {
  *
  * The cliffs it is handed are already filtered to the ones this axis reaches
  * and to the switches that are on, so everything here draws what it is given.
+ *
+ * On a phone it takes the narrow frame — the margins closed up around the
+ * plot — so the curve gets the width the screen has. The plot is its own
+ * cursor: a click or a tap moves the marker to the income under the pointer,
+ * and a finger drawn along the plot drags it. The hover reading is drawn
+ * only where there is a pointer that can hover.
  */
 export const TorpedoChart: React.FC<TorpedoChartProps> = ({
   curve,
   axisDomain,
+  axisMax,
+  incomeStep,
+  onIncome,
   here,
   totalIncomeAt,
   cliffs,
@@ -140,11 +158,26 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
   muniInterest,
   beneficiaries,
   year,
-}) => (
+}) => {
+  const narrow = useMediaQuery(NARROW_QUERY);
+  const frame = frameFor(narrow);
+  const hoverable = useMediaQuery(HOVER_QUERY, true);
+  const pointer = usePlotPointer({ axisMax, step: incomeStep, frame, onIncome });
+
+  return (
   <>
-    <div className="chart-container" role="img" aria-label={label}>
+    <div
+      className="chart-container"
+      role="img"
+      aria-label={label}
+      ref={pointer.ref}
+      onPointerDown={pointer.onPointerDown}
+      onPointerMove={pointer.onPointerMove}
+      onPointerUp={pointer.onPointerUp}
+      onPointerCancel={pointer.onPointerCancel}
+    >
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={curve} margin={{ top: 22, right: 28, left: 10, bottom: 0 }}>
+        <AreaChart data={curve} margin={frame.margin}>
           <defs>
             {/* The engraver's hatch under the curve: a diagonal hairline in
                 the curve's own blue, at `CHART.fill`. A pattern rather than a
@@ -183,21 +216,23 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
           <YAxis
             {...AXIS_PROPS}
             tickFormatter={(value) => `${value}%`}
-            width={CHART.axis}
+            width={frame.axis}
             domain={[0, 'auto']}
           />
-          <Tooltip
-            cursor={HOVER_CURSOR}
-            content={
-              <ChartTooltip
-                ssBenefit={ssBenefit}
-                filingStatus={filingStatus}
-                muniInterest={muniInterest}
-                beneficiaries={beneficiaries}
-                year={year}
-              />
-            }
-          />
+          {hoverable && (
+            <Tooltip
+              cursor={HOVER_CURSOR}
+              content={
+                <ChartTooltip
+                  ssBenefit={ssBenefit}
+                  filingStatus={filingStatus}
+                  muniInterest={muniInterest}
+                  beneficiaries={beneficiaries}
+                  year={year}
+                />
+              }
+            />
+          )}
           {cliffs.map((cliff) => (
             <ReferenceLine
               className="irmaa-cliff"
@@ -244,11 +279,12 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
             strokeWidth={CHART.line}
             fill="url(#rateHatch)"
             fillOpacity={1}
-            activeDot={HOVER_DOT}
+            activeDot={hoverable ? HOVER_DOT : false}
           />
         </AreaChart>
       </ResponsiveContainer>
     </div>
     <p className="chart-axis-label">{caption}</p>
   </>
-);
+  );
+};

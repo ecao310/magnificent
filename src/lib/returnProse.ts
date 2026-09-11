@@ -47,6 +47,27 @@ export const ageProse = (
         ? 'both spouses 65 or older'
         : 'one spouse 65 or older';
 
+/**
+ * The return in one line, for the row the rail folds to on a narrow screen:
+ * who files it, who on it has reached 65, and what it collects.
+ * "A single filer, 65 or older · $24,852/yr Social Security", or
+ * "A married couple filing jointly, both spouses 65 or older · no Social
+ * Security · $3,750 muni interest".
+ */
+export function returnSummary(
+  filingStatus: FilingStatus,
+  ageProse: string,
+  ssBenefit: number,
+  muniInterest: number,
+): string {
+  const who = `${FILING_STATUS_PROSE[filingStatus]}, ${ageProse}`;
+  const collecting =
+    ssBenefit > 0 ? `${formatCurrency(ssBenefit)}/yr Social Security` : 'no Social Security';
+  const plus = muniInterest > 0 ? ` · ${formatCurrency(muniInterest)} muni interest` : '';
+  const line = `${who} · ${collecting}${plus}`;
+  return line.charAt(0).toUpperCase() + line.slice(1);
+}
+
 /** One advanced input that has been moved off $0, named both ways it is named. */
 export interface AdvancedInput {
   /** The short name the summary strip has room for. */

@@ -219,9 +219,9 @@ h1 {
  * chart and the slider under the chart sets it.
  *
  * Three children, two of them in the reading column: the chart and its
- * figures, then the notes under them. Collapsed to one column the order is
- * the answer first, the controls that move it second and the working third,
- * which is `order` below.
+ * figures, then the notes under them. Collapsed to one column they stack in
+ * the markup's own order — the rail first, folded to a row (`.return-sheet`
+ * below), then the answer, then the working.
  */
 .shell {
   display: grid;
@@ -283,6 +283,79 @@ h1 {
   border-top-color: var(--ink);
 }
 
+/* ───── The fold ────────────────────────────────────────────────────────────
+ *
+ * On one column the rail is a `details` under the masthead, and this is its
+ * closed row: the heading, the return in a phrase under it, and a stamped
+ * word at the right that says what a tap does. Under the masthead's own
+ * hairline and over an ink rule, the way the rail's list opens, so the row
+ * reads as the rail folded rather than as a note. Open, the body takes over
+ * the bottom rule, and the first item drops its top one so the row and the
+ * list share a hairline.
+ */
+.return-sheet > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'heading toggle'
+    'gloss toggle';
+  column-gap: 1rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid var(--ink);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.return-sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.return-sheet > summary .step-heading {
+  grid-area: heading;
+  margin: 0;
+}
+
+.return-sheet-gloss {
+  grid-area: gloss;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.return-sheet-toggle {
+  grid-area: toggle;
+  padding: 0.4375rem 0.75rem;
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.return-sheet[open] .return-sheet-toggle {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.return-sheet[open] > summary {
+  border-bottom-color: var(--edge);
+}
+
+.return-sheet-body .filing-status:first-of-type {
+  border-top: none;
+}
+
+.return-sheet > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
 label {
   font-size: 1.0625rem;
   font-weight: 500;
@@ -309,7 +382,8 @@ label {
  * The slider is the platform's own with an `accent-color`, deliberately: a
  * drawn track would cost the filled run to the left of the thumb, which is
  * the only thing on a slider that says where the value sits without reading
- * the number. The 2rem height is the hit area, not the track.
+ * the number. The 2.75rem height is the hit area, not the track: a thumb's
+ * worth of room above and below it for a finger.
  */
 input[type='range'] {
   width: 100%;
@@ -318,7 +392,7 @@ input[type='range'] {
   border: none;
   background: transparent;
   accent-color: var(--ink);
-  height: 2rem;
+  height: 2.75rem;
   cursor: pointer;
 }
 
@@ -556,9 +630,44 @@ fieldset.filing-status legend {
   margin-top: 0.375rem;
 }
 
+.link-note-list {
+  margin: 0.5rem 0 0;
+}
+
+.link-note-list summary {
+  display: inline-block;
+  min-height: 2.75rem;
+  padding: 0.6875rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.link-note-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.link-note-list summary::before {
+  content: '+ ';
+}
+
+.link-note-list[open] summary::before {
+  content: '− ';
+}
+
+.link-note-list summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .link-note button {
-  margin-top: 0.75rem;
-  padding: 0.4rem 0.75rem;
+  margin-top: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
   border: 1px solid var(--ink);
   border-radius: 0;
   background: transparent;
@@ -676,8 +785,18 @@ fieldset.filing-status legend {
 }
 
 .chart-container {
-  height: 400px;
+  height: max(280px, min(400px, 75vh));
   width: 100%;
+  /* A finger drawn down the plot scrolls the page; one drawn along it
+     moves the marker. The browser takes the first, the chart the second. */
+  touch-action: pan-y;
+}
+
+/* A tap focuses the plot's own accessible layer, and the browser draws its
+   ring around the whole plot. The ring is for a keyboard, which is what
+   `:focus-visible` says; a finger gets none. */
+.chart-container :focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* The plot's own words are set in the mono, at the one size `CHART.label`
@@ -1446,12 +1565,13 @@ footer p {
 /* ───── The collapse ────────────────────────────────────────────────────────
  *
  * Two steps down. Below 1200px the page's own margins halve. Below 1100px the
- * two columns become one, and the order is set rather than left to the
- * markup: the chart and the figures first, because they are what the reader
- * came for; the controls that move them second; the notes last. 1100 rather
+ * two columns become one, in the markup's own order: the rail first, folded
+ * to a row (`.return-sheet` above) so it costs the chart one line rather
+ * than a screen; the chart and the figures; the notes last. 1100 rather
  * than lower because the rail is 22.5rem and the gutter 4rem, so under it the
  * reading column — and the plot in it — would be narrower than the rail is
- * tall.
+ * tall. `RAIL_COLLAPSES_AT` in BenefitStep.tsx is the same number, and the
+ * component folds at it.
  *
  * Last in the screen half on purpose — a media query adds no specificity, so
  * a rule it overrides has to be above it in the file or the override silently
@@ -1466,15 +1586,10 @@ footer p {
 @media (max-width: 1100px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 2.5rem;
-  }
-
-  .flow {
-    order: 1;
+    row-gap: 1.75rem;
   }
 
   .step-config {
-    order: 2;
     position: static;
     max-height: none;
     overflow: visible;
@@ -1482,7 +1597,6 @@ footer p {
   }
 
   .notes-section {
-    order: 3;
     grid-column: auto;
   }
 }
@@ -1510,13 +1624,29 @@ footer p {
     font-size: 1.125rem;
   }
 
+  /* The narrow frame: `NARROW_FRAME` in chartFrame.ts, the same gutter with
+     a left margin of 4px and a right of 24px. The slider's track is inset to
+     it, so the thumb still stands under the marker; the slider's label and
+     the sentence under it take the whole measure, which on a phone they
+     need. Taller, because it is narrower. */
   .chart-container {
-    height: 320px;
+    height: max(280px, min(340px, 75vh));
   }
 
   .chart-slider {
     padding-left: 0;
     padding-right: 0;
+  }
+
+  .chart-slider-track {
+    padding-left: calc(var(--chart-axis) + 4px);
+    padding-right: 24px;
+  }
+
+  /* A note's text takes the whole measure; the number in the margin still
+     numbers the row above it. */
+  .explainer-content {
+    padding-left: 0;
   }
 
   .answer-figures {

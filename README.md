@@ -37,17 +37,31 @@ itself stands where the chart stands beside it.
    start; the 400% line only when the **Breakpoints** button in the corner of
    the plot is asked for it. Every figure under it is a federal one.
 
+   A dashed amber marker stands at your income — click or tap the chart,
+   drag a finger along it, or drag the slider under it to move it — and the
+   sentence under the slider is its reading. The hover reading over the
+   curve is drawn only for a pointer that can hover; a finger moves the
+   marker instead.
+
 Six figures follow the chart, the ones the whole walk was for: total income,
 federal tax, effective rate, the rate on the next dollar, the taxable share of
 the benefit, and the Medicare surcharge that MAGI buys. Below them, the notes:
 four or five collapsed explainers, numbered — the torpedo, how to mitigate it,
 the IRMAA cliffs, the 400% line when the return has one, and the senior
-deduction's phaseout. On a narrow screen the order is the chart and the
-figures first, the return second and the notes last. Under the footer's
+deduction's phaseout. Under the footer's
 rule, one more note, closed like the rest: three links to read on — a
 Fidelity piece on the torpedo and the cliffs around it, Kitces on the
 benefit's taxation as a marginal rate, and IRS Publication 915, whose
 Worksheet 1 the engine reproduces — and then the disclaimer.
+
+On a wide screen the return is a column beside the chart. On one column —
+a phone, or a window under 1100px — it folds to a row under the title that
+names the return in a phrase ("A single filer, 65 or older · $24,852/yr
+Social Security") with a *Change* button; tapping it opens the same
+controls in place, directly above the chart they move. The plot itself
+takes a narrower frame under 640px, its margins closed up around the
+curve, and the slider's track stays inset to it so the thumb still stands
+under the marker.
 
 ## What is priced
 
@@ -141,7 +155,7 @@ longer the rate the arithmetic reaches.
 ```bash
 npm install
 npm run dev      # start dev server
-npm run test     # vitest, 402 tests
+npm run test     # vitest, 419 tests
 npm run lint     # eslint
 npm run build    # tsc -b && vite build
 ```
@@ -151,8 +165,8 @@ npm run build    # tsc -b && vite build
 | Path | What it is |
 | --- | --- |
 | `src/App.tsx` | The composition root: the return in state, the figures derived from it, and the three sections it hands them to. |
-| `src/components/` | What the page is made of — the two steps, the chart and its tooltip, the Breakpoints panel, the figures, the notes and the five explainers in them, the reading list. |
-| `src/hooks/` | The three pieces of behaviour that are not markup: the live region's debounce, the address bar, and dismissing a panel. |
+| `src/components/` | What the page is made of — the two steps, the chart and its tooltip, the frame the chart is drawn in, the Breakpoints panel, the figures, the notes and the five explainers in them, the reading list. |
+| `src/hooks/` | The five pieces of behaviour that are not markup: the live region's debounce, the address bar, dismissing a panel, asking the window its width, and the plot as a cursor. |
 | `src/lib/tax/` | Every figure on the page, and the only place a rate or a threshold is written down. One module per chapter of the code, behind `index.ts`. |
 | `src/lib/scenarioUrl.ts` | The return, encoded into the address bar and clamped back out of it. |
 | `src/lib/format.ts`, `src/lib/returnProse.ts`, `src/lib/furtherReading.ts` | How a figure is rendered, how a return is described in words, and the reading list's one copy. |
@@ -163,9 +177,10 @@ npm run build    # tsc -b && vite build
 | `scripts/og-cover.mjs` | Redraws the card from the page's own arithmetic. Run by hand; see above. |
 
 Tests sit beside what they test: `src/lib/tax/irmaa.test.ts` next to `irmaa.ts`,
-and the five `src/App.*.test.tsx` suites next to `App.tsx`, each rendering the
+and the seven `src/App.*.test.tsx` suites next to `App.tsx`, each rendering the
 whole page and asking about one subject — the steps, the chart, its thresholds,
-the close, the reading list.
+the close, the reading list, the rail's fold on a phone, and the plot under a
+pointer.
 
 ## Deployment
 
