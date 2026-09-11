@@ -57,15 +57,6 @@ export const SlopeExplainer: React.FC<SlopeExplainerProps> = ({ here, year }) =>
                 : 'Your share already covers the full premium, so there is no subsidy left to lose.'}
           </p>
         )}
-        <p>
-          <strong>The shape.</strong> The cost of the next dollar climbs through each band
-          and drops back at each boundary. For a couple on the {year} table it runs from
-          about 11¢ at 150% of the poverty line to 16¢ at 200%, drops to 14¢, climbs to
-          nearly 18¢ by 250%, drops to 16¢, climbs to 19¢ by 300%, then falls to a flat 10¢
-          from 300% to 400%, where the share stops rising. The dearest dollar under the line
-          is the one just before 300%; the cheapest is anywhere from 300% to 400%. A raise,
-          overtime or a second job gives back that many cents of subsidy on every dollar.
-        </p>
       </div>
     </details>
   );

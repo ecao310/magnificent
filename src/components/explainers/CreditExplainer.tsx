@@ -19,11 +19,8 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here, year }) 
       </summary>
       <div className="explainer-content">
         <p>
-          The subsidy (the premium tax credit, IRC 36B) pays whatever the benchmark plan
-          costs above a set share of your household income. The share comes from a table,
-          by where your income falls against the federal poverty line, and it rises with
-          income. So what you pay is that share of income, and the subsidy is the rest of
-          the premium.
+          For ACA plans, you pay a percentage of your income as your premium, and a subsidy pays the rest.
+          Your share is determined by a table based on your income as a percentage of the federal poverty line.
         </p>
         <p>
           For this household: benchmark <strong>{formatCurrency(here.benchmarkAnnual)}</strong>{' '}
@@ -61,11 +58,8 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here, year }) 
           ))}
         </ul>
         <p>
-          <strong>The benchmark.</strong> Unless you enter your own, it is the national
-          average, or your state&rsquo;s, scaled to your ages on the age curve your
-          state&rsquo;s insurers use: the federal one in most states, on which a 64-year-old
-          pays three times what a 21-year-old does, or the state&rsquo;s own in the seven
-          that filed one. Your area&rsquo;s figure may be half or double that. A different benchmark changes the subsidy dollar for dollar, but not what
+          <strong>The benchmark.</strong> Your state&rsquo;s average, scaled to your ages on the age curve.
+          A different benchmark changes the subsidy dollar for dollar, but not what
           you pay under the 400% line &mdash; your share is a share of income.
         </p>
         <p>

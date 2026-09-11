@@ -98,13 +98,13 @@ describe('the rate section', () => {
     expect(figure('The plan’s share of income')).toHaveTextContent('full premium would be');
   });
 
-  it('brings its own notes: how the rate is figured, why the premium counts, and what is left out on both sides', () => {
+  it('brings its own notes: how the rate is figured, the effective rate, and what is left out on both sides', () => {
     renderRate();
     const headings = (): string[] =>
       Array.from(document.querySelectorAll('.notes-section .explainer h3')).map((h) => h.textContent ?? '');
     expect(headings()).toEqual([
       'How the rate is figured',
-      'Why the premium counts as a tax',
+      'Effective Rate',
       'What is left out',
     ]);
     fireEvent.click(screen.getByText('How the rate is figured'));

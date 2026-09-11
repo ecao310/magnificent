@@ -66,6 +66,7 @@ export {
   creditSlopeAt,
   creditLostBetween,
   cliffCost,
+  creditRunsOutMagi,
   subsidyLines,
   ptcFor,
 } from './ptc';

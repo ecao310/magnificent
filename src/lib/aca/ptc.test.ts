@@ -8,6 +8,7 @@ import {
   cliffCost,
   creditFloorMagi,
   creditLostBetween,
+  creditRunsOutMagi,
   creditSlopeAt,
   expectedContribution,
   fplGuidelineYear,
@@ -183,6 +184,30 @@ describe('the credit', () => {
     expect(premiumTaxCredit(59_000, young)).toBeGreaterThan(0);
     expect(premiumTaxCredit(60_000, young)).toBe(0);
     expect(cliffCost(young)).toBe(0);
+  });
+});
+
+describe('where the share reaches the benchmark', () => {
+  it('is the first dollar of income with no credit left, short of the line, for a cheap benchmark', () => {
+    const young: Scenario = { adults: 1, ages: [25], year: 2026 };
+    const runsOut = creditRunsOutMagi(young)!;
+    expect(runsOut).toBe(59_157);
+    expect(runsOut).toBeLessThan(ptcCliffMagi(young)!);
+    expect(premiumTaxCredit(runsOut - 1, young)).toBeGreaterThan(0);
+    expect(premiumTaxCredit(runsOut, young)).toBe(0);
+  });
+
+  it('is nowhere for a household whose credit lasts to the line', () => {
+    expect(cliffCost(COUPLE)).toBeGreaterThan(0);
+    expect(creditRunsOutMagi(COUPLE)).toBeNull();
+  });
+
+  it('is always somewhere in a year without a line', () => {
+    const last: Scenario = { ...COUPLE, year: 2025 };
+    const runsOut = creditRunsOutMagi(last)!;
+    expect(runsOut).toBe(Math.ceil((1_389 * 12) / 0.085));
+    expect(premiumTaxCredit(runsOut - 1, last)).toBeGreaterThan(0);
+    expect(premiumTaxCredit(runsOut, last)).toBe(0);
   });
 });
 

@@ -14,12 +14,6 @@ export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false 
       <h3 id="left-out-heading">What is left out</h3>
     </summary>
     <div className="explainer-content">
-      {tax && (
-        <p>
-          <strong>On the subsidy&rsquo;s side</strong>, what the premium in the chart does not
-          price:
-        </p>
-      )}
       <ul>
         <li>
           <strong>Twelve identical months.</strong> The subsidy is figured month by month;
@@ -32,8 +26,7 @@ export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false 
           the smooth line by a few dollars.
         </li>
         <li>
-          <strong>Where you live.</strong> The benchmark is a state average, or a national
-          one, until you enter your own; your county&rsquo;s figure differs. New York and
+          <strong>Where you live.</strong> The benchmark is a state average: your county&rsquo;s figure differs. New York and
           Vermont are priced flat, since they do not price by age. Georgia&rsquo;s partial
           expansion is not modelled.
         </li>
@@ -50,8 +43,7 @@ export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false 
         <>
           <p>
             <strong>On the return&rsquo;s side</strong>, the tax in the chart is the federal
-            return with nothing unusual on it, and the income is taken as all ordinary and all
-            in the tax base. Each of these moves the rate, and none is priced:
+            return with nothing unusual on it, and the income is taken as all ordinary.
           </p>
           <ul>
             <li>

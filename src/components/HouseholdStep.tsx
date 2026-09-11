@@ -104,7 +104,7 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
       </fieldset>
 
       <fieldset className="input-group filing-status">
-        <legend>Children on the plan</legend>
+        <legend>Dependents on the plan</legend>
         <div className="segmented">
           {CHILD_COUNTS.map((value) => (
             <label key={value} className="segmented-option">

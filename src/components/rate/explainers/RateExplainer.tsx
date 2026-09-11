@@ -2,7 +2,7 @@ import type { CoverageYear } from '../../../lib/aca';
 import { TAX_YEAR_PARAMS } from '../../../lib/tax';
 import type { AllInAssessment } from '../../../lib/tax';
 import { FILING_STATUS_PROSE } from '../../../lib/tax';
-import { formatAxisPercent, formatCurrency, formatPercent } from '../../../lib/format';
+import { formatCurrency, formatPercent } from '../../../lib/format';
 
 export interface RateExplainerProps {
   here: AllInAssessment;
@@ -11,7 +11,6 @@ export interface RateExplainerProps {
 
 /** How the rate is figured: the return, the premium, and the two added up at the reader's own income. */
 export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
-  const { brackets } = TAX_YEAR_PARAMS[year].filing[here.filingStatus];
   const { perChild, phaseoutStart } = TAX_YEAR_PARAMS[year].childTaxCredit;
   const { ptc } = here;
   return (
@@ -21,15 +20,12 @@ export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
       </summary>
       <div className="explainer-content">
         <p>
-          Two figures, each a share of the same household income, added. The income is
-          the one the subsidy is measured on: everyone on the return&rsquo;s income before
-          any deduction, which the return calls modified adjusted gross income.
+          Everyone on the return&rsquo;s income before
+          any deduction, called modified adjusted gross income (MAGI).
         </p>
         <p>
-          <strong>Federal income tax</strong> is the return with nothing unusual on it: the
-          standard deduction comes off the top, the year&rsquo;s rate schedule is applied to
-          what is left, and the child tax credit comes off the result, down to zero but not
-          below. This household is {FILING_STATUS_PROSE[here.filingStatus]}, so the
+          <strong>Federal income tax. </strong>
+          Standard deduction and the child tax credit. This household is {FILING_STATUS_PROSE[here.filingStatus]}, so the
           standard deduction is <strong>{formatCurrency(here.standardDeduction)}</strong>;{' '}
           {formatCurrency(Math.round(here.magi))} of income leaves{' '}
           <strong>{formatCurrency(here.taxableIncome)}</strong> taxable, which the schedule
@@ -43,25 +39,13 @@ export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
           {formatPercent(here.incomeTaxShare)} of income.
         </p>
         <p>
-          <strong>The {year} schedule</strong> for this return, on taxable income:
-        </p>
-        <ul>
-          {brackets.map((band, i) => (
-            <li key={band.upTo}>
-              {i === 0 ? 'Up to' : `${formatCurrency(brackets[i - 1].upTo)} to`}{' '}
-              {Number.isFinite(band.upTo) ? formatCurrency(band.upTo) : 'anything'}:{' '}
-              {formatAxisPercent(band.rate)}
-            </li>
-          ))}
-        </ul>
-        <p>
           The child tax credit is {formatCurrency(perChild)} for each child, and shrinks by
           five cents for every dollar of income over{' '}
           {formatCurrency(phaseoutStart[here.filingStatus])}. Every child on the plan is
           taken to qualify.
         </p>
         <p>
-          <strong>The premium</strong> is the cost page&rsquo;s figure: what the household
+          <strong>The premium. </strong> What the household
           pays for the benchmark plan after the subsidy, which under the 400% line is a set
           share of income from the year&rsquo;s table and over it is the whole premium. Here
           it is{' '}

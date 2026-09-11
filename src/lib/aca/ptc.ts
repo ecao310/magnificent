@@ -337,6 +337,41 @@ export function cliffCost(scenario: Scenario = {}): number | null {
   return toCents(premiumTaxCredit(cliffMagi, scenario));
 }
 
+/**
+ * The household income at which the household's share of it reaches the
+ * whole benchmark, so the credit is gone from there on with no line crossed:
+ * a cheap benchmark — a young household, a cheap state — against enough
+ * income. Null when the credit is still positive at the line, so that it is
+ * the line that ends it; see `cliffCost`, which is zero exactly when this is
+ * not null. In a year without a line the share always gets there, since it
+ * only rises.
+ *
+ * Found by bisection on whole dollars: the share is monotonic in income, and
+ * the first dollar at which the credit is under half a cent — the same
+ * rounding `cliffCost` reads zero by — is the one quoted.
+ */
+export function creditRunsOutMagi(scenario: Scenario = {}): number | null {
+  const { year } = resolveScenario(scenario);
+  const benchmark = benchmarkAnnualFor(scenario);
+  const gone = (magi: number): boolean => benchmark - expectedContribution(magi, scenario) < 0.005;
+  const cliffMagi = ptcCliffMagi(scenario);
+  const { table } = FPL_YEAR_PARAMS[year];
+  const last = table[table.length - 1];
+  let high =
+    cliffMagi === null
+      ? Math.ceil(Math.max(last.from * povertyLineFor(scenario), benchmark / last.final))
+      : Math.floor(cliffMagi);
+  if (!gone(high)) return null;
+  let low = Math.ceil(creditFloorMagi(scenario));
+  if (gone(low)) return low;
+  while (high - low > 1) {
+    const mid = Math.floor((low + high) / 2);
+    if (gone(mid)) high = mid;
+    else low = mid;
+  }
+  return high;
+}
+
 /** One vertical line the chart draws: an edge of the credit. */
 export interface SubsidyLine {
   id: 'floor' | 'cliff';

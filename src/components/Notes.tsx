@@ -17,6 +17,8 @@ export interface NotesProps {
   /** Where the household stands against the subsidy, so every note is priced at the reader's own income. */
   here: PtcAssessment;
   cliffCost: number | null;
+  /** Where the share reaches the full premium under the line, or null where the line ends the credit. */
+  runsOutMagi: number | null;
   /** The same standing with the tax added, for the rate chart's notes. */
   rate: AllInAssessment;
 }
@@ -33,14 +35,24 @@ export interface NotesProps {
  * these are the working. Each is numbered by the stylesheet, so a note added
  * or dropped renumbers the rest.
  */
-export const Notes: React.FC<NotesProps> = ({ chart, year, scenario, here, cliffCost, rate }) => (
+export const Notes: React.FC<NotesProps> = ({
+  chart,
+  year,
+  scenario,
+  here,
+  cliffCost,
+  runsOutMagi,
+  rate,
+}) => (
   <section className="notes-section" aria-label="Notes">
     <p className="notes-kicker">Notes</p>
     {chart === 'cost' ? (
       <>
         <CreditExplainer here={here} year={year} />
         <SlopeExplainer here={here} year={year} />
-        {here.cliffApplies && <CliffExplainer here={here} cliffCost={cliffCost} year={year} />}
+        {here.cliffApplies && (
+          <CliffExplainer here={here} cliffCost={cliffCost} runsOutMagi={runsOutMagi} year={year} />
+        )}
         <FloorExplainer here={here} expansionState={scenario.expansionState !== false} />
         <LeftOutExplainer />
       </>
