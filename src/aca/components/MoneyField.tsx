@@ -12,7 +12,8 @@ export interface MoneyFieldProps {
   /** Called with every in-range figure typed, and with the clamped one on blur. */
   onCommit: (next: number) => void;
   /** The colour the figure takes, as a class. */
-  className?: string;
+  /** Set in amber: the one figure the reader is asked for, the income. */
+  amber?: boolean;
   describedBy?: string;
 }
 
@@ -48,7 +49,7 @@ export const MoneyField: React.FC<MoneyFieldProps> = ({
   max,
   step,
   onCommit,
-  className,
+  amber,
   describedBy,
 }) => {
   const [draft, setDraft] = useState<string | null>(null);
@@ -89,8 +90,11 @@ export const MoneyField: React.FC<MoneyFieldProps> = ({
      across a gap. */
   const digits = { '--digits': withSeparators(max).length } as React.CSSProperties;
 
-  return (
-    <span className={className ? `money-field ${className}` : 'money-field'} style={digits}>
+  /* Two literal class spellings rather than one built at render time: the
+     stylesheet guard reads every className off the source, and a class it
+     cannot read is a rule it cannot hold to a component. */
+  const field = (
+    <>
       <span className="money-field-sign" aria-hidden="true">
         $
       </span>
@@ -106,6 +110,16 @@ export const MoneyField: React.FC<MoneyFieldProps> = ({
         onBlur={settle}
         onKeyDown={stepBy}
       />
+    </>
+  );
+
+  return amber ? (
+    <span className="money-field amber" style={digits}>
+      {field}
+    </span>
+  ) : (
+    <span className="money-field" style={digits}>
+      {field}
     </span>
   );
 };

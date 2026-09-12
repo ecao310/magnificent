@@ -15,7 +15,7 @@ import { benchmarkMonthlyFor, creditFloorMagi, ptcCliffMagi } from '../lib/aca';
 import type { CostPoint, Scenario, SubsidyLine } from '../lib/aca';
 import { formatAxisMoney, formatCurrency, formatFpl } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
-import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import { usePlotPointer } from '../hooks/usePlotPointer';
 import {
   AXIS_PROPS,

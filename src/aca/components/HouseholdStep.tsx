@@ -14,7 +14,7 @@ import type { Adults, CoverageYear, StateCode } from '../lib/aca';
 import { ADULT_COUNTS, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
 import { formatCurrency, formatFpl } from '../lib/format';
 import { ADULTS_LABELS, householdSummary } from '../lib/householdProse';
-import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import { MoneyField } from './MoneyField';
 
 export interface HouseholdStepProps {

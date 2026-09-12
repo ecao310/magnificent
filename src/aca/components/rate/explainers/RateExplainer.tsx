@@ -54,7 +54,7 @@ export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
               nothing &mdash;{' '}
               {ptc.floorMultiple > 1
                 ? 'this income is under the Medicaid line, where there is no Marketplace premium'
-                : 'this income is under the poverty line in a state that did not expand Medicaid, and the page does not price the full premium against it'}
+                : 'this income is under the poverty line in a state that did not expand Medicaid, and the full premium is left unpriced'}
             </>
           ) : (
             <>

@@ -1,7 +1,7 @@
 import type { CostPoint, PtcAssessment, Scenario, SubsidyLine } from '../lib/aca';
 import { formatCurrency } from '../lib/format';
 import { readoutParts } from '../lib/readout';
-import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import { NARROW_QUERY } from './chartFrame';
 import { CostChart } from './CostChart';
 import { IncomeSlider } from './IncomeSlider';

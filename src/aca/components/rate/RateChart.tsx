@@ -17,7 +17,7 @@ import type { Scenario, SubsidyLine } from '../../lib/aca';
 import type { RatePoint } from '../../lib/tax';
 import { formatAxisMoney, formatAxisPercent, formatFpl, formatPercent } from '../../lib/format';
 import { CHART, PALETTE } from '../../styles/palette';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useMediaQuery } from '../../../shared/hooks/useMediaQuery';
 import { usePlotPointer } from '../../hooks/usePlotPointer';
 import {
   AXIS_PROPS,

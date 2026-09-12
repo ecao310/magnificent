@@ -39,7 +39,7 @@ export const IncomeSlider: React.FC<IncomeSliderProps> = ({
       <label htmlFor="income">{INCOME_LABEL}</label>
       <MoneyField
         id="income"
-        className="amber"
+        amber
         value={income}
         min={0}
         max={MAX_INCOME}

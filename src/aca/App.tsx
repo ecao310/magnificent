@@ -17,7 +17,7 @@ import { rateReadoutText } from './lib/rateReadout';
 import { readoutText } from './lib/readout';
 import { useHousehold } from './hooks/useHousehold';
 import type { Moved } from './hooks/useHousehold';
-import { useSettledReading } from './hooks/useSettledReading';
+import { useSettledReading } from '../shared/hooks/useSettledReading';
 import { Answer } from './components/Answer';
 import { ChartChooser } from './components/ChartChooser';
 import { CostStep, NEXT_BLOCK } from './components/CostStep';
