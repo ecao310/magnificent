@@ -1,6 +1,7 @@
 import { EXPANSION_FLOOR_MULTIPLE } from '../../lib/aca';
 import type { PtcAssessment } from '../../lib/aca';
 import { formatCurrency, formatFpl } from '../../lib/format';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface FloorExplainerProps {
   here: PtcAssessment;
@@ -9,11 +10,7 @@ export interface FloorExplainerProps {
 
 /** Where the subsidy starts. */
 export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionState }) => (
-  <details className="explainer">
-    <summary>
-      <h3 id="floor-heading">The Medicaid line</h3>
-    </summary>
-    <div className="explainer-content">
+  <Explainer id="floor-heading" title="The Medicaid line">
       {expansionState ? (
         <p>
           <strong>The Medicaid line.</strong> In a state that expanded Medicaid, a household
@@ -30,6 +27,5 @@ export const FloorExplainer: React.FC<FloorExplainerProps> = ({ here, expansionS
           no subsidy and no Medicaid: the coverage gap, where you pay the full premium.
         </p>
       )}
-    </div>
-  </details>
+    </Explainer>
 );

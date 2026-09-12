@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 import { ChartTooltip } from './components/ChartTooltip';
 import { PAGE_TAX_YEAR } from './lib/tax';
-import { pinPageYear, AVG_ANNUAL_SS_BENEFIT } from './test/pageFixtures';
+import { pinPageYear, AVG_ANNUAL_SS_BENEFIT, slide } from './test/pageFixtures';
 
 /**
  * The two threshold lines the chart can draw, the panel that switches them on,
@@ -628,10 +628,6 @@ describe('the axis, taken apart', () => {
       .getByRole('img', { name: /^Chart: the marginal tax rate/ })
       .getAttribute('aria-label')!;
 
-  const setSlider = (name: RegExp, value: string): void => {
-    fireEvent.change(screen.getByRole('slider', { name }), { target: { value } });
-  };
-
   it('adds up on the return the page opens with', () => {
     render(<App />);
     // from, to, the benefit, the $0 the other-income range starts at, the edge
@@ -651,7 +647,7 @@ describe('the axis, taken apart', () => {
     render(<App />);
     // Start narrow — under 65 — and widen by claiming the deduction.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
-    setSlider(/tax-exempt \(municipal\) interest/i, '3750');
+    slide(/tax-exempt \(municipal\) interest/i, 3750);
     const [, toBefore, , , , edgeBefore] = dollars(chartLabel());
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
@@ -670,7 +666,7 @@ describe('the axis, taken apart', () => {
    */
   it('names both fixed halves to a screen reader, and still adds up', () => {
     render(<App />);
-    setSlider(/tax-exempt \(municipal\) interest/i, '3750');
+    slide(/tax-exempt \(municipal\) interest/i, 3750);
     expect(chartLabel()).toContain(
       'a fixed $24,852 of Social Security and $3,750 of municipal interest',
     );

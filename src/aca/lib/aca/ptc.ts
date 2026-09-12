@@ -11,7 +11,7 @@ import type { Scenario } from './scenario';
 import { STATES } from './states';
 import type { GuidelineRegion } from './states';
 import { benchmarkAnnualFor, benchmarkMonthlyFor } from './premium';
-import { toCents } from './money';
+import { toCents } from '../../../shared/lib/money';
 
 /**
  * The ceiling: household income over this multiple of the poverty line has

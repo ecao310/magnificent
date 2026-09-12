@@ -227,7 +227,9 @@ the page.
 The curve on each card is the real one. `scripts/og-cover.mjs` bundles
 `marginalRateCurve` out of `src/torpedo/lib`, and `scripts/og-cover-aca.mjs`
 bundles `costCurve` out of `src/aca/lib`; each samples it for the scenario
-its page opens on and rasterises the result:
+its page opens on, draws its plot inside the frame `scripts/card.mjs` holds
+— the kicker and the rule, the headline, the hook at the right, the site's
+faces and tokens — and rasterises the result:
 
 ```bash
 node scripts/og-cover.mjs       # rewrites public/og-cover.png and public/apple-touch-icon.png
@@ -258,14 +260,14 @@ npm run build    # tsc -b && vite build
 | Path | What it is |
 | --- | --- |
 | `index.html`, `aca/index.html` | The two entries, one per page, each with its own card. |
-| `src/shared/` | What the pages share: the masthead and the strip between the pages, the reading list, the copy button, the address-bar hook, the plot as a cursor, the frame every plot is drawn in, whole dollars, and `styles/site.css`. |
+| `src/shared/` | What the pages share. `components/`: the page shell (`Page`), the masthead and the strip between the pages, the rail and its fold, the figures and one figure, the notes section and one note, the hover reading's card, the plot's box and the marks every plot draws, the reading list, the copy button. `hooks/`: the address bar, the plot as a cursor and what a plot asks the window, the live reading's settle. `lib/`: the frame every plot is drawn in and how its axis is drawn, the fold's width, whole dollars and whole cents, the pages' addresses, how a page mounts. `styles/`: `site.css` and the palette every chart paints with. |
 | `src/torpedo/` | The Tax Torpedo: `App.tsx`, its rail, chart, figures, notes and explainers under `components/`, its engine under `lib/tax/`, the return in the address bar in `lib/scenarioUrl.ts`, its hues and gutter in `styles/`, and its page suites beside `App.tsx`. |
 | `src/aca/` | The ACA Subsidy Slope: the same shape — `App.tsx`, the household in `hooks/useHousehold.ts`, the cost and rate charts under `components/`, the subsidy under `lib/aca/`, the return under `lib/tax/`, the two charts and the fragment that chooses one in `lib/charts.ts`, its gutter in `styles/`, and its page suites. |
 | `src/guards/` | The suites that hold down what no other test reads, each run once per page: the build's chunking and entries, the link previews and this README, the rendered prose, the stylesheets, the pages and the links between them, the reading lists. `pages.ts` is the table they iterate. |
-| `src/test/` | Test setup. Each page keeps its own fixtures under `src/<page>/test/`. |
+| `src/test/` | Test setup, and the fixtures both pages' suites build on: the stopped clock, a strip's radio, a slider. Each page keeps its own under `src/<page>/test/`. |
 | `docs/` | The published figures each engine is checked against, and their sources. |
 | `public/`, `public/aca/` | Each page's favicon, touch icon and link-preview card. |
-| `scripts/` | Redraws each card from its page's own arithmetic. Run by hand; see above. |
+| `scripts/` | Redraws each card from its page's own arithmetic, on the frame, faces and tokens in `card.mjs`. Run by hand; see above. |
 
 Tests sit beside what they test: `src/torpedo/lib/tax/irmaa.test.ts` next to
 `irmaa.ts`, and each page's `App.*.test.tsx` suites next to its `App.tsx`,

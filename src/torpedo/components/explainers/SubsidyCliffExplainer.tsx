@@ -7,6 +7,7 @@ import {
 import type { FilingStatus, PtcAssessment, PtcCliff, TaxYear } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
 import { acaLink } from '../../lib/acaLink';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface SubsidyCliffExplainerProps {
   cliff: PtcCliff;
@@ -34,13 +35,7 @@ export const SubsidyCliffExplainer: React.FC<SubsidyCliffExplainerProps> = ({
   filingStatus,
   year,
 }) => (
-  <details className="explainer">
-    <summary>
-      <h3 id="subsidy-cliff-heading">
-        The {PTC_CLIFF_PERCENT * 100}% poverty-line cliff
-      </h3>
-    </summary>
-    <div className="explainer-content">
+  <Explainer id="subsidy-cliff-heading" title={<>The {PTC_CLIFF_PERCENT * 100}% poverty-line cliff</>}>
       <p>
         Health coverage bought on the Marketplace comes with a{' '}
         <strong>premium tax credit</strong> that pays whatever the
@@ -141,6 +136,5 @@ export const SubsidyCliffExplainer: React.FC<SubsidyCliffExplainerProps> = ({
           ? 'The household here is one person; a dependent would move the line right by about $5,500 of income.'
           : 'The household here is the two people this filing status implies; a dependent past them would move the line right by about $5,500 of income.'}
       </p>
-    </div>
-  </details>
+    </Explainer>
 );

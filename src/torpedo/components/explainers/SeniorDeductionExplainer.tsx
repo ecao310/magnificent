@@ -5,6 +5,7 @@ import {
   SENIOR_DEDUCTION_PHASEOUT_RATE,
 } from '../../lib/tax';
 import { formatCents, formatCurrency, formatPercent } from '../../lib/format';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface SeniorDeductionExplainerProps {
   /** MAGI at which each qualifying person's $6,000 starts shrinking. */
@@ -26,14 +27,7 @@ export const SeniorDeductionExplainer: React.FC<SeniorDeductionExplainerProps> =
 }) => {
   const taxableIncomePerDollar = 1 + phaseoutRate;
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="senior-deduction-heading">
-          The senior deduction phaseout ({SENIOR_DEDUCTION_FIRST_YEAR}&ndash;
-          {SENIOR_DEDUCTION_LAST_YEAR})
-        </h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="senior-deduction-heading" title={<>The senior deduction phaseout ({SENIOR_DEDUCTION_FIRST_YEAR}&ndash;{SENIOR_DEDUCTION_LAST_YEAR})</>}>
         <p>
           For tax years {SENIOR_DEDUCTION_FIRST_YEAR} through{' '}
           {SENIOR_DEDUCTION_LAST_YEAR} only, anyone who reaches age 65 gets an
@@ -77,7 +71,6 @@ export const SeniorDeductionExplainer: React.FC<SeniorDeductionExplainerProps> =
           is <em>not</em> added back for this
           phaseout, unlike the MAGI Medicare uses for IRMAA.
         </p>
-      </div>
-    </details>
+      </Explainer>
   );
 };

@@ -10,6 +10,7 @@ import type {
   PtcCliff,
   TaxYear,
 } from '../lib/tax';
+import { NotesSection } from '../../shared/components/NotesSection';
 import { IrmaaExplainer } from './explainers/IrmaaExplainer';
 import { MitigationExplainer } from './explainers/MitigationExplainer';
 import { SeniorDeductionExplainer } from './explainers/SeniorDeductionExplainer';
@@ -35,10 +36,6 @@ export interface NotesProps {
  * The notes, in the order a reader meets what they describe: the torpedo
  * itself, what can be done about it, the Medicare cliffs, the 400% line, and
  * the senior deduction's phaseout.
- *
- * Below the figures rather than beside them: the figures are the answer, and
- * these are the working. Each is numbered by the stylesheet, so a note added
- * or dropped renumbers the rest.
  */
 export const Notes: React.FC<NotesProps> = ({
   year,
@@ -58,8 +55,7 @@ export const Notes: React.FC<NotesProps> = ({
   const phaseoutRate = SENIOR_DEDUCTION_PHASEOUT_RATE * Math.max(1, seniors);
 
   return (
-    <section className="notes-section" aria-label="Notes">
-      <p className="notes-kicker">Notes</p>
+    <NotesSection>
       <TorpedoExplainer filingStatus={filingStatus} />
       <MitigationExplainer />
       <IrmaaExplainer
@@ -89,6 +85,6 @@ export const Notes: React.FC<NotesProps> = ({
         phaseoutEnd={phaseoutEnd}
         phaseoutRate={phaseoutRate}
       />
-    </section>
+    </NotesSection>
   );
 };

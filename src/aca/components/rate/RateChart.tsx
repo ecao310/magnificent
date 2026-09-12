@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Area,
-  CartesianGrid,
   ComposedChart,
   Line,
   ReferenceArea,
@@ -17,23 +16,23 @@ import type { Scenario, SubsidyLine } from '../../lib/aca';
 import type { RatePoint } from '../../lib/tax';
 import { formatAxisMoney, formatAxisPercent, formatFpl, formatPercent } from '../../lib/format';
 import { CHART, PALETTE } from '../../styles/palette';
-import { useMediaQuery } from '../../../shared/hooks/useMediaQuery';
-import { usePlotPointer } from '../../../shared/hooks/usePlotPointer';
+import { usePlot } from '../../../shared/hooks/usePlot';
+import { PlotBox } from '../../../shared/components/PlotBox';
+import { grid, hatch } from '../../../shared/components/marks';
 import {
   AXIS_PROPS,
   AXIS_TITLE,
   HOVER_CURSOR,
   HOVER_DOT,
-  HOVER_QUERY,
   LABEL_GAP,
-  NARROW_QUERY,
+  POINTER_STEP,
   edgeLabelsFit,
   frameFor,
   incomeTicks,
   labelMeetsEdge,
   plotWidthOf,
   textWidth,
-  wordStandsUpright, POINTER_STEP
+  wordStandsUpright,
 } from '../chartFrame';
 import { RateTooltip } from './RateTooltip';
 
@@ -95,10 +94,7 @@ export const RateChart: React.FC<RateChartProps> = ({
   const floorMagi = Math.round(creditFloorMagi(scenario));
   const cliffMagi = ptcCliffMagi(scenario);
 
-  const narrow = useMediaQuery(NARROW_QUERY);
-  const frame = frameFor(narrow);
-  const hoverable = useMediaQuery(HOVER_QUERY, true);
-  const pointer = usePlotPointer({ axisMax, step: POINTER_STEP, frame, onIncome });
+  const { frame, hoverable, pointer } = usePlot({ axisMax, step: POINTER_STEP, onIncome, frameFor });
 
   /** The width of the box the chart is drawn in, or null before the first measurement. */
   const [width, setWidth] = useState<number | null>(null);
@@ -158,40 +154,13 @@ export const RateChart: React.FC<RateChartProps> = ({
       : 0;
 
   return (
-    <div
-      className="chart-container"
-      role="img"
-      aria-label={label}
-      ref={pointer.ref}
-      onPointerDown={pointer.onPointerDown}
-      onPointerMove={pointer.onPointerMove}
-      onPointerUp={pointer.onPointerUp}
-      onPointerCancel={pointer.onPointerCancel}
-    >
+    <PlotBox label={label} pointer={pointer}>
       <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
         <ComposedChart data={curve} margin={frame.margin}>
-          <defs>
-            {/* The cost page's hatch, for the same thing it stands for there:
-                what the household pays for the plan. */}
-            <pattern
-              id="premiumHatch"
-              width="6"
-              height="6"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="6"
-                stroke={PALETTE.accent}
-                strokeWidth={CHART.hairline}
-                strokeOpacity={CHART.fill}
-              />
-            </pattern>
-          </defs>
-          <CartesianGrid stroke={PALETTE.edge} strokeWidth={CHART.hairline} vertical={false} />
+          {/* The cost page's hatch, for the same thing it stands for there:
+              what the household pays for the plan. */}
+          {hatch('premiumHatch')}
+          {grid()}
           <XAxis
             {...AXIS_PROPS}
             dataKey="magi"
@@ -335,6 +304,6 @@ export const RateChart: React.FC<RateChartProps> = ({
           )}
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
+    </PlotBox>
   );
 };

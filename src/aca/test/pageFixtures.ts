@@ -1,28 +1,25 @@
-import { afterEach, beforeEach, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { PAGE_COVERAGE_YEAR } from '../lib/aca';
+import { chooseRadio, pinYear } from '../../test/pageFixtures';
 
-/** What every test that renders the whole page needs: a stopped clock, and the readings more than one file makes. */
+/**
+ * What every test that renders the whole page needs: a stopped clock, and
+ * the readings more than one file makes. The clock and the gestures are the
+ * site's, in src/test/pageFixtures.ts; what is here is the year this page
+ * prices and the names its controls carry.
+ */
 
-export function pinPageYear(): void {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date(`${PAGE_COVERAGE_YEAR}-07-01T00:00:00Z`));
-  });
+export { slide } from '../../test/pageFixtures';
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-}
+/** Pins the clock to the year the page prices, for one test file. */
+export const pinPageYear = (): void => pinYear(PAGE_COVERAGE_YEAR);
 
 /** Set the adults, which the page keeps in one place: the strip. */
-export const chooseAdults = (label: string): void => {
-  fireEvent.click(screen.getByRole('radio', { name: label }));
-};
+export const chooseAdults = chooseRadio;
 
 /** Set the children, on the strip of digits beside the adults. */
 export const chooseChildren = (count: number): void => {
-  fireEvent.click(screen.getByRole('radio', { name: `${count} ${count === 1 ? 'child' : 'children'}` }));
+  chooseRadio(`${count} ${count === 1 ? 'child' : 'children'}`);
 };
 
 /** Pick a state off the list, or '' for the national average. */
@@ -34,14 +31,7 @@ export const chooseState = (code: string): void => {
 export const INCOME = 'Household income for the year';
 
 /** Put the other chart on the page, by the name the chooser gives it. */
-export const chooseChart = (name: 'What you pay' | 'Your effective rate'): void => {
-  fireEvent.click(screen.getByRole('radio', { name }));
-};
-
-/** Move a slider to a value. */
-export const slide = (name: RegExp | string, value: number): void => {
-  fireEvent.change(screen.getByRole('slider', { name }), { target: { value: String(value) } });
-};
+export const chooseChart = (name: 'What you pay' | 'Your effective rate'): void => chooseRadio(name);
 
 /** Type a dollar figure into one of the money fields and leave it, as a reader would. */
 export const typeMoney = (name: RegExp | string, value: number): void => {

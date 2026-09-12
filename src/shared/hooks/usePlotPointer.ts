@@ -10,6 +10,8 @@ import type { Frame } from '../lib/chartFrame';
  */
 const SLOP = 8;
 
+export type PlotPointer = ReturnType<typeof usePlotPointer>;
+
 export interface PlotPointerOptions {
   axisMax: number;
   /** The slider's step, which a pointer's income is rounded to. */

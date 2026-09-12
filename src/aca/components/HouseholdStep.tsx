@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   EXPANSION_FLOOR_MULTIPLE,
   MAX_ADULT_AGE,
@@ -14,7 +13,7 @@ import type { Adults, CoverageYear, StateCode } from '../lib/aca';
 import { ADULT_COUNTS, MAX_DEPENDENTS, MAX_PREMIUM_MONTHLY } from '../lib/scenarioUrl';
 import { formatCurrency, formatFpl } from '../lib/format';
 import { ADULTS_LABELS, householdSummary } from '../lib/householdProse';
-import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
+import { Rail } from '../../shared/components/Rail';
 import { MoneyField } from './MoneyField';
 
 export interface HouseholdStepProps {
@@ -42,13 +41,6 @@ const CHILD_COUNTS = Array.from({ length: MAX_DEPENDENTS + 1 }, (_, n) => n);
 const NATIONAL = '';
 
 /**
- * The width under which the page is one column and the rail folds. The same
- * 1100 as the stylesheet's collapse, and `the fold` in styles.test.tsx holds
- * the two together.
- */
-export const RAIL_COLLAPSES_AT = 1100;
-
-/**
  * The household every figure on the page is priced for: who is on the plan,
  * how old they are, where they live, and what the benchmark costs. Where the
  * subsidy starts is the state's answer, not the reader's: the note under the
@@ -60,12 +52,8 @@ export const RAIL_COLLAPSES_AT = 1100;
  * the field under the chart sets it.
  *
  * Beside the chart on a wide screen, and on a narrow one folded to a row
- * under the masthead: the household in a phrase, and the word that opens it.
- * A phone reader who scrolled past a chart and four figures to find the
- * controls found them too late to change the household the figures were
- * priced for; a row that says "a couple, both 50" before the chart says the
- * figures are somebody's, and one tap makes them theirs. Open, the controls
- * stand in place, directly over the chart they move.
+ * under the masthead that says "a couple, both 50" before the chart does —
+ * see `Rail`. What is here is the controls and that phrase.
  */
 export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   year,
@@ -91,17 +79,12 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
   const expansionLine = formatFpl(EXPANSION_FLOOR_MULTIPLE);
   const statutoryLine = formatFpl(STATUTORY_FLOOR_MULTIPLE);
 
-  const folds = useMediaQuery(`(max-width: ${RAIL_COLLAPSES_AT}px)`);
-  const [open, setOpen] = useState(false);
-
-  const heading = (
-    <h2 className="step-heading" id="step-household-heading">
-      Your household
-    </h2>
-  );
-
-  const controls = (
-    <>
+  return (
+    <Rail
+      id="step-household"
+      heading="Your household"
+      summary={householdSummary(adults, ages, dependents, state, benchmark)}
+    >
         <fieldset className="input-group filing-status">
           <legend>Adults on the plan</legend>
           <div className="segmented">
@@ -250,41 +233,6 @@ export const HouseholdStep: React.FC<HouseholdStepProps> = ({
           </p>
         )}
       </div>
-    </>
-  );
-
-  if (!folds) {
-    return (
-      <section
-        className="step step-config"
-        id="step-household"
-        tabIndex={-1}
-        aria-labelledby="step-household-heading"
-      >
-        {heading}
-        {controls}
-      </section>
-    );
-  }
-
-  return (
-    <details
-      className="step step-config household-sheet"
-      id="step-household"
-      aria-labelledby="step-household-heading"
-      open={open}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-    >
-      <summary>
-        {heading}
-        <span className="household-sheet-gloss">
-          {householdSummary(adults, ages, dependents, state, benchmark)}
-        </span>
-        <span className="household-sheet-toggle" aria-hidden="true">
-          {open ? 'Done' : 'Change'}
-        </span>
-      </summary>
-      <div className="household-sheet-body">{controls}</div>
-    </details>
+    </Rail>
   );
 };

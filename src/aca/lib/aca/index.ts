@@ -71,7 +71,7 @@ export {
   ptcFor,
 } from './ptc';
 
-export { toCents } from './money';
+export { toCents } from '../../../shared/lib/money';
 
 export type { CostPoint, CostCurveRange } from './curve';
 export { costCurve } from './curve';

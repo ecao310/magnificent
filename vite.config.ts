@@ -72,10 +72,11 @@ function chunkFor(id: string): string | undefined {
  * against the name-function form's 0.80 / 496.78.
  *
  * `site` is the third layer: src/shared, which both pages import — the
- * masthead and its page strip, the reading list, the address-bar and
- * pointer hooks. Rolldown would split it out on its own, since two entries
- * share it, but under a name derived from whichever module it met first;
- * naming the group is what lets `the build it emits` find it.
+ * page shell and its masthead, the rail's fold, the figures, the notes, the
+ * plot's box and marks, the address-bar and pointer hooks. Rolldown would
+ * split it out on its own, since two entries share it, but under a name
+ * derived from whichever module it met first; naming the group is what lets
+ * `the build it emits` find it.
  */
 const CHUNKS = ['react', 'charts', 'site'] as const
 

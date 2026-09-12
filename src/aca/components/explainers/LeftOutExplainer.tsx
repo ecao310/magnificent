@@ -1,3 +1,4 @@
+import { Explainer } from '../../../shared/components/Explainer';
 export interface LeftOutExplainerProps {
   /** Whether the rate chart is showing, and so whether the return's side is on the page. */
   tax?: boolean;
@@ -9,11 +10,7 @@ export interface LeftOutExplainerProps {
  * return's side after it.
  */
 export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false }) => (
-  <details className="explainer">
-    <summary>
-      <h3 id="left-out-heading">What is left out</h3>
-    </summary>
-    <div className="explainer-content">
+  <Explainer id="left-out-heading" title="What is left out">
       <ul>
         <li>
           <strong>Twelve identical months.</strong> The subsidy is figured month by month;
@@ -79,6 +76,5 @@ export const LeftOutExplainer: React.FC<LeftOutExplainerProps> = ({ tax = false 
           </ul>
         </>
       )}
-    </div>
-  </details>
+    </Explainer>
 );

@@ -3,6 +3,7 @@ import { TAX_YEAR_PARAMS } from '../../../lib/tax';
 import type { AllInAssessment } from '../../../lib/tax';
 import { FILING_STATUS_PROSE } from '../../../lib/tax';
 import { formatCurrency, formatPercent } from '../../../lib/format';
+import { Explainer } from '../../../../shared/components/Explainer';
 
 export interface RateExplainerProps {
   here: AllInAssessment;
@@ -14,11 +15,7 @@ export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
   const { perChild, phaseoutStart } = TAX_YEAR_PARAMS[year].childTaxCredit;
   const { ptc } = here;
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="rate-heading">How the rate is figured</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="rate-heading" title="How the rate is figured">
         <p>
           Everyone on the return&rsquo;s income before
           any deduction, called modified adjusted gross income (MAGI).
@@ -72,7 +69,6 @@ export const RateExplainer: React.FC<RateExplainerProps> = ({ here, year }) => {
             , which is <strong>{formatPercent(here.allInShare)}</strong>.
           </p>
         )}
-      </div>
-    </details>
+      </Explainer>
   );
 };

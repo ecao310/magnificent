@@ -6,7 +6,9 @@
  * chart with a different y-axis — the same income runs along the bottom of
  * each, the same two edges of the subsidy cut across each, and the same
  * marker stands on each — and a reader moving from one page to the other
- * should not be able to tell that the plots were drawn twice.
+ * should not be able to tell that the plots were drawn twice. How the axis
+ * and a hover are drawn is the site's, re-exported here so a chart imports
+ * from one place.
  */
 import type { SubsidyLine } from '../lib/aca';
 import { CHART, PALETTE } from '../styles/palette';
@@ -14,28 +16,14 @@ import { incomeAtX as incomeAtXBy } from '../../shared/lib/chartFrame';
 import type { Frame as SiteFrame } from '../../shared/lib/chartFrame';
 
 export {
+  AXIS_PROPS,
+  HOVER_CURSOR,
+  HOVER_DOT,
   HOVER_QUERY,
   NARROW_MAX_WIDTH,
   NARROW_QUERY,
   plotWidthOf,
 } from '../../shared/lib/chartFrame';
-
-/**
- * How the axis is drawn, in one object rather than two copies: the frame is
- * `--edge-strong`, the mesh behind it is `--edge`, and the words are
- * `--ink-muted`.
- */
-export const AXIS_PROPS = {
-  stroke: PALETTE.edgeStrong,
-  strokeWidth: CHART.hairline,
-  fontSize: CHART.label,
-  tickLine: false,
-  tick: { fill: PALETTE.inkMuted },
-} as const;
-
-/** What a hover draws: the rule down the plot, and the dot on the curve. */
-export const HOVER_CURSOR = { stroke: PALETTE.inkMuted, strokeWidth: CHART.hairline } as const;
-export const HOVER_DOT = { stroke: PALETTE.surface, strokeWidth: CHART.rule } as const;
 
 /** How an axis title is set, wherever one is hung. */
 export const AXIS_TITLE = { fontSize: CHART.label, fill: PALETTE.inkMuted } as const;

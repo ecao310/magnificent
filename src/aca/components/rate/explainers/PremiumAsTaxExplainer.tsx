@@ -1,6 +1,7 @@
 import type { AllInAssessment } from '../../../lib/tax';
 import { formatCents, formatCurrency, formatFpl, formatPercent } from '../../../lib/format';
 import { torpedoLink } from '../../../lib/torpedoLink';
+import { Explainer } from '../../../../shared/components/Explainer';
 
 export interface PremiumAsTaxExplainerProps {
   here: AllInAssessment;
@@ -10,11 +11,7 @@ export interface PremiumAsTaxExplainerProps {
 export const PremiumAsTaxExplainer: React.FC<PremiumAsTaxExplainerProps> = ({ here }) => {
   const { ptc } = here;
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="premium-as-tax-heading">Effective Rate</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="premium-as-tax-heading" title="Effective Rate">
         <p>
           At {formatCurrency(Math.round(here.magi))}{' '}
           the next dollar costs <strong>{formatCents(here.incomeTaxSlope)}</strong> in income
@@ -58,7 +55,6 @@ export const PremiumAsTaxExplainer: React.FC<PremiumAsTaxExplainerProps> = ({ he
           <a href={torpedoLink(here.filingStatus)}>Income Tax in Retirement</a> draws that curve
           for {here.filingStatus === 'mfj' ? 'a joint return' : 'a single return'}.
         </p>
-      </div>
-    </details>
+      </Explainer>
   );
 };

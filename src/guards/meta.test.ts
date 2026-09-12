@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createElement } from 'react';
 import { render, screen } from '@testing-library/react';
-import { GUARDED_PAGES, SITE_SHEET } from './pages';
+import { GUARDED_PAGES, SITE_CARD, SITE_SHEET } from './pages';
 import type { GuardedPage } from './pages';
 import { marginalRateCurve, incomeAxisMax } from '../torpedo/lib/tax';
 import { defaultScenario } from '../torpedo/lib/scenarioUrl';
@@ -165,11 +165,13 @@ describe.each(GUARDED_PAGES)('$name’s cover', (page) => {
   });
 
   /**
-   * The mark, the card and the browser chrome are all painted in the page's
+   * The mark, the card and the browser chrome are all painted in the site's
    * own two colours, and none of the three files can read `:root` — an SVG
    * attribute takes a literal, and a `<meta>` tag takes a string. Same
    * argument `palette.ts` makes about the charts, and the same remedy: the
-   * copies are held together by a test that reads the original.
+   * copies are held together by a test that reads the original. The card's
+   * copy lives in the module both cover scripts draw on, so the page's
+   * script is held to drawing on it rather than to carrying the colours.
    */
   it('is painted in the palette the site is', () => {
     const css = readFileSync(root(SITE_SHEET), 'utf8');
@@ -178,11 +180,12 @@ describe.each(GUARDED_PAGES)('$name’s cover', (page) => {
     const surface = token('surface');
     const accent = token('accent');
 
-    for (const file of [`${page.publicDir}/favicon.svg`, page.cover]) {
+    for (const file of [`${page.publicDir}/favicon.svg`, SITE_CARD]) {
       const source = readFileSync(root(file), 'utf8');
       expect(source).toContain(surface);
       expect(source).toContain(accent);
     }
+    expect(readFileSync(root(page.cover), 'utf8')).toMatch(/from '\.\/card\.mjs'/);
     expect(metaTags['theme-color']).toBe(surface);
   });
 
