@@ -2,6 +2,12 @@
 # .github/workflows/deploy.yml publishes GitHub Pages, and the README's
 # Deployment section describes both.
 #
+# The site is two pages from one build: index.html at the domain's root and
+# aca/index.html at /aca/. Both come out of the one `vite build` below, each
+# at its own path under dist/, and Netlify serves a directory's index.html at
+# the directory's address without being told, so nothing here names the second
+# page. (Pretty URLs, on by default, send /aca to /aca/.)
+#
 # The two builds differ in one thing. A Pages site lives under
 # /magnificent/, so vite.config.ts's `base` says so — and a build
 # made with that `base` asks a Netlify domain for

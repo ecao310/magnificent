@@ -8,6 +8,9 @@ name: Deploy to GitHub Pages
 # was next pushed. So a push to either branch runs this one job, which checks
 # out both, builds both, and publishes the combined tree.
 #
+# Each build is two pages — index.html at its base and aca/index.html under
+# it — so the four addresses are the two bases and the two bases plus aca/.
+#
 # `the front door` in src/guards/meta.test.ts reads the three values under
 # `env` and the branch list under `on.push` and holds README.md's Deployment
 # section to them, so a change here that the README does not describe turns
