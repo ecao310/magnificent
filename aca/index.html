@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- The favicon is drawn in the page's own two colours; `apple-touch-icon`
+       is the same mark rasterised, because iOS will not take an SVG. Both
+       hrefs go through %BASE_URL% rather than a bare `/`, which vite rewrites
+       for the production build and the /preview/ one alike. -->
+  <link rel="icon" type="image/svg+xml" href="%BASE_URL%aca/favicon.svg" />
+  <link rel="apple-touch-icon" href="%BASE_URL%aca/apple-touch-icon.png" />
+  <meta name="theme-color" content="#f7f3eb" />
+
+  <!-- The two faces the page is set in: Newsreader for everything read and
+       IBM Plex Mono for everything counted. Google Fonts is the one host the
+       page asks anything of; the stacks in src/shared/styles/site.css fall back to
+       Georgia and Menlo until the faces arrive. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=IBM+Plex+Mono:wght@300;400;500;600&amp;display=swap" />
+
+  <title>The ACA Subsidy Slope</title>
+  <!-- The search result: a different surface from the share card below. It
+       ends on the list of sections it promises, and `the search snippet` in
+       src/guards/meta.test.ts reads that list back out and looks for each one
+       in a heading the page actually renders. -->
+  <meta name="description"
+    content="What you pay for a Marketplace plan at every income, and what the next dollar costs in subsidy: the slope, the 400% cliff and the Medicaid line.">
+
+  <!-- What the link looks like when it is sent rather than opened. The card
+       is deliberately not the reader's own household: this is static files
+       on GitHub Pages, so no server sees the query string. It says what the
+       page is, and the figures stay on the page. Absolute URLs, assembled
+       from the origin plus %BASE_URL% so the preview build under /preview/
+       points at its own copy rather than production's. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Subsidy Slope" />
+  <meta property="og:title" content="How Much Subsidy Does the Next Dollar Cost?" />
+  <meta property="og:description"
+    content="On a Marketplace plan, every extra dollar of income gives back a slice of your subsidy — about 17 cents for a couple mid-table, and all of it at 400% of the poverty line. Priced for your household." />
+  <meta property="og:url" content="%VITE_SITE_ORIGIN%%BASE_URL%aca/" />
+  <meta property="og:image" content="%VITE_SITE_ORIGIN%%BASE_URL%aca/og-cover.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"
+    content="Chart of what a household pays each month for the benchmark Marketplace plan against income: blank under the Medicaid line, rising from about $85 to $700 a month between 138% and 400% of the poverty line, then jumping to the full $1,747 at the cliff at 400%." />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How Much Subsidy Does the Next Dollar Cost?" />
+  <meta name="twitter:description"
+    content="On a Marketplace plan, every extra dollar of income gives back a slice of your subsidy — about 17 cents for a couple mid-table, and all of it at 400% of the poverty line. Priced for your household." />
+  <meta name="twitter:image" content="%VITE_SITE_ORIGIN%%BASE_URL%aca/og-cover.png" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/aca/main.tsx"></script>
+</body>
+
+</html>

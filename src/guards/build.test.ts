@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { build, createLogger, resolveConfig, type Rolldown } from 'vite';
 import config from '../../vite.config';
@@ -76,10 +76,34 @@ describe('the build\'s chunking', () => {
     }
   });
 
-  it('leaves app source in the entry chunk', () => {
-    for (const source of ['src/App.tsx', 'src/lib/tax/income.ts', 'src/main.tsx']) {
+  it('leaves each page\'s own source in that page\'s entry chunk', () => {
+    for (const source of [
+      'src/torpedo/App.tsx',
+      'src/torpedo/lib/tax/income.ts',
+      'src/torpedo/main.tsx',
+      'src/aca/App.tsx',
+      'src/aca/lib/aca/ptc.ts',
+      'src/aca/main.tsx',
+    ]) {
       expect(chunkOf(root(source))).toBeUndefined();
     }
+  });
+
+  it('sends what the pages share to one chunk of its own', () => {
+    for (const source of ['src/shared/hooks/useMediaQuery.ts', 'src/shared/hooks/useSettledReading.ts']) {
+      expect(chunkOf(root(source))).toBe('site');
+    }
+  });
+
+  it('builds one entry per page, each from the HTML at the page\'s address', () => {
+    const input = config.build?.rollupOptions?.input;
+    if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+      throw new Error('the pages are a named map of entries here');
+    }
+    expect(Object.keys(input)).toEqual(['torpedo', 'aca']);
+    expect(input.torpedo).toBe(root('index.html'));
+    expect(input.aca).toBe(root('aca/index.html'));
+    for (const file of Object.values(input)) expect(existsSync(file)).toBe(true);
   });
 
   it('still has only recharts to call a chart library', () => {
@@ -140,6 +164,34 @@ describe('the build it emits', () => {
   it('bundles the chart library into the charts chunk', () => {
     expect(homeOf('recharts')).toEqual(['charts']);
     expect(homeOf('d3-scale')).toEqual(['charts']);
+  });
+
+  /** The source files a chunk was assembled from, relative to the repo. */
+  const sourcesIn = (name: string) =>
+    Object.keys(chunks.get(name)?.modules ?? {})
+      .filter((m) => !m.includes('node_modules') && m.startsWith(root('src')))
+      .map((m) => m.slice(root('').length + 1));
+
+  it('emits an entry for each page, fronted by the HTML at the page\'s address', () => {
+    for (const [page, html] of [['torpedo', 'index.html'], ['aca', 'aca/index.html']]) {
+      const chunk = chunks.get(page);
+      expect(chunk?.isEntry).toBe(true);
+      expect(chunk?.facadeModuleId).toBe(root(html));
+    }
+  });
+
+  it('keeps each page\'s source out of the other page\'s chunk', () => {
+    expect(sourcesIn('torpedo').filter((m) => m.startsWith('src/aca/'))).toEqual([]);
+    expect(sourcesIn('aca').filter((m) => m.startsWith('src/torpedo/'))).toEqual([]);
+  });
+
+  it('bundles the shared source into the site chunk, and nothing else', () => {
+    const site = sourcesIn('site');
+    expect(site.length).toBeGreaterThan(0);
+    expect(site.filter((m) => !m.startsWith('src/shared/'))).toEqual([]);
+    for (const page of ['torpedo', 'aca']) {
+      expect(sourcesIn(page).filter((m) => m.startsWith('src/shared/'))).toEqual([]);
+    }
   });
 
   it('keeps every chunk under the 500 kB Vite warns at', () => {

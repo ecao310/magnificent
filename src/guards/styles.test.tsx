@@ -1,10 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { render } from '@testing-library/react';
-import App from '../App';
-import { RAIL_COLLAPSES_AT } from '../components/BenefitStep';
-import { NARROW_MAX_WIDTH } from '../components/chartFrame';
-import { CHART, PALETTE } from '../styles/palette';
+import { GUARDED_PAGES, SITE_SHEET } from './pages';
+import type { GuardedPage } from './pages';
 
 /**
  * A CSS rule that can never match is silent. Nothing throws, nothing warns,
@@ -17,15 +15,102 @@ import { CHART, PALETTE } from '../styles/palette';
  * happens by accident, because it is the shape you get by editing the wrong
  * half of a selector you copied. So every one of them has to point at
  * something the page actually renders.
+ *
+ * Every claim here is made about one page at a time. A page's stylesheet is
+ * the site's sheet and then its own, in that order, which is what Vite
+ * inlines the `@import` into and what a browser is handed; so each check
+ * below reads the two files, joins each half — screen with screen, print with
+ * print — and asks its question of the join. Site rules are checked twice,
+ * once against each page's markup, which is the point: a site rule is a
+ * claim about both pages.
  */
 /* Read off disk rather than imported: Vite hands an imported `.css` to the
    test as a URL string, and under jsdom `import.meta.url` is an http one. The
    run's cwd is the project root, which is where `vite.config.ts` roots the
    test glob too. */
-const stylesheet = readFileSync(resolve(process.cwd(), 'src/styles/index.css'), 'utf8');
+const read = (path: string): string => readFileSync(resolve(process.cwd(), path), 'utf8');
+const stripped = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
 /**
- * Every `.a .b` in the stylesheet, and only those.
+ * The screen half of a stylesheet: everything ahead of `@media print`.
+ *
+ * The two halves paint from different palettes on purpose — paper re-declares
+ * every colour token — so a claim about where colour comes from has to be
+ * made about one of them at a time.
+ */
+const screenBlock = (css: string): string => {
+  const plain = stripped(css);
+  const print = plain.indexOf('@media print');
+  return print === -1 ? plain : plain.slice(0, print);
+};
+
+/**
+ * The body of every `@media` block with this prelude, joined.
+ *
+ * Read by balancing braces rather than by regex, because a media block is the
+ * one thing in these files that nests — `leafRules` walks straight past the
+ * prelude and into the rules inside, which is exactly what is wanted
+ * everywhere else and not here. `@media print` nests twice over, holding an
+ * `@page` of its own, which is the other reason this counts rather than
+ * matching. Every occurrence, because a page sheet may carry a block of its
+ * own under the same prelude as the site's.
+ */
+const mediaBlocks = (css: string, prelude: string): string => {
+  const plain = stripped(css);
+  const bodies: string[] = [];
+  let from = 0;
+  for (;;) {
+    const at = plain.indexOf(prelude, from);
+    if (at === -1) break;
+    const open = plain.indexOf('{', at);
+    let depth = 0;
+    let end = -1;
+    for (let i = open; i < plain.length; i += 1) {
+      if (plain[i] === '{') depth += 1;
+      else if (plain[i] === '}') {
+        depth -= 1;
+        if (depth === 0) {
+          end = i;
+          break;
+        }
+      }
+    }
+    if (end === -1) break;
+    bodies.push(plain.slice(open + 1, end));
+    from = end + 1;
+  }
+  return bodies.join('\n');
+};
+
+/** The other ground: the same page on paper. */
+const printBlock = (css: string): string => mediaBlocks(css, '@media print');
+
+/** The site's sheet, and each page's own, as the page ships them. */
+const site = read(SITE_SHEET);
+
+interface Sheet {
+  /** Both files, whole, in the order the page loads them. */
+  all: string;
+  /** The screen halves, joined, comments stripped. */
+  screen: string;
+  /** The print halves, joined, comments stripped. */
+  print: string;
+  /** The page's own file alone, its `@import` line taken off. */
+  own: string;
+}
+
+const sheetFor = (page: GuardedPage): Sheet => {
+  const own = read(page.sheet).replace(/^@import [^\n]*\n/m, '');
+  return {
+    all: `${site}\n${own}`,
+    screen: `${screenBlock(site)}\n${screenBlock(own)}`,
+    print: `${printBlock(site)}\n${printBlock(own)}`,
+    own,
+  };
+};
+
+/**
+ * Every `.a .b` in a stylesheet, and only those.
  *
  * Pseudo-classes and the other combinators are left out on purpose rather
  * than overlooked: `:hover` and `:has()` describe states this render is not
@@ -34,14 +119,14 @@ const stylesheet = readFileSync(resolve(process.cwd(), 'src/styles/index.css'), 
  * about nesting, which `querySelector` can settle outright.
  */
 const nestedClassSelectors = (css: string): string[] =>
-  (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]+(?=\{)/g) ?? [])
+  (stripped(css).match(/[^{}]+(?=\{)/g) ?? [])
     .flatMap((prelude) => prelude.split(','))
     .map((selector) => selector.trim().replace(/\s+/g, ' '))
     .filter((selector) => /^\.[\w-]+ \.[\w-]+$/.test(selector));
 
 /**
- * Every shipped `.tsx` under `src`, concatenated, for the one question a
- * render cannot answer.
+ * Every shipped `.tsx` a page is made of, concatenated, for the one question
+ * a render cannot answer.
  *
  * A class can be alive and still be absent from a default render — the
  * Breakpoints panel's swatches are behind a button, the link note behind a
@@ -50,11 +135,9 @@ const nestedClassSelectors = (css: string): string[] =>
  * `className` here is a literal string: no template, no helper, no
  * conditional join. The test below asserts that before it relies on it.
  *
- * Read off the whole tree rather than off one file, because the markup is
- * spread across `components/` now. Reading only `App.tsx` would have made this
- * pass vacuously the moment a rule's one caller moved into a component — the
- * guard's own extractor going quiet is exactly the failure it exists to catch,
- * which is why the sizes below are asserted before the comparison is.
+ * A page is made of `src/shared` and its own directory, and nothing else:
+ * reading the other page's markup too would let a site rule pass on the
+ * strength of a class only the other page writes.
  */
 const tsxUnder = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
@@ -65,61 +148,19 @@ const tsxUnder = (dir: string): string[] =>
         : [],
   );
 
-const source = tsxUnder(resolve(process.cwd(), 'src'))
-  .map((file) => readFileSync(file, 'utf8'))
-  .join('\n');
+const sourceOf = (page: GuardedPage): string =>
+  ['src/shared', page.source]
+    .flatMap((dir) => tsxUnder(resolve(process.cwd(), dir)))
+    .map((file) => readFileSync(file, 'utf8'))
+    .join('\n');
 
 /** Every class name a selector mentions, wherever in the selector it sits. */
 const styledClasses = (css: string): Set<string> =>
   new Set(
-    (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]+(?=\{)/g) ?? [])
+    (stripped(css).match(/[^{}]+(?=\{)/g) ?? [])
       .flatMap((prelude) => Array.from(prelude.matchAll(/\.([\w-]+)/g)))
       .map(([, name]) => name),
   );
-
-describe('the stylesheet', () => {
-  it('scopes no rule to a nesting the page never renders', () => {
-    const selectors = nestedClassSelectors(stylesheet);
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(selectors.length).toBeGreaterThan(0);
-
-    const { container } = render(<App />);
-    const dead = selectors.filter((selector) => !container.querySelector(selector));
-    expect(dead).toEqual([]);
-  });
-
-  /**
-   * The other half of the same silence. A rule scoped to a nesting that never
-   * happens is caught above; this catches a rule whose class no render path
-   * emits at all, which is what a section leaves behind when its markup is
-   * deleted and its stylesheet is not. `.step-intro`, `.answer-share-line`,
-   * `.answer-note` and `.chart-key` were four of them at once — every one
-   * outliving the element it was written for, and none of them costing a
-   * warning to say so.
-   */
-  it('writes no rule for a class the page never renders', () => {
-    // The claim `styledClasses` rests on: className is always a literal here.
-    expect(source).not.toMatch(/className=\{/);
-
-    const rendered = new Set(
-      Array.from(source.matchAll(/className="([^"]*)"/g)).flatMap(([, list]) =>
-        list.split(/\s+/).filter(Boolean),
-      ),
-    );
-    // Guards both extractors: either coming back empty would pass vacuously.
-    expect(rendered.size).toBeGreaterThan(20);
-    const styled = styledClasses(stylesheet);
-    expect(styled.size).toBeGreaterThan(20);
-
-    // recharts names its own SVG parts, and the print sheet re-colours the
-    // grid and the ticks by the names the library emits. Nothing under `src`
-    // writes one, and nothing should.
-    const dead = Array.from(styled).filter(
-      (name) => !rendered.has(name) && !name.startsWith('recharts-'),
-    );
-    expect(dead).toEqual([]);
-  });
-});
 
 /**
  * Every rule with a body, and only the innermost ones.
@@ -129,62 +170,13 @@ describe('the stylesheet', () => {
  * this safe to run over a stylesheet that has an `@media print` block in it.
  */
 const leafRules = (css: string): { selectors: string[]; body: string }[] =>
-  Array.from(
-    css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g),
-  ).map(([, prelude, body]) => ({
+  Array.from(stripped(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)).map(([, prelude, body]) => ({
     selectors: prelude
       .split(',')
       .map((selector) => selector.trim().replace(/\s+/g, ' '))
       .filter(Boolean),
     body,
   }));
-
-/**
- * Two headings used to paint their text with a `linear-gradient` background
- * and knock the glyphs out with `-webkit-text-fill-color: transparent`: the
- * page title and step 3's. On screen that was the effect. On paper, in a
- * browser printing without background graphics, it was the knockout without
- * the paint — both headings came out as blank space, the build stayed green,
- * and nothing anywhere reported it. The print sheet carried two rules whose
- * only job was to undo them.
- *
- * FI Calc paints no text with a gradient, so neither does this page, and the
- * repair rules are gone. What is left is the reason they were needed: a
- * knockout is a heading that a printer is free to drop. So the claim is not
- * that the two are repaired but that there is nothing to repair, which is the
- * shape that stays true as headings are added.
- */
-describe('the headings', () => {
-  it('paints none of them with a gradient a printer would drop', () => {
-    const rules = leafRules(stylesheet);
-    // Guards the extractor itself: an empty sheet would pass vacuously.
-    expect(rules.length).toBeGreaterThan(50);
-
-    const knockedOut = rules
-      .filter((rule) =>
-        /-webkit-text-fill-color:\s*transparent|background-clip:\s*text/.test(
-          rule.body,
-        ),
-      )
-      .flatMap((rule) => rule.selectors);
-
-    expect(knockedOut).toEqual([]);
-  });
-});
-
-/**
- * The screen half of the stylesheet: everything ahead of `@media print`.
- *
- * The two halves paint from different palettes on purpose — the screen is
- * near-black with a light ink ramp on it, paper is the other way round — so
- * a claim about where colour comes from has to be made about one of them at
- * a time. This is the screen's.
- */
-const screenBlock = (css: string): string => {
-  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const print = stripped.indexOf('@media print');
-  return print === -1 ? stripped : stripped.slice(0, print);
-};
 
 /**
  * A colour written out where it is used rather than named in `:root`.
@@ -198,35 +190,11 @@ const screenBlock = (css: string): string => {
 const looseColours = (css: string): string[] =>
   css.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d[^)]*\)/g) ?? [];
 
-/**
- * The palette lives in `:root` and nowhere else.
- *
- * This is the invariant that makes a restyle a bounded job instead of an
- * open-ended hunt. Before it, one blue was spelled `#38bdf8` in twenty places
- * across 1,300 lines and in seven more inside `App.tsx`, so "change the
- * accent" meant finding all twenty-seven — and the cost of missing one is
- * silent, because a stale colour still renders.
- *
- * It bites in the direction that actually happens: nobody adds a token they
- * do not use, but everybody pastes a hex into the rule they are already
- * editing. That paste fails here.
- */
-describe('the screen stylesheet', () => {
-  it('writes every colour it paints with in :root and nowhere else', () => {
-    const screen = screenBlock(stylesheet);
-
-    const declared = screen.match(/:root\s*\{[^}]*\}/g) ?? [];
-    // Guards the extractor: no `:root` found would make the rest vacuous.
-    expect(declared.length).toBeGreaterThan(0);
-    expect(looseColours(declared.join('\n')).length).toBeGreaterThan(20);
-
-    const used = declared.reduce((css, block) => css.replace(block, ''), screen);
-    expect(looseColours(used)).toEqual([]);
-  });
-});
+/** Every `:root` block in a stretch of stylesheet. */
+const rootBlocks = (css: string): string[] => css.match(/:root\s*\{[^}]*\}/g) ?? [];
 
 /**
- * Every custom property a `:root` block declares, and — of those — the ones
+ * Every custom property the `:root` blocks declare, and — of those — the ones
  * whose value is a colour.
  *
  * `--accent-rgb` is a colour and `--measure` is not: the first is a colour
@@ -234,313 +202,42 @@ describe('the screen stylesheet', () => {
  * is a length. Which side a token falls on is the difference between
  * something that has to be re-derived for paper and something that means the
  * same on either ground.
- *
- * The two are asymmetric on purpose. What paper *owes* an answer for is every
- * screen token holding a colour; what counts as an answer is the name being
- * declared at all, whatever it is set to. `--shadow-float` is why: on paper
- * it is `none`, which is the right answer and not a colour.
  */
 const tokenNames = (css: string): string[] =>
-  (css.match(/:root\s*\{[^}]*\}/g) ?? []).flatMap((block) =>
+  rootBlocks(css).flatMap((block) =>
     Array.from(block.matchAll(/(--[\w-]+):/g)).map(([, name]) => name),
   );
 
 const colourTokens = (css: string): string[] =>
-  (css.match(/:root\s*\{[^}]*\}/g) ?? []).flatMap((block) =>
+  rootBlocks(css).flatMap((block) =>
     Array.from(block.matchAll(/(--[\w-]+):\s*([^;]+);/g))
       .filter(([, name, value]) => /-rgb$/.test(name) || looseColours(value).length > 0)
       .map(([, name]) => name),
   );
 
-/**
- * The paper half, held to the same line as the screen half.
- *
- * The print sheet used to override the screen's rules one at a time — forty
- * selectors, each restating a rule in a slate literal — because when it was
- * written the colours were spelled where they were used and there was nothing
- * else to re-point. The ground pass put them all in `:root`, and this pass
- * spends that: paper re-declares the tokens and every rule above paints
- * itself.
- *
- * That trades one failure for another, and this is the one it trades to. The
- * old sheet went stale by a screen rule changing and its print twin not; the
- * new one goes stale by a *token* being added to the screen ground and not to
- * the paper one — which is silent in exactly the same way, because a
- * custom property that paper never re-points still resolves, to whatever
- * value the near-black register gave it. `--surface-control` on a printed
- * page would be a #31333f block.
- *
- * So the second `it` is the one that matters, and the first is what keeps the
- * `:root` block the only place worth looking. Only the colour tokens are
- * checked: `--measure`, `--gutter` and the three corners mean the same thing
- * on either ground, and `#root` drops the measures on paper outright.
- */
-describe('the print stylesheet', () => {
-  it('writes every colour it paints with in :root and nowhere else', () => {
-    const print = printBlock(stylesheet);
-    // Guards the extractor: an empty block would make both checks vacuous.
-    expect(print.length).toBeGreaterThan(500);
-
-    const declared = print.match(/:root\s*\{[^}]*\}/g) ?? [];
-    expect(declared).toHaveLength(1);
-    expect(looseColours(declared.join('\n')).length).toBeGreaterThan(20);
-
-    const used = declared.reduce((css, block) => css.replace(block, ''), print);
-    expect(looseColours(used)).toEqual([]);
-  });
-
-  it('answers for every token the screen ground declares', () => {
-    const screen = colourTokens(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(screen.length).toBeGreaterThan(20);
-
-    const paper = new Set(tokenNames(printBlock(stylesheet)));
-    expect(screen.filter((name) => !paper.has(name))).toEqual([]);
-  });
-});
-
-/**
- * `ResponsiveContainer` measures the box it is handed and renders nothing at
- * all when that box is zero high. The print sheet used to hand it zero: it set
- * `height: auto !important` on `.chart-container` and on both recharts divs
- * to scale a screen-sized SVG down to the sheet, the observer fired on the
- * change, and all three chart plots unmounted. Thirty tick values on screen,
- * none on paper — the axis, both sets of tick values and the grid gone, and
- * what printed was an axis label, a key and a caption with nothing between
- * them.
- *
- * Nothing reported it, and nothing could: recharts renders nothing under
- * jsdom either, so no render-based test can tell a chart that is missing from
- * paper apart from one that is missing from the test. What can be checked is
- * the rule that did it, which is the claim here: the print sheet may resize a
- * chart, and may not take its height away.
- */
-describe('the print sheet’s charts', () => {
-  const chartRules = () =>
-    leafRules(printBlock(stylesheet)).filter((rule) =>
-      rule.selectors.some((selector) => /chart-container|recharts/.test(selector)),
-    );
-
-  it('hands the plot a height it can measure', () => {
-    const sized = chartRules().filter((rule) => /(?:^|[;\s])height:/.test(rule.body));
-    expect(sized).toHaveLength(1);
-    expect(/height:\s*([^;}]+)/.exec(sized[0].body)?.[1].trim()).toMatch(/^\d+px$/);
-  });
-
-  it('never resolves that height to nothing', () => {
-    const zeroed = chartRules()
-      .filter((rule) => /(?:^|[;\s])(?:height|max-height):\s*(auto|0)\b/.test(rule.body))
-      .flatMap((rule) => rule.selectors);
-
-    expect(zeroed).toEqual([]);
-  });
-});
-
-/**
- * `palette.ts` and `:root` are the same palette written twice, once for CSS
- * and once for SVG. Two copies drift — silently, because a stale colour still
- * renders — so the only thing keeping them one palette is this.
- *
- * The direction that matters is a token changed in one file and not the
- * other: the whole reason the tokens exist is that "change the accent" should
- * be one edit, and it is only one edit if a second copy cannot survive it.
- */
-/** `surfaceRaised` is `--surface-raised`, and every name pairs that way. */
-const custom = (name: string) =>
-  `--${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
-
-/** Every custom property `:root` declares on screen, name to value. */
-const rootTokens = (css: string): Record<string, string> =>
+/** Every custom property the screen `:root` blocks declare, name to value. */
+const rootTokens = (screen: string): Record<string, string> =>
   Object.fromEntries(
-    Array.from(
-      (screenBlock(css).match(/:root\s*\{[^}]*\}/g) ?? [])
-        .join('\n')
-        .matchAll(/(--[\w-]+):\s*([^;]+);/g),
-    ).map(([, name, value]) => [name, value.trim()]),
+    Array.from(rootBlocks(screen).join('\n').matchAll(/(--[\w-]+):\s*([^;]+);/g)).map(
+      ([, name, value]) => [name, value.trim()],
+    ),
   );
 
-describe('the palette', () => {
-  it('gives the charts the same colours the stylesheet declares', () => {
-    const declared = rootTokens(stylesheet);
-    // Guards the extractor: an empty map would make every check below vacuous.
-    expect(Object.keys(declared).length).toBeGreaterThan(20);
+/** `surfaceRaised` is `--surface-raised`, and every name pairs that way. */
+const custom = (name: string) => `--${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
 
-    const disagreed = Object.entries(PALETTE)
-      .map(([name, value]) => ({ name, value, css: declared[custom(name)] }))
-      .filter((token) => token.css !== token.value);
-
-    expect(disagreed).toEqual([]);
-  });
-
-  /**
-   * The check above runs `PALETTE` → CSS, so a token with no `PALETTE` twin is
-   * invisible to it. That is the half `--lime-deep` fell through: its only
-   * user was the charitable slider, the slider came off with the deduction it
-   * set, and the token sat in both `:root` blocks afterwards spent by nothing
-   * and named by nothing — the one entry in the block a reader could not
-   * account for.
-   *
-   * So there are exactly two ways a token earns its line: a `var()` somewhere
-   * in the sheet, or a `PALETTE` entry, which is a chart spending it in SVG
-   * where `var()` cannot reach. `--indigo`, `--indigo-bright` and `--lime`
-   * were held on neither — kept, with a note in `palette.ts` saying what they
-   * were being held *for*, against two steps coming back that have not — and
-   * a note is not a reader. All three are gone from both grounds now, and this
-   * is what fails the next one that outlives its use.
-   */
-  it('declares no colour with nothing on either side of it', () => {
-    const sheet = stylesheet.replace(/\/\*[\s\S]*?\*\//g, '');
-    const twins = new Set(Object.keys(PALETTE).map(custom));
-
-    const names = Object.keys(rootTokens(stylesheet));
-    expect(names.length).toBeGreaterThan(20);
-
-    const orphaned = names.filter(
-      (name) => !sheet.includes(`var(${name})`) && !twins.has(name),
-    );
-    expect(orphaned).toEqual([]);
-  });
-});
-
-/**
- * Two widths the markup has to know as well as the stylesheet.
- *
- * The rail folds to a row at the width the columns collapse to one, and the
- * plot takes its narrow frame at the width the phone rules turn on: each is
- * a `matchMedia` in a component and an `@media` in the sheet, and the two
- * copies of a number drift the same silent way two copies of a colour do.
- */
-describe('the fold', () => {
-  it('happens at the width the stylesheet collapses the columns', () => {
-    expect(screenBlock(stylesheet)).toMatch(
-      new RegExp(`@media \\(max-width: ${RAIL_COLLAPSES_AT}px\\)`),
-    );
-  });
-
-  it('narrows the plot at the width the stylesheet turns its phone rules on', () => {
-    expect(screenBlock(stylesheet)).toMatch(
-      new RegExp(`@media \\(max-width: ${NARROW_MAX_WIDTH}px\\)`),
-    );
-  });
-});
-
-/**
- * `CHART` is the second copy of two of the page's measures, held to the first
- * the same way `PALETTE` is — by a test, because a stale number renders as
- * quietly as a stale colour.
- *
- * Only two of the five entries have a counterpart in CSS, and they are the
- * two where a disagreement would actually show. The y-axis gutter is one: an
- * SVG that holds back 44px and a caption that indents 44px are describing the
- * same edge, and if they stop agreeing the words under every plot stop
- * starting where the plot does. The label size is the other: 13px inside the
- * plot is `0.8125rem` under it, and the claim this pass made is that a chart
- * and its notes read at one size.
- *
- * The other three — the curve, the rule and the hairline — are stroke widths,
- * which nothing in CSS draws, and `the chart register` in App.chart.test.tsx
- * is what holds those closed instead.
- */
-describe('the chart metrics', () => {
-  it('holds back the same gutter the notes under the plot indent by', () => {
-    const root = (screenBlock(stylesheet).match(/:root\s*\{[^}]*\}/g) ?? []).join('\n');
-    expect(/--chart-axis:\s*([^;]+);/.exec(root)?.[1].trim()).toBe(`${CHART.axis}px`);
-  });
-
-  it('sets the plot’s labels at the step its notes are set in', () => {
-    // 13px is 0.8125rem, and the root font size is the browser's own 16px:
-    // `index.css` sets 15px on `body` rather than on `:root` precisely so
-    // that every rem length on the page stays where it was put.
-    const step = `${CHART.label / 16}rem`;
-    expect(step).toBe('0.8125rem');
-
-    // One note, where there were two: the paragraph of key under the plot
-    // came off with the Breakpoints panel, which put each swatch beside the
-    // switch that draws its line instead.
-    const notes = ['.chart-axis-label'];
-    const set = leafRules(screenBlock(stylesheet))
-      .filter((rule) => rule.selectors.some((selector) => notes.includes(selector)))
-      .map((rule) => ({
-        selector: rule.selectors.join(', '),
-        size: /font-size:\s*([^;}]+)/.exec(rule.body)?.[1].trim(),
-      }));
-    expect(set).toHaveLength(notes.length);
-    expect(set.filter((note) => note.size !== step)).toEqual([]);
-  });
-});
-
-/**
- * Every size the screen half sets, in the order the file sets them.
- *
- * Comments are stripped first, so the scale written out above `body` in
- * `index.css` is documentation here rather than nine more sizes to check.
- */
+/** Every size a stretch of stylesheet sets, in the order it sets them. */
 const fontSizes = (css: string): string[] =>
   Array.from(css.matchAll(/font-size:\s*([^;}]+)/g)).map(([, size]) => size.trim());
 
 /**
- * Ten steps, and no eleventh.
- *
- * They are the Subsidy Slope's, read off its stylesheet: a 2.75rem page
- * title, 2.125rem section headings and closing figures, 1.125rem note
- * headings, 1.0625rem body copy. Before this the page ran a 5.75rem title
- * and 2.75rem step headings — a register above everything its sibling uses —
- * and the sizes in between had arrived one rule at a time.
- *
- * It was once ten for a different reason: 1rem was set by a generic `input`
- * rule painting a text field this page has never rendered, and by the one
- * menu this page had, which copied it. Both are gone, and the second `it`
- * below is what caught the step going unspent rather than lingering as a
- * size nothing sets.
- *
- * That is the failure this closes. A scale does not drift by someone
- * rewriting it; it drifts by a 1.05rem typed into the one rule being edited,
- * because from inside that rule there is nothing to compare against. Here
- * there is: a size that is not on the list fails, so widening the scale
- * becomes an edit to the list, made once, on purpose.
- */
-describe('the type scale', () => {
-  const STEPS = [
-    '0.75rem',
-    '0.8125rem',
-    '0.875rem',
-    '1.0625rem',
-    '1.125rem',
-    '1.25rem',
-    '1.5rem',
-    '2rem',
-    '2.125rem',
-    '2.75rem',
-  ];
-
-  it('sets every size from one closed list of steps', () => {
-    const sizes = fontSizes(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(sizes.length).toBeGreaterThan(20);
-
-    expect([...new Set(sizes)].filter((size) => !STEPS.includes(size)).sort()).toEqual(
-      [],
-    );
-  });
-
-  it('spends every step it declares', () => {
-    const spent = new Set(fontSizes(screenBlock(stylesheet)));
-    expect(STEPS.filter((step) => !spent.has(step))).toEqual([]);
-  });
-});
-
-/**
- * Every ring the screen half paints.
+ * Every ring a stretch of stylesheet paints.
  *
  * A ring is an `outline` that is not `none`, or a `box-shadow` with no offset
  * and no blur — `0 0 0 Npx colour`, which is the shape of a border drawn
- * outside the box rather than of a shadow. `--shadow-float` is the one real
- * shadow left on the page and it has both an offset and a blur, so it is not
- * one of these.
+ * outside the box rather than of a shadow.
  */
-const rings = (
-  css: string,
-): { selectors: string[]; property: string; value: string }[] =>
+const rings = (css: string): { selectors: string[]; property: string; value: string }[] =>
   leafRules(css).flatMap((rule) => {
     const outline = /(?:^|[;\s])outline:\s*([^;}]+)/.exec(rule.body)?.[1].trim();
     const shadow = /(?:^|[;\s])box-shadow:\s*([^;}]+)/.exec(rule.body)?.[1].trim();
@@ -555,310 +252,568 @@ const rings = (
   });
 
 /**
- * One ring, and only on focus.
+ * Every `width` and `max-width` a stretch of stylesheet sets, with what set it.
  *
- * Before the controls pass this page rang in three different ways: a 2px
- * `rgba(--accent, 0.2)` glow under the fields, a 2px `rgba(--accent, 0.6)`
- * outline on everything else, and — under the generic `input` rule that has
- * since been deleted — a glow on controls that then had to spend a rule each
- * taking it back off. All three were washes, and a translucent ring over a
- * near-black ground is a smudge: at 0.2 alpha the fields' glow was 1.3:1
- * against the page, which is to say invisible, on the one indicator a
- * keyboard reader has no alternative for.
- *
- * So the claim is the whole register in two parts: nothing rings except on
- * focus, and every ring is the same solid accent. Both fail in the direction
- * that actually happens — a ring pasted into the rule being edited, carrying
- * whatever alpha it had where it was copied from.
- *
- * The second part allows for a ring drawn on a border rather than outside it —
- * FI Calc rings a `.select` that way, by thickening its own border and laying
- * a 1px `box-shadow` in the same accent behind it. Nothing on the page takes
- * that shape today; it stays allowed because it is still one ring in one
- * colour, which is the whole of what these two tests hold.
+ * `min-width` is left out: `body` sets a 320px floor, which is a statement
+ * about the smallest window the page will try to draw in and not a measure
+ * of a column. So is anything in a rule that clips — `.live-reading` is a box
+ * shrunk to a pixel and clipped to nothing so that a live region stays in the
+ * accessibility tree while being off the screen.
  */
-describe('the controls', () => {
-  it('paints a ring in no state but focus', () => {
-    const painted = rings(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(painted.length).toBeGreaterThan(5);
-
-    const unfocused = painted
-      .filter((ring) => !ring.selectors.every((s) => s.includes(':focus')))
-      .map((ring) => `${ring.selectors.join(', ')} { ${ring.property} }`);
-
-    expect(unfocused).toEqual([]);
-  });
-
-  it('paints every ring in the same solid accent', () => {
-    const washed = rings(screenBlock(stylesheet))
-      .filter((ring) => !/^\d+px solid var\(--accent\)$|var\(--accent\)$/.test(ring.value))
-      .map((ring) => `${ring.selectors.join(', ')} { ${ring.property}: ${ring.value} }`);
-
-    expect(washed).toEqual([]);
-  });
-});
-
-/**
- * The body of one `@media` block, named by its prelude.
- *
- * Read by balancing braces rather than by regex, because a media block is the
- * one thing in this file that nests — `leafRules` walks straight past the
- * prelude and into the rules inside, which is exactly what is wanted
- * everywhere else and not here. `@media print` nests twice over, holding an
- * `@page` of its own, which is the other reason this counts rather than
- * matching.
- */
-const mediaBlock = (css: string, prelude: string): string => {
-  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const at = stripped.indexOf(prelude);
-  if (at === -1) return '';
-  const open = stripped.indexOf('{', at);
-  let depth = 0;
-  for (let i = open; i < stripped.length; i += 1) {
-    if (stripped[i] === '{') depth += 1;
-    else if (stripped[i] === '}') {
-      depth -= 1;
-      if (depth === 0) return stripped.slice(open + 1, i);
-    }
-  }
-  return '';
-};
-
-/** The block that collapses the two columns into one. */
-const collapseBlock = (css: string): string =>
-  mediaBlock(css, `@media (max-width: ${RAIL_COLLAPSES_AT}px)`);
-
-/** The other ground: the same page on paper. */
-const printBlock = (css: string): string => mediaBlock(css, '@media print');
-
-/**
- * Every `width` and `max-width` the screen half sets, with what set it.
- *
- * Two things are left out deliberately rather than overlooked. `min-width` is
- * one: `body` sets a 320px floor, which is a statement about the smallest
- * window this page will try to draw in and not a measure of a column. The
- * other is anything in a rule that clips — `.live-reading` is a box shrunk to
- * a pixel and clipped to nothing so that a live region stays in the
- * accessibility tree while being off the screen, and its 1px is a way of
- * hiding rather than a width.
- */
-const widths = (
-  css: string,
-): { selectors: string[]; property: string; value: string }[] =>
+const widths = (css: string): { selectors: string[]; property: string; value: string }[] =>
   leafRules(css)
     .filter((rule) => !rule.body.includes('clip-path'))
     .flatMap((rule) =>
-      Array.from(
-        rule.body.matchAll(/(?:^|[;\s])(max-width|width):\s*([^;}]+)/g),
-      ).map(([, property, value]) => ({
-        selectors: rule.selectors,
-        property,
-        value: value.trim(),
-      })),
+      Array.from(rule.body.matchAll(/(?:^|[;\s])(max-width|width):\s*([^;}]+)/g)).map(
+        ([, property, value]) => ({ selectors: rule.selectors, property, value: value.trim() }),
+      ),
     );
 
-/**
- * Two columns, three measures, and one place they are written down.
- *
- * The shape this page had was a single 900px `#root`, and that one number was
- * doing two jobs at once: it was the reading measure *and* the whole width of
- * the page. So there was nowhere to put a configuration column, and every
- * input ended up stacked at the top of step 1 — which is why a reader looking
- * at step 3's chart could not see the benefit being priced under it.
- *
- * FI Calc's answer is two numbers instead of one: 44rem of reading column and
- * 18rem of configuration beside it. Both are now `:root` tokens and `#root`
- * is derived from them, so the page's width is a consequence of its columns
- * rather than a third number that has to be kept in step with them by hand.
- *
- * The first `it` is what keeps that true. It fails in the direction that
- * actually happens — not by someone rewriting the shell, but by a `900px`
- * typed into whichever rule is being edited, which from inside that rule
- * looks like nothing at all.
- *
- * The second is about the other thing this shape brought with it. Two columns
- * only work while there are two, and the configuration column pins: it sticks
- * to the top of the window while the reading column scrolls past it. The step
- * nav pinned to the head of that reading column until the nav came off the
- * page, which is why the count below is a floor rather than a pair. On a
- * phone there is one column and nothing may pin — a pinned configuration
- * panel there is the whole screen. So every `position: sticky` on this page
- * has to be taken back off in the collapse, and a new one that forgets to is
- * a bug nobody sees on the machine they wrote it on.
- */
-describe('the shell', () => {
-  const MEASURES = ['--measure', '--column', '--gutter'];
-
-  it('sets every column width from the measures it names, never from a number', () => {
-    const drawn = widths(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(drawn.length).toBeGreaterThan(5);
-
-    const hardCoded = drawn
-      .filter((width) => /\d\s*px/.test(width.value))
-      .map((width) => `${width.selectors.join(', ')} { ${width.property}: ${width.value} }`);
-
-    expect(hardCoded).toEqual([]);
-  });
-
-  it('spends every measure it declares', () => {
-    const screen = screenBlock(stylesheet);
-    const spent = screen.slice(screen.lastIndexOf(':root'));
-    expect(MEASURES.filter((name) => !spent.includes(`var(${name})`))).toEqual([]);
-  });
-
-  it('unpins everything that pins where the grid collapses to one', () => {
-    const pinned = leafRules(screenBlock(stylesheet))
-      .filter((rule) => /position:\s*sticky/.test(rule.body))
-      .flatMap((rule) => rule.selectors);
-    // Guards the extractor: no sticky found would make the check vacuous.
-    expect(pinned.length).toBeGreaterThan(0);
-
-    const released = leafRules(collapseBlock(stylesheet))
-      .filter((rule) => /position:\s*static/.test(rule.body))
-      .flatMap((rule) => rule.selectors);
-
-    expect(pinned.filter((selector) => !released.includes(selector))).toEqual([]);
-  });
-});
-
-/** Every left border the screen half draws, with what drew it. */
-const leftBorders = (
-  css: string,
-): { selectors: string[]; property: string; value: string }[] =>
+/** Every left border a stretch of stylesheet draws, with what drew it. */
+const leftBorders = (css: string): { selectors: string[]; property: string; value: string }[] =>
   leafRules(css).flatMap((rule) =>
-    Array.from(
-      rule.body.matchAll(/(?:^|[;\s])(border-left(?:-color)?):\s*([^;}]+)/g),
-    ).map(([, property, value]) => ({
-      selectors: rule.selectors,
-      property,
-      value: value.trim(),
-    })),
+    Array.from(rule.body.matchAll(/(?:^|[;\s])(border-left(?:-color)?):\s*([^;}]+)/g)).map(
+      ([, property, value]) => ({ selectors: rule.selectors, property, value: value.trim() }),
+    ),
   );
 
-/**
- * Two shapes of left border, and no third.
- *
- * This page sets something apart in the margin rather than in a box more
- * often than it does anything else: the recap that closes step 1 and each of
- * the six closing figures are a rule and an indent. They arrived one at a
- * time and had drifted into two alphas — 0.5 under the recap, 0.35 beside the
- * figures — which is the same drift `the corners` and `the type scale` were
- * written for, in the one dimension neither of them watches.
- *
- * So: a margin rule is 2px, and its colour is either the page's hairline or a
- * data token at exactly half alpha. A note box is the other shape — 3px of a
- * solid token down the side of something with a fill and a border of its own,
- * which is now only `.link-note`, the separate return's rose `.warning-note`
- * having left with the status that raised it — and it is allowed for
- * explicitly rather than by omission, because the difference between the two
- * is the whole point: one is a rule beside prose, the other is a box.
- */
-describe('the margin rules', () => {
-  const RULE = /^2px solid (var\(--edge\)|rgba\(var\(--[\w-]+-rgb\), 0\.5\))$/;
-  const COLOUR = /^(var\(--edge\)|rgba\(var\(--[\w-]+-rgb\), 0\.5\))$/;
-  const BOX = /^3px solid var\(--[\w-]+\)$/;
-
-  it('draws every one of them at one weight and one alpha', () => {
-    const drawn = leftBorders(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously. Two
-    // rules take this shape today — the recap's margin rule and the link
-    // note's box.
-    expect(drawn.length).toBeGreaterThan(1);
-
-    const odd = drawn
-      .filter((border) =>
-        border.property === 'border-left-color'
-          ? !COLOUR.test(border.value)
-          : !RULE.test(border.value) && !BOX.test(border.value),
-      )
-      .map((border) => `${border.selectors.join(', ')} { ${border.property}: ${border.value} }`);
-
-    expect(odd).toEqual([]);
-  });
-});
-
-/** Every corner the screen half draws, one value per `border-radius`. */
+/** Every corner a stretch of stylesheet draws, one value per `border-radius`. */
 const corners = (css: string): string[] =>
   Array.from(css.matchAll(/border-radius:\s*([^;}]+)/g)).flatMap(([, value]) =>
     value.trim().split(/\s+(?![^(]*\))/),
   );
 
-/**
- * Three corners, and no fourth.
- *
- * The same guard as `the type scale`, aimed at the other number that drifts
- * by being typed into the one rule someone is already editing. This page was
- * built on 12px and 16px corners and came down to 8/6/4 in the ground pass;
- * a stray `10px` would not look wrong from inside its own rule, and there is
- * nothing else that would catch it.
- *
- * `50%` was allowed and was never a fourth step — it is a circle, which is a
- * shape rather than a corner. The step nav's numbered discs were the only
- * things that took it, so it left the page with them; a new circle is welcome
- * back on the list, but not by being absent from it.
- */
-/**
- * A control nobody can see, in either of its two states.
- *
- * The skip link is the one thing on this page whose whole behaviour is a CSS
- * rule: it is clipped to a pixel at rest and unclipped by `:focus`, and no
- * render test can tell a link that unclips from one that does not, because
- * jsdom computes neither. So it is invisible in every screenshot and every
- * assertion elsewhere, and both ways of breaking it are silent — a resting
- * rule that stops hiding puts a link nobody asked for above the title, and a
- * focus rule that stops showing leaves a keyboard reader tabbing into
- * something they cannot read.
- *
- * `display: none` is called out by name because it is the obvious way to
- * write the first half and the wrong one: it takes the tab stop away with the
- * pixels, and a skip link that cannot be tabbed to is not a skip link.
- */
-describe('the skip link', () => {
-  const rule = (selector: string) =>
-    leafRules(screenBlock(stylesheet)).find((r) => r.selectors.includes(selector));
+/** A stretch of stylesheet with every `@media` block taken out: its base rules. */
+const withoutMediaBlocks = (css: string): string => {
+  const plain = stripped(css);
+  let out = '';
+  let i = 0;
+  while (i < plain.length) {
+    const at = plain.indexOf('@media', i);
+    if (at === -1) {
+      out += plain.slice(i);
+      break;
+    }
+    out += plain.slice(i, at);
+    const open = plain.indexOf('{', at);
+    let depth = 0;
+    let end = plain.length;
+    for (let j = open; j < plain.length; j += 1) {
+      if (plain[j] === '{') depth += 1;
+      else if (plain[j] === '}') {
+        depth -= 1;
+        if (depth === 0) {
+          end = j;
+          break;
+        }
+      }
+    }
+    i = end + 1;
+  }
+  return out;
+};
 
-  it('is clipped at rest and unclipped by focus', () => {
-    const resting = rule('.skip-link');
-    const focused = rule('.skip-link:focus');
-    expect(resting).toBeDefined();
-    expect(focused).toBeDefined();
+/** Every property a rule body sets. */
+const properties = (body: string): string[] =>
+  Array.from(body.matchAll(/(?:^|[;\s])([\w-]+)\s*:/g)).map(([, name]) => name);
 
-    expect(resting?.body).toMatch(/clip-path:\s*inset\(50%\)/);
-    expect(resting?.body).not.toMatch(/display:\s*none/);
-    expect(focused?.body).toMatch(/clip-path:\s*none/);
+describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
+  const sheet = sheetFor(page);
+  const source = sourceOf(page);
+
+  describe('the stylesheet', () => {
+    it('scopes no rule to a nesting the page never renders', () => {
+      const selectors = nestedClassSelectors(sheet.all);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(selectors.length).toBeGreaterThan(0);
+
+      const { container } = render(<page.App />);
+      let dead = selectors.filter((selector) => !container.querySelector(selector));
+      if (page.reveal && dead.length > 0) {
+        page.reveal();
+        dead = dead.filter((selector) => !container.querySelector(selector));
+      }
+      expect(dead).toEqual([]);
+    });
+
+    /**
+     * The other half of the same silence. A rule scoped to a nesting that
+     * never happens is caught above; this catches a rule whose class no render
+     * path emits at all, which is what a section leaves behind when its markup
+     * is deleted and its stylesheet is not. Run against the site's sheet
+     * through each page's markup, it is also what keeps a page's class out of
+     * the site's sheet: a rule for the chooser in site.css fails here for the
+     * page that has no chooser.
+     */
+    it('writes no rule for a class the page never renders', () => {
+      // The claim `styledClasses` rests on: className is always a literal here.
+      expect(source).not.toMatch(/className=\{/);
+
+      const rendered = new Set(
+        Array.from(source.matchAll(/className="([^"]*)"/g)).flatMap(([, list]) =>
+          list.split(/\s+/).filter(Boolean),
+        ),
+      );
+      // Guards both extractors: either coming back empty would pass vacuously.
+      expect(rendered.size).toBeGreaterThan(20);
+      const styled = styledClasses(sheet.all);
+      expect(styled.size).toBeGreaterThan(20);
+
+      // recharts names its own SVG parts, and the print sheet re-colours the
+      // grid and the ticks by the names the library emits. Nothing under `src`
+      // writes one, and nothing should.
+      const dead = Array.from(styled).filter(
+        (name) => !rendered.has(name) && !name.startsWith('recharts-'),
+      );
+      expect(dead).toEqual([]);
+    });
   });
 
   /**
-   * And drawn over everything, because what it unclips onto is whatever the
-   * reader had already opened.
+   * The page's sheet comes after the site's, media blocks included, and a
+   * media query adds no specificity. So a page rule at base level that sets
+   * a property one of the site's media blocks sets on the same selector wins
+   * over the block on every screen — the collapse un-sticks the rail, and a
+   * page rule that restated `position: sticky` would pin it on a phone again.
+   * What a page changes at a breakpoint or on paper goes in media blocks of
+   * its own, at the foot of its own file.
    */
-  it('lands above every other layer the page stacks', () => {
-    const layers = Array.from(
-      screenBlock(stylesheet).matchAll(/z-index:\s*(\d+)/g),
-    ).map(([, value]) => Number(value));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(layers.length).toBeGreaterThan(2);
+  describe('the cascade', () => {
+    it('restates at base level no property the site changes in a media block', () => {
+      const changed = new Map<string, Set<string>>();
+      for (const prelude of stripped(site).match(/@media[^{]+/g) ?? []) {
+        for (const rule of leafRules(mediaBlocks(site, prelude.trim()))) {
+          for (const selector of rule.selectors) {
+            const set = changed.get(selector) ?? new Set<string>();
+            for (const property of properties(rule.body)) set.add(property);
+            changed.set(selector, set);
+          }
+        }
+      }
+      // Guards the extractor itself: an empty map would pass vacuously.
+      expect(changed.size).toBeGreaterThan(5);
 
-    const focused = Number(/z-index:\s*(\d+)/.exec(rule('.skip-link:focus')?.body ?? '')?.[1]);
-    expect(focused).toBe(Math.max(...layers));
+      const restated = leafRules(withoutMediaBlocks(screenBlock(sheet.own))).flatMap((rule) =>
+        rule.selectors.flatMap((selector) =>
+          properties(rule.body)
+            .filter((property) => changed.get(selector)?.has(property))
+            .map((property) => `${selector} { ${property} }`),
+        ),
+      );
+      expect(restated).toEqual([]);
+    });
   });
-});
 
-describe('the corners', () => {
+  /**
+   * Two headings used to paint their text with a `linear-gradient` background
+   * and knock the glyphs out with `-webkit-text-fill-color: transparent`. On
+   * paper, in a browser printing without background graphics, that was the
+   * knockout without the paint — both headings came out as blank space. A
+   * knockout is a heading a printer is free to drop, so the claim is that
+   * there is nothing to repair.
+   */
+  describe('the headings', () => {
+    it('paints none of them with a gradient a printer would drop', () => {
+      const rules = leafRules(sheet.all);
+      // Guards the extractor itself: an empty sheet would pass vacuously.
+      expect(rules.length).toBeGreaterThan(50);
+
+      const knockedOut = rules
+        .filter((rule) =>
+          /-webkit-text-fill-color:\s*transparent|background-clip:\s*text/.test(rule.body),
+        )
+        .flatMap((rule) => rule.selectors);
+
+      expect(knockedOut).toEqual([]);
+    });
+  });
+
+  /**
+   * The palette lives in `:root` and nowhere else.
+   *
+   * This is the invariant that makes a restyle a bounded job instead of an
+   * open-ended hunt. It bites in the direction that actually happens: nobody
+   * adds a token they do not use, but everybody pastes a hex into the rule
+   * they are already editing. That paste fails here. The site's `:root`
+   * holds what both pages paint with and a page's own `:root` its own hues,
+   * and a colour literal anywhere else fails for whichever page it is in.
+   */
+  describe('the screen stylesheet', () => {
+    it('writes every colour it paints with in :root and nowhere else', () => {
+      const declared = rootBlocks(sheet.screen);
+      // Guards the extractor: no `:root` found would make the rest vacuous.
+      expect(declared.length).toBeGreaterThan(0);
+      expect(looseColours(declared.join('\n')).length).toBeGreaterThan(10);
+
+      const used = declared.reduce((css, block) => css.replace(block, ''), sheet.screen);
+      expect(looseColours(used)).toEqual([]);
+    });
+  });
+
+  /**
+   * The paper half, held to the same line as the screen half.
+   *
+   * Paper re-declares the tokens and every rule above paints itself. That
+   * goes stale by a *token* being added to the screen ground and not to the
+   * paper one — silent, because a custom property that paper never
+   * re-points still resolves, to whatever value the screen gave it. So the
+   * second `it` is the one that matters: every colour token a page declares
+   * on screen, in the site's `:root` or its own, has a paper answer.
+   */
+  describe('the print stylesheet', () => {
+    it('writes every colour it paints with in :root and nowhere else', () => {
+      // Guards the extractor: an empty block would make both checks vacuous.
+      expect(sheet.print.length).toBeGreaterThan(500);
+
+      const declared = rootBlocks(sheet.print);
+      expect(declared.length).toBeGreaterThan(0);
+      expect(looseColours(declared.join('\n')).length).toBeGreaterThan(10);
+
+      const used = declared.reduce((css, block) => css.replace(block, ''), sheet.print);
+      expect(looseColours(used)).toEqual([]);
+    });
+
+    it('answers for every token the screen ground declares', () => {
+      const screen = colourTokens(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(screen.length).toBeGreaterThan(10);
+
+      const paper = new Set(tokenNames(sheet.print));
+      expect(screen.filter((name) => !paper.has(name))).toEqual([]);
+    });
+  });
+
+  /**
+   * `ResponsiveContainer` measures the box it is handed and renders nothing at
+   * all when that box is zero high. The print sheet used to hand it zero, and
+   * every plot unmounted on paper; recharts renders nothing under jsdom
+   * either, so no render-based test can tell. What can be checked is the
+   * rule: the print sheet may resize a chart, and may not take its height away.
+   */
+  describe('the print sheet’s charts', () => {
+    const chartRules = () =>
+      leafRules(sheet.print).filter((rule) =>
+        rule.selectors.some((selector) => /chart-container|recharts/.test(selector)),
+      );
+
+    it('hands the plot a height it can measure', () => {
+      const sized = chartRules().filter((rule) => /(?:^|[;\s])height:/.test(rule.body));
+      expect(sized).toHaveLength(1);
+      expect(/height:\s*([^;}]+)/.exec(sized[0].body)?.[1].trim()).toMatch(/^\d+px$/);
+    });
+
+    it('never resolves that height to nothing', () => {
+      const zeroed = chartRules()
+        .filter((rule) => /(?:^|[;\s])(?:height|max-height):\s*(auto|0)\b/.test(rule.body))
+        .flatMap((rule) => rule.selectors);
+
+      expect(zeroed).toEqual([]);
+    });
+  });
+
+  /**
+   * `palette.ts` and `:root` are the same palette written twice, once for CSS
+   * and once for SVG. Two copies drift — silently, because a stale colour
+   * still renders — so the only thing keeping them one palette is this.
+   */
+  describe('the palette', () => {
+    it('gives the charts the same colours the stylesheet declares', () => {
+      const declared = rootTokens(sheet.screen);
+      // Guards the extractor: an empty map would make every check below vacuous.
+      expect(Object.keys(declared).length).toBeGreaterThan(15);
+
+      const disagreed = Object.entries(page.PALETTE)
+        .map(([name, value]) => ({ name, value, css: declared[custom(name)] }))
+        .filter((token) => token.css !== token.value);
+
+      expect(disagreed).toEqual([]);
+    });
+
+    /**
+     * There are exactly two ways a token earns its line: a `var()` somewhere
+     * in the page's sheet, or a `PALETTE` entry, which is a chart spending it
+     * in SVG where `var()` cannot reach. Asked of each page, this is also
+     * what keeps the site's `:root` to what both pages spend: a hue only one
+     * page draws with fails here for the other, and belongs in the one's own
+     * sheet.
+     */
+    it('declares no colour with nothing on either side of it', () => {
+      const plain = stripped(sheet.all);
+      const twins = new Set(Object.keys(page.PALETTE).map(custom));
+
+      const names = Object.keys(rootTokens(sheet.screen));
+      expect(names.length).toBeGreaterThan(15);
+
+      const orphaned = names.filter(
+        (name) => !plain.includes(`var(${name})`) && !twins.has(name),
+      );
+      expect(orphaned).toEqual([]);
+    });
+  });
+
+  /**
+   * The gutter the plot holds back is the one measure the pages disagree on:
+   * one y-axis is a percentage and the other a dollar figure. So the site's
+   * ground does not set it, and each page's own does — a page that forgot
+   * would inherit nothing, and every caption under its plot would start at
+   * the plot's left edge instead of the plot area's.
+   */
+  describe('the split', () => {
+    it('leaves the plot’s gutter to the page, and the page sets it', () => {
+      expect(tokenNames(screenBlock(site))).not.toContain('--chart-axis');
+      expect(tokenNames(screenBlock(sheet.own))).toContain('--chart-axis');
+    });
+  });
+
+  /**
+   * Two widths the markup has to know as well as the stylesheet.
+   *
+   * The rail folds to a row at the width the columns collapse to one, and the
+   * plot takes its narrow frame at the width the phone rules turn on: each is
+   * a `matchMedia` in a component and an `@media` in the sheet, and the two
+   * copies of a number drift the same silent way two copies of a colour do.
+   */
+  describe('the fold', () => {
+    it('happens at the width the stylesheet collapses the columns', () => {
+      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${page.RAIL_COLLAPSES_AT}px\\)`));
+    });
+
+    it('narrows the plot at the width the stylesheet turns its phone rules on', () => {
+      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${page.NARROW_MAX_WIDTH}px\\)`));
+    });
+  });
+
+  /**
+   * `CHART` is the second copy of the page's plot measures, held to the first
+   * the same way `PALETTE` is — by a test, because a stale number renders as
+   * quietly as a stale colour. The y-axis gutter is one: an SVG that holds
+   * back 44px and a caption that indents 44px are describing the same edge.
+   * The label size is the other: 13px inside the plot is `0.8125rem` under it.
+   */
+  describe('the chart metrics', () => {
+    it('holds back the same gutter the notes under the plot indent by', () => {
+      const root = rootBlocks(sheet.screen).join('\n');
+      expect(/--chart-axis:\s*([^;]+);/.exec(root)?.[1].trim()).toBe(`${page.CHART.axis}px`);
+      if (page.CHART.axisNarrow !== undefined) {
+        expect(/--chart-axis-narrow:\s*([^;]+);/.exec(root)?.[1].trim()).toBe(
+          `${page.CHART.axisNarrow}px`,
+        );
+      }
+    });
+
+    it('sets the plot’s labels at the step its notes are set in', () => {
+      // 13px is 0.8125rem, and the root font size is the browser's own 16px.
+      const step = `${page.CHART.label / 16}rem`;
+      expect(step).toBe('0.8125rem');
+
+      const set = leafRules(sheet.screen)
+        .filter((rule) => rule.selectors.some((selector) => page.chartNotes.includes(selector)))
+        .map((rule) => ({
+          selector: rule.selectors.join(', '),
+          size: /font-size:\s*([^;}]+)/.exec(rule.body)?.[1].trim(),
+        }));
+      expect(set).toHaveLength(page.chartNotes.length);
+      expect(set.filter((note) => note.size !== step)).toEqual([]);
+    });
+  });
+
+  /**
+   * Ten steps, and no eleventh.
+   *
+   * A scale does not drift by someone rewriting it; it drifts by a 1.05rem
+   * typed into the one rule being edited, because from inside that rule
+   * there is nothing to compare against. Here there is: a size that is not
+   * on the list fails, so widening the scale becomes an edit to the list,
+   * made once, on purpose. And every step has to be spent, so a step that
+   * outlives its last user comes off the list rather than lingering.
+   */
+  describe('the type scale', () => {
+    const STEPS = [
+      '0.75rem',
+      '0.8125rem',
+      '0.875rem',
+      '1.0625rem',
+      '1.125rem',
+      '1.25rem',
+      '1.5rem',
+      '2rem',
+      '2.125rem',
+      '2.75rem',
+    ];
+
+    it('sets every size from one closed list of steps', () => {
+      const sizes = fontSizes(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(sizes.length).toBeGreaterThan(20);
+
+      expect([...new Set(sizes)].filter((size) => !STEPS.includes(size)).sort()).toEqual([]);
+    });
+
+    it('spends every step it declares', () => {
+      const spent = new Set(fontSizes(sheet.screen));
+      expect(STEPS.filter((step) => !spent.has(step))).toEqual([]);
+    });
+  });
+
+  /**
+   * One ring, and only on focus.
+   *
+   * The claim is the whole register in two parts: nothing rings except on
+   * focus, and every ring is the same solid accent. Both fail in the
+   * direction that actually happens — a ring pasted into the rule being
+   * edited, carrying whatever alpha it had where it was copied from.
+   */
+  describe('the controls', () => {
+    it('paints a ring in no state but focus', () => {
+      const painted = rings(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(painted.length).toBeGreaterThan(5);
+
+      const unfocused = painted
+        .filter((ring) => !ring.selectors.every((s) => s.includes(':focus')))
+        .map((ring) => `${ring.selectors.join(', ')} { ${ring.property} }`);
+
+      expect(unfocused).toEqual([]);
+    });
+
+    it('paints every ring in the same solid accent', () => {
+      const washed = rings(sheet.screen)
+        .filter((ring) => !/^\d+px solid var\(--accent\)$|var\(--accent\)$/.test(ring.value))
+        .map((ring) => `${ring.selectors.join(', ')} { ${ring.property}: ${ring.value} }`);
+
+      expect(washed).toEqual([]);
+    });
+  });
+
+  /**
+   * Two columns, three measures, and one place they are written down.
+   *
+   * The reading column and the configuration column are `:root` tokens and
+   * `#root` is derived from them, so the page's width is a consequence of
+   * its columns rather than a third number kept in step by hand. The first
+   * `it` fails the way that actually happens — a `900px` typed into
+   * whichever rule is being edited. The second is about what two columns
+   * bring with them: the configuration column pins, and on a phone there is
+   * one column and nothing may pin, so every `position: sticky` has to be
+   * taken back off in the collapse.
+   */
+  describe('the shell', () => {
+    const MEASURES = ['--measure', '--column', '--gutter'];
+
+    it('sets every column width from the measures it names, never from a number', () => {
+      const drawn = widths(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(drawn.length).toBeGreaterThan(5);
+
+      const hardCoded = drawn
+        .filter((width) => /\d\s*px/.test(width.value))
+        .map((width) => `${width.selectors.join(', ')} { ${width.property}: ${width.value} }`);
+
+      expect(hardCoded).toEqual([]);
+    });
+
+    it('spends every measure it declares', () => {
+      const spent = rootBlocks(sheet.screen).reduce((css, block) => css.replace(block, ''), sheet.screen);
+      expect(MEASURES.filter((name) => !spent.includes(`var(${name})`))).toEqual([]);
+    });
+
+    it('unpins everything that pins where the grid collapses to one', () => {
+      const pinned = leafRules(sheet.screen)
+        .filter((rule) => /position:\s*sticky/.test(rule.body))
+        .flatMap((rule) => rule.selectors);
+      // Guards the extractor: no sticky found would make the check vacuous.
+      expect(pinned.length).toBeGreaterThan(0);
+
+      const released = leafRules(
+        mediaBlocks(sheet.all, `@media (max-width: ${page.RAIL_COLLAPSES_AT}px)`),
+      )
+        .filter((rule) => /position:\s*static/.test(rule.body))
+        .flatMap((rule) => rule.selectors);
+
+      expect(pinned.filter((selector) => !released.includes(selector))).toEqual([]);
+    });
+  });
+
+  /**
+   * Two shapes of left border, and no third.
+   *
+   * A margin rule is 2px, and its colour is either the page's hairline or a
+   * data token at exactly half alpha. A note box is the other shape — 3px of
+   * a solid token down the side of something with a fill and a border of its
+   * own — and it is allowed for explicitly rather than by omission.
+   */
+  describe('the margin rules', () => {
+    const RULE = /^2px solid (var\(--edge\)|rgba\(var\(--[\w-]+-rgb\), 0\.5\))$/;
+    const COLOUR = /^(var\(--edge\)|rgba\(var\(--[\w-]+-rgb\), 0\.5\))$/;
+    const BOX = /^3px solid var\(--[\w-]+\)$/;
+
+    it('draws every one of them at one weight and one alpha', () => {
+      const drawn = leftBorders(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously. One
+      // rule takes this shape on every page — the link note's box.
+      expect(drawn.length).toBeGreaterThan(0);
+
+      const odd = drawn
+        .filter((border) =>
+          border.property === 'border-left-color'
+            ? !COLOUR.test(border.value)
+            : !RULE.test(border.value) && !BOX.test(border.value),
+        )
+        .map((border) => `${border.selectors.join(', ')} { ${border.property}: ${border.value} }`);
+
+      expect(odd).toEqual([]);
+    });
+  });
+
+  /**
+   * A control nobody can see, in either of its two states.
+   *
+   * The skip link is clipped to a pixel at rest and unclipped by `:focus`, and
+   * no render test can tell a link that unclips from one that does not,
+   * because jsdom computes neither. `display: none` is called out by name
+   * because it is the obvious way to write the first half and the wrong one:
+   * it takes the tab stop away with the pixels.
+   */
+  describe('the skip link', () => {
+    const rule = (selector: string) =>
+      leafRules(sheet.screen).find((r) => r.selectors.includes(selector));
+
+    it('is clipped at rest and unclipped by focus', () => {
+      const resting = rule('.skip-link');
+      const focused = rule('.skip-link:focus');
+      expect(resting).toBeDefined();
+      expect(focused).toBeDefined();
+
+      expect(resting?.body).toMatch(/clip-path:\s*inset\(50%\)/);
+      expect(resting?.body).not.toMatch(/display:\s*none/);
+      expect(focused?.body).toMatch(/clip-path:\s*none/);
+    });
+
+    /** And drawn over everything, because what it unclips onto is whatever the reader had already opened. */
+    it('lands above every other layer the page stacks', () => {
+      const layers = Array.from(sheet.screen.matchAll(/z-index:\s*(\d+)/g)).map(([, value]) =>
+        Number(value),
+      );
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(layers.length).toBeGreaterThan(0);
+
+      const focused = Number(/z-index:\s*(\d+)/.exec(rule('.skip-link:focus')?.body ?? '')?.[1]);
+      expect(focused).toBe(Math.max(...layers));
+    });
+  });
+
   /**
    * None. The broadsheet is ink on paper, and a rule on paper is a line, not
    * a box — so the only `border-radius` the sheet writes is the `0` that
-   * takes a browser's own rounding off a button. The old three steps went
-   * with the cards they rounded; a corner typed into one rule would not look
-   * wrong from inside that rule, and this is what would catch it.
+   * takes a browser's own rounding off a button.
    */
-  it('draws every box square', () => {
-    const drawn = corners(screenBlock(stylesheet));
-    // Guards the extractor itself: an empty list would pass vacuously.
-    expect(drawn.length).toBeGreaterThan(0);
+  describe('the corners', () => {
+    it('draws every box square', () => {
+      const drawn = corners(sheet.screen);
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(drawn.length).toBeGreaterThan(0);
 
-    expect([...new Set(drawn)]).toEqual(['0']);
+      expect([...new Set(drawn)]).toEqual(['0']);
+    });
   });
 });

@@ -2,9 +2,10 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createElement } from 'react';
 import { render, screen } from '@testing-library/react';
-import App from '../App';
-import { marginalRateCurve, incomeAxisMax } from '../lib/tax';
-import { defaultScenario } from '../lib/scenarioUrl';
+import { GUARDED_PAGES, SITE_SHEET } from './pages';
+import type { GuardedPage } from './pages';
+import { marginalRateCurve, incomeAxisMax } from '../torpedo/lib/tax';
+import { defaultScenario } from '../torpedo/lib/scenarioUrl';
 
 /**
  * What the link says about itself before anyone opens it.
@@ -22,19 +23,27 @@ import { defaultScenario } from '../lib/scenarioUrl';
  * is the project root, which is where `vite.config.ts` roots the test glob.
  */
 const root = (path: string) => resolve(process.cwd(), path);
-const html = readFileSync(root('index.html'), 'utf8');
 
-/** Every `<meta>` in the document, by whichever of `property`/`name` it uses. */
-const metaTags: Record<string, string> = Object.fromEntries(
-  (html.match(/<meta\s[^>]*>/g) ?? []).flatMap((tag) => {
-    const key = /(?:property|name)="([^"]+)"/.exec(tag)?.[1];
-    const content = /content="([^"]*)"/s.exec(tag)?.[1];
-    return key && content !== undefined ? [[key, content]] : [];
-  }),
-);
+/**
+ * A page's document: every `<meta>` in it, by whichever of `property`/`name`
+ * it uses, and every `href` it asks the origin for. Two pages, two documents,
+ * two cards, so every claim about a card below is made of one page's own
+ * HTML, and the pages are the rows of `GUARDED_PAGES`.
+ */
+const documentOf = (page: GuardedPage) => {
+  const html = readFileSync(root(page.html), 'utf8');
+  const metaTags: Record<string, string> = Object.fromEntries(
+    (html.match(/<meta\s[^>]*>/g) ?? []).flatMap((tag) => {
+      const key = /(?:property|name)="([^"]+)"/.exec(tag)?.[1];
+      const content = /content="([^"]*)"/s.exec(tag)?.[1];
+      return key && content !== undefined ? [[key, content]] : [];
+    }),
+  );
+  const hrefs = (html.match(/href="([^"]+)"/g) ?? []).map((h) => h.slice(6, -1));
+  return { metaTags, hrefs };
+};
 
-/** Every `href` the document asks the origin for. */
-const hrefs = (html.match(/href="([^"]+)"/g) ?? []).map((h) => h.slice(6, -1));
+const torpedo = documentOf(GUARDED_PAGES[0]);
 
 /**
  * The origin the card's absolute URLs are built on, as `.env` declares it.
@@ -60,7 +69,12 @@ const pngSize = (path: string) => {
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
 };
 
-describe('the link preview', () => {
+describe.each(GUARDED_PAGES)('$name’s link preview', (page) => {
+  const { metaTags, hrefs } = documentOf(page);
+
+  /** How this page's card addresses itself: the origin, the base, then its own path. */
+  const here = `%VITE_SITE_ORIGIN%%BASE_URL%${page.prefix}`;
+
   it('names itself, describes itself and carries a card', () => {
     expect(metaTags['og:type']).toBe('website');
     expect(metaTags['og:site_name']).toBeTruthy();
@@ -100,6 +114,15 @@ describe('the link preview', () => {
     expect(siteOrigin).toMatch(/^https:\/\/[^/]+$/);
   });
 
+  /* `%BASE_URL%` is the site's base, not the page's directory, so a page
+     under the base spells its own path after it — and the card it names is
+     its own, not the front page's. */
+  it('addresses the card to its own page', () => {
+    expect(metaTags['og:url']).toBe(here);
+    expect(metaTags['og:image'].startsWith(here)).toBe(true);
+    expect(metaTags['twitter:image'].startsWith(here)).toBe(true);
+  });
+
   it('asks the origin for nothing outside the base', () => {
     for (const href of hrefs) {
       expect(href.startsWith('/') && !href.startsWith('//')).toBe(false);
@@ -107,8 +130,11 @@ describe('the link preview', () => {
   });
 });
 
-describe('the cover', () => {
-  const shipped = ['public/og-cover.png', 'public/apple-touch-icon.png', 'public/favicon.svg'];
+describe.each(GUARDED_PAGES)('$name’s cover', (page) => {
+  const { metaTags, hrefs } = documentOf(page);
+  const shipped = ['og-cover.png', 'apple-touch-icon.png', 'favicon.svg'].map(
+    (file) => `${page.publicDir}/${file}`,
+  );
 
   it('ships every file the document links to', () => {
     const linked = [
@@ -127,7 +153,7 @@ describe('the cover', () => {
      declared: Slack lays the card out from the numbers before the bytes
      arrive, and then reflows. So the numbers are read back off the file. */
   it('declares the size the file actually is', () => {
-    const { width, height } = pngSize('public/og-cover.png');
+    const { width, height } = pngSize(`${page.publicDir}/og-cover.png`);
     expect(width).toBe(1200);
     expect(height).toBe(630);
     expect(metaTags['og:image:width']).toBe(String(width));
@@ -135,7 +161,7 @@ describe('the cover', () => {
   });
 
   it('rasterises the touch icon at the size iOS asks for', () => {
-    expect(pngSize('public/apple-touch-icon.png')).toEqual({ width: 180, height: 180 });
+    expect(pngSize(`${page.publicDir}/apple-touch-icon.png`)).toEqual({ width: 180, height: 180 });
   });
 
   /**
@@ -145,14 +171,14 @@ describe('the cover', () => {
    * argument `palette.ts` makes about the charts, and the same remedy: the
    * copies are held together by a test that reads the original.
    */
-  it('is painted in the palette the page is', () => {
-    const css = readFileSync(root('src/styles/index.css'), 'utf8');
+  it('is painted in the palette the site is', () => {
+    const css = readFileSync(root(SITE_SHEET), 'utf8');
     const token = (name: string) =>
       new RegExp(`--${name}:\\s*(#[0-9a-f]{3,8})`, 'i').exec(css)?.[1] ?? `--${name} is missing`;
     const surface = token('surface');
     const accent = token('accent');
 
-    for (const file of ['public/favicon.svg', 'scripts/og-cover.mjs']) {
+    for (const file of [`${page.publicDir}/favicon.svg`, page.cover]) {
       const source = readFileSync(root(file), 'utf8');
       expect(source).toContain(surface);
       expect(source).toContain(accent);
@@ -160,14 +186,19 @@ describe('the cover', () => {
     expect(metaTags['theme-color']).toBe(surface);
   });
 
-  /**
-   * The card quotes a rate. It is drawn from `marginalRateCurve` rather than
-   * by hand for exactly this reason — but the *description* beside it is
-   * prose, and prose does not get redrawn when a bracket moves. So the figure
-   * the copy names has to still be the figure the arithmetic reaches on the
-   * scenario the page opens on. If this fails, the numbers moved: re-run
-   * `node scripts/og-cover.mjs` and re-read the sentence.
-   */
+});
+
+/**
+ * The torpedo's card quotes a rate. It is drawn from `marginalRateCurve`
+ * rather than by hand for exactly this reason — but the *description* beside
+ * it is prose, and prose does not get redrawn when a bracket moves. So the
+ * figure the copy names has to still be the figure the arithmetic reaches on
+ * the scenario the page opens on. If this fails, the numbers moved: re-run
+ * `node scripts/og-cover.mjs` and re-read the sentence.
+ */
+describe('the torpedo’s card', () => {
+  const { metaTags } = torpedo;
+
   it('quotes a rate the opening scenario still reaches', () => {
     const opening = defaultScenario();
     const scenario = {
@@ -208,8 +239,8 @@ describe('the cover', () => {
  * actually has. Naming a section that came off the page therefore fails here,
  * and so does taking a section off the page without rewriting the tag.
  */
-describe('the search snippet', () => {
-  const description = metaTags['description'];
+describe.each(GUARDED_PAGES)('$name’s search snippet', (page) => {
+  const description = documentOf(page).metaTags['description'];
 
   /**
    * The sections the snippet promises: everything after the last colon, split
@@ -234,7 +265,7 @@ describe('the search snippet', () => {
   });
 
   it('promises only sections the page still has', () => {
-    render(createElement(App));
+    render(createElement(page.App));
     const headings = screen.getAllByRole('heading').map((h) => h.textContent?.toLowerCase() ?? '');
 
     const topics = advertised(description);
@@ -311,10 +342,14 @@ describe('the front door', () => {
     .map((b) => b.trim())
     .filter(Boolean);
 
-  const publishes = [
+  /** Each branch's base, and under it, each page. */
+  const bases = [
     { branch: env('PRODUCTION_BRANCH'), base: configBase },
     { branch: env('PREVIEW_BRANCH'), base: env('PREVIEW_BASE') },
   ];
+  const publishes = bases.flatMap(({ branch, base }) =>
+    GUARDED_PAGES.map((page) => ({ branch, page: page.id, base: `${base}${page.prefix}` })),
+  );
 
   it('is published by one workflow, from the branches it declares', () => {
     expect(workflowFiles).toEqual(['deploy.yml']);
@@ -328,7 +363,7 @@ describe('the front door', () => {
 
     // `on.push.branches` cannot read `env`, so the list is written twice and
     // the two copies have to agree. Sorted, so a diff names the branch.
-    expect([...triggers].sort()).toEqual(publishes.map((p) => p.branch).sort());
+    expect([...triggers].sort()).toEqual(bases.map((p) => p.branch).sort());
   });
 
   it('says which branches deploy, and where', () => {
@@ -348,8 +383,25 @@ describe('the front door', () => {
       expect(url.startsWith(`${ORIGIN}/`)).toBe(true);
       expect({ branch, base: url.slice(ORIGIN.length) }).toEqual({
         branch,
-        base: publishes.find((p) => p.branch === branch)?.base,
+        base: publishes.find((p) => p.branch === branch && p.page === 'torpedo')?.base,
       });
+    }
+  });
+
+  /* Each branch publishes both pages, and the section says where each is. */
+  it('names each page under each branch', () => {
+    for (const { base } of publishes) {
+      expect(deployment).toContain(`${ORIGIN}${base}`);
+    }
+  });
+
+  /* The README is the site's, so the front of it names each page by the
+     title its card carries — the one a reader will have seen in a preview. */
+  it('names each page by the title its card carries', () => {
+    for (const page of GUARDED_PAGES) {
+      const title = documentOf(page).metaTags['og:title'];
+      expect(title).toBeTruthy();
+      expect(readme).toContain(title);
     }
   });
 

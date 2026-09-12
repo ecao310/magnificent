@@ -1,5 +1,23 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+
+/** A file in this repo, absolute, the way rolldown wants an entry named. */
+const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
+/**
+ * The two pages, one HTML entry each: the Tax Torpedo at the site's root and
+ * the ACA Subsidy Slope under aca/. Vite writes each to the same path under
+ * dist/, so Pages and Netlify both serve aca/index.html at `<base>aca/` with
+ * nothing to configure, and a plain link between them is enough.
+ *
+ * `%BASE_URL%` inside either file is the *site's* base, not the page's
+ * directory, so aca/index.html spells its own icons and card `%BASE_URL%aca/…`.
+ */
+const PAGES = {
+  torpedo: here('index.html'),
+  aca: here('aca/index.html'),
+}
 
 /**
  * Which chunk a bundled module belongs in.
@@ -33,6 +51,7 @@ import react from '@vitejs/plugin-react'
  * untrue — at which point this rule needs a name that is still honest.
  */
 function chunkFor(id: string): string | undefined {
+  if (/[/\\]src[/\\]shared[/\\]/.test(id)) return 'site'
   if (!id.includes('node_modules')) return undefined
   return /node_modules[/\\](react|react-dom|react-is|scheduler)[/\\]/.test(id)
     ? 'react'
@@ -51,15 +70,25 @@ function chunkFor(id: string): string | undefined {
  * assertion about `chunkFor` can see. One group per name, matched in order, is
  * the form that actually separates them: measured at 139.83 / 357.37 kB
  * against the name-function form's 0.80 / 496.78.
+ *
+ * `site` is the third layer: src/shared, which both pages import — the
+ * masthead and its page strip, the reading list, the address-bar and
+ * pointer hooks. Rolldown would split it out on its own, since two entries
+ * share it, but under a name derived from whichever module it met first;
+ * naming the group is what lets `the build it emits` find it.
  */
-const CHUNKS = ['react', 'charts'] as const
+const CHUNKS = ['react', 'charts', 'site'] as const
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   base: '/magnificent/',
+  /* Two pages, no client-side routes: an address neither page owns is a 404
+     in dev and preview, as it is on Pages and Netlify. */
+  appType: 'mpa',
   build: {
     rollupOptions: {
+      input: PAGES,
       output: {
         codeSplitting: {
           groups: CHUNKS.map((name) => ({

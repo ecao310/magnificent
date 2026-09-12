@@ -51,8 +51,8 @@ async function loadTaxModule() {
   const out = join(dir, 'bundle.mjs');
   writeFileSync(
     entry,
-    `export * from ${JSON.stringify(join(ROOT, 'src/lib/tax/index'))};\n` +
-      `export * from ${JSON.stringify(join(ROOT, 'src/lib/scenarioUrl'))};\n`,
+    `export * from ${JSON.stringify(join(ROOT, 'src/torpedo/lib/tax/index'))};\n` +
+      `export * from ${JSON.stringify(join(ROOT, 'src/torpedo/lib/scenarioUrl'))};\n`,
   );
   await build({ input: entry, output: { file: out, format: 'esm' }, platform: 'node', logLevel: 'silent' });
   const mod = await import(pathToFileURL(out).href);

@@ -1,0 +1,535 @@
+/* ───── The ACA Subsidy Slope's sheet ────────────────────────────────────────
+ *
+ * What this page paints that the site's sheet does not: the gutter its plot
+ * holds back, and the rules for the controls and notes only this page has —
+ * the household's fold, the state select, the typed figure, the plot's key,
+ * the chart chooser.
+ *
+ * The site's sheet comes first, whole. Its media blocks have already run by
+ * the time a rule here applies, so nothing at base level here restates a
+ * property one of them sets; what this page changes at a breakpoint or on
+ * paper is in the blocks at the foot of this file.
+ */
+@import '../../shared/styles/site.css';
+
+/* ───── This page's ground ──────────────────────────────────────────────────
+ *
+ * This page draws its lines in the site's own hues, and adds none.
+ */
+:root {
+  /* The gutter recharts holds back for the y-axis — its ticks and its rotated
+     title — so the slider under the plot can start where the plot area does.
+     The one number on this page that a stylesheet and an SVG attribute both
+     have to know: `CHART.axis` in this page's palette.ts is the same 76, and
+     `the chart metrics` in styles.test.tsx fails if either moves without the
+     other. Narrower on a phone, where the title comes off the axis. */
+  --chart-axis: 76px;
+  --chart-axis-narrow: 56px;
+}
+
+/* ───── What this page sets its own way ─────────────────────────────────────
+ *
+ * Two shared rules, one declaration each, that the pages disagree on.
+ */
+
+/* A strip of digits reads as a scale, so every option is the same width. */
+.segmented-option {
+  flex: 1 1 0;
+}
+
+/* The reading has a second line where the household stands somewhere the
+   plain reading does not hold, and it wraps at this. */
+.chart-tooltip {
+  max-width: 14rem;
+}
+
+.step-config > :last-child {
+  border-bottom: 1px solid var(--ink);
+}
+
+/* ───── The fold ────────────────────────────────────────────────────────────
+ *
+ * On one column the rail is a `details` under the masthead, and this is its
+ * closed row: the heading, the household in a phrase under it, and a stamped
+ * word at the right that says what a tap does. Under the masthead's own
+ * hairline and over an ink rule, the way the rail's list opens, so the row
+ * reads as the rail folded rather than as a note. Open, the body takes over
+ * the bottom rule, and the first item drops its top one so the row and the
+ * list share a hairline.
+ */
+.household-sheet > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'heading toggle'
+    'gloss toggle';
+  column-gap: 1rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid var(--ink);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.household-sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.household-sheet > summary .step-heading {
+  grid-area: heading;
+  margin: 0;
+}
+
+.household-sheet-gloss {
+  grid-area: gloss;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.household-sheet-toggle {
+  grid-area: toggle;
+  padding: 0.4375rem 0.75rem;
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.household-sheet[open] .household-sheet-toggle {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.household-sheet[open] > summary {
+  border-bottom-color: var(--edge);
+}
+
+.household-sheet-body .filing-status:first-of-type {
+  border-top: none;
+}
+
+.household-sheet > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ───── The select ─────────────────────────────────────────────────────────
+ *
+ * The one list on the page too long for a strip: fifty-one names. The box is
+ * the register's — a hairline of ink around paper, square — and the platform
+ * menu it opens is the platform's, because a drawn menu is a second widget
+ * to keep accessible. The chevron is two borders of a rotated square on the
+ * wrapper: no glyph, no asset, and it prints. */
+.select-field {
+  position: relative;
+  display: block;
+}
+
+.select-field select {
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.4;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select-field::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.375rem;
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.select-field select:hover {
+  background: var(--surface-hover);
+}
+
+.select-field select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───── A figure the reader types ────────────────────────────────────────────
+ *
+ * Set exactly as `.slider-value` beside it — mono, right-aligned, the same
+ * size — because it is the same figure, and the only difference is that this
+ * one can be typed into. A hairline under it is the whole of the box: an
+ * input drawn as an input would be the one chromed control on the page. The
+ * box is `--digits` characters wide — the component sets it to the length
+ * of the largest figure the field takes, separators included — plus room
+ * for a caret, so the sign stands against the digits. As tall as a finger
+ * needs, which puts a little air between the digits and the hairline.
+ */
+.money-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.0625rem;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.money-field input {
+  width: calc(var(--digits, 7) * 1ch + 0.25rem);
+  min-height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--edge);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  font-variant-numeric: inherit;
+  appearance: textfield;
+}
+
+.money-field input::-webkit-outer-spin-button,
+.money-field input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.money-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The sign stands outside the box, so it is never typed over and never
+   selected with the figure, and takes the figure's own colour so the pair
+   reads as one figure. */
+.money-field-sign {
+  color: inherit;
+  user-select: none;
+}
+
+/* Amber is you: the field that says where on the chart you are standing. */
+.money-field.amber {
+  color: var(--amber-bright);
+}
+
+/* The way back to the figure the page prefilled. */
+.field-reset {
+  margin: 0.5rem 0 0;
+}
+
+.reset-button {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.reset-button:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.reset-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───── The key ─────────────────────────────────────────────────────────────
+ *
+ * Under the rate plot only: three marks is one more than a plot can name in
+ * place. Each swatch is the mark it stands for, drawn with the same ground
+ * — the ink rule, the accent hatch at the hatch's own alpha, the ink wash —
+ * so the key is a sample of the plot rather than a legend beside it. Inset
+ * to the plot area the way the slider is, so it starts under the y-axis.
+ */
+.chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.5rem;
+  margin: 0.5rem 0 0;
+  padding-left: calc(var(--chart-axis) + 10px);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.chart-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-key-swatch {
+  position: relative;
+  display: inline-block;
+  width: 1.5rem;
+  height: 0.75rem;
+  overflow: hidden;
+}
+
+.chart-key-line {
+  height: 0;
+  border-top: 3px solid var(--ink);
+}
+
+/* The hatch: the accent, on a diagonal, thinned to the plot's own alpha by
+   the pseudo-element's opacity rather than by a second colour. */
+.chart-key-hatch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent) 0 1px,
+    transparent 1px 6px
+  );
+  opacity: 0.6;
+}
+
+.chart-key-wash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink-muted);
+  opacity: 0.16;
+}
+
+.chart-key-wash {
+  border-top: 1px solid var(--ink-muted);
+}
+
+/* The premium line: the same dashes it is drawn with. */
+.chart-key-dashed::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1.5px dashed var(--ink-muted);
+}
+
+/* The subsidy's tint, a shade stronger than on the plot so a swatch this
+   small reads as green at all. */
+.chart-key-tint::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--emerald);
+  opacity: 0.25;
+}
+
+/* Only where the plain reading does not hold: Medicaid, past the line, a
+   silver plan that has been upgraded. */
+.chart-tooltip-standing {
+  display: block;
+  color: var(--ink-muted);
+}
+
+/* A label and its figure, the figures aligned down the right. */
+.chart-tooltip-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.75rem;
+  margin: 0;
+}
+
+.chart-tooltip-rows dt {
+  color: var(--ink-muted);
+}
+
+.chart-tooltip-rows dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───── The chooser ─────────────────────────────────────────────────────────
+ *
+ * Which chart is on the page, chosen directly above it: two stamped boxes
+ * in the segmented control's vocabulary — a hairline of ink around paper,
+ * the one showing filled with ink — so the pair reads as one of two, the
+ * way the rail's own choosers do. A name in mono over a gloss in the serif:
+ * what the chart is called, and what it draws, so a reader knows what the
+ * other one is for before choosing it. The boxes share the row while there
+ * is room for both and stack when there is not.
+ *
+ * Its own rules rather than `.segmented`'s, because that control's rule for
+ * its inner span would set the gloss in mono and centre both lines.
+ */
+.chart-chooser {
+  margin: 0 0 1.75rem;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.chart-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chart-choice {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.chart-choice input[type='radio'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chart-choice-box {
+  display: block;
+  padding: 0.625rem 0.875rem 0.6875rem;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chart-choice-name {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chart-choice-gloss {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* The chart showing: filled, and its gloss knocked out with it. */
+.chart-choice input[type='radio']:checked + .chart-choice-box {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.chart-choice input[type='radio']:checked + .chart-choice-box .chart-choice-gloss {
+  color: var(--surface);
+}
+
+.chart-choice:hover input[type='radio']:not(:checked) + .chart-choice-box {
+  background: var(--surface-hover);
+}
+
+.chart-choice input[type='radio']:focus-visible + .chart-choice-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* One figure takes a colour, and it is the marker's: the page's subject. */
+.answer-figure:nth-of-type(3) dd strong {
+  color: var(--amber-bright);
+}
+
+/* ───── A word for the reader who cannot see the page ──────────────────────
+
+   Clipped the way the live reading is, and for the same reason: the chart
+   chooser's legend names the group for a screen reader — "Chart" — and the
+   two boxes name themselves for everyone else, so the word is in the
+   accessibility tree and nowhere on the page. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+
+  .chart-slider input[type='range'],
+  .chart-slider .slider-range-labels {
+    width: calc(100% - var(--chart-axis-narrow) - 1.25rem);
+    margin-left: calc(var(--chart-axis-narrow) + 4px);
+  }
+
+  .chart-key {
+    padding-left: calc(var(--chart-axis-narrow) + 4px);
+    padding-right: 16px;
+  }
+
+  /* The chooser as a strip: the two names side by side and the glosses off,
+     so the pair costs the chart one row rather than two boxes. The gloss is
+     still what the radio is described by, off screen or not. */
+  .chart-choice {
+    display: flex;
+    flex-basis: 0;
+  }
+
+  /* Both boxes as tall as the taller name, and the name centred in each. */
+  .chart-choice-box {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 0.5rem;
+    text-align: center;
+  }
+
+  .chart-choice-gloss {
+    display: none;
+  }
+}
+
+@media print {
+  /* The chooser and the reset: controls that only do something when clicked. */
+  .chart-chooser,
+  .reset-button {
+    display: none;
+  }
+
+  /* A typed figure prints as the figure, not as the box it was typed into. */
+  .money-field input {
+    border-bottom: none;
+  }
+}
