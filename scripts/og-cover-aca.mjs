@@ -1,6 +1,6 @@
 /**
- * Draws `public/og-cover.png`, the 1200x630 card Messages, Slack and a forum
- * post render in place of the link, and `public/apple-touch-icon.png`.
+ * Draws `public/aca/og-cover.png`, the 1200x630 card Messages, Slack and a forum
+ * post render in place of the link, and `public/aca/apple-touch-icon.png`.
  *
  * These are the two assets in the repo that are generated rather than
  * written, and the two the deploy workflow cannot generate: rasterising needs
@@ -28,7 +28,7 @@ import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PUBLIC = join(ROOT, 'public');
+const PUBLIC = join(ROOT, 'public/aca');
 
 /* ── The arithmetic ──────────────────────────────────────────────────────── */
 
@@ -38,8 +38,8 @@ async function loadTaxModule() {
   const out = join(dir, 'bundle.mjs');
   writeFileSync(
     entry,
-    `export * from ${JSON.stringify(join(ROOT, 'src/lib/aca/index'))};\n` +
-      `export * from ${JSON.stringify(join(ROOT, 'src/lib/scenarioUrl'))};\n`,
+    `export * from ${JSON.stringify(join(ROOT, 'src/aca/lib/aca/index'))};\n` +
+      `export * from ${JSON.stringify(join(ROOT, 'src/aca/lib/scenarioUrl'))};\n`,
   );
   await build({ input: entry, output: { file: out, format: 'esm' }, platform: 'node', logLevel: 'silent' });
   const mod = await import(pathToFileURL(out).href);
@@ -233,7 +233,7 @@ function cover(curve, hook) {
     )
     .join('\n  ')}
 
-  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">ecao310.github.io/super-duper-broccoli</text>
+  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">ecao310.github.io/magnificent/aca</text>
   <text x="1128" y="608" fill="${INK_MUTED}" font-size="17" font-style="italic" text-anchor="end">Household income →</text>
 </svg>`;
 }
