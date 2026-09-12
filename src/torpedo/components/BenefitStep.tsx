@@ -21,7 +21,7 @@ import {
   advancedInputs,
   returnSummary,
 } from '../lib/returnProse';
-import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import { ProseList } from './ProseList';
 
 export interface BenefitStepProps {

@@ -31,7 +31,7 @@ import {
   ageProse as ageProseFor,
 } from './lib/returnProse';
 import { useScenarioAddress } from './hooks/useScenarioAddress';
-import { useSettledReading } from './hooks/useSettledReading';
+import { useSettledReading } from '../shared/hooks/useSettledReading';
 import { Answer } from './components/Answer';
 import { BenefitStep } from './components/BenefitStep';
 import { FurtherReading } from './components/FurtherReading';

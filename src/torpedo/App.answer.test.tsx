@@ -2,7 +2,7 @@ import { render, screen, fireEvent, within, act, cleanup } from '@testing-librar
 import { vi } from 'vitest';
 import App from './App';
 import { ADDRESS_SETTLE_MS } from './hooks/useScenarioAddress';
-import { READING_SETTLE_MS } from './hooks/useSettledReading';
+import { READING_SETTLE_MS } from '../shared/hooks/useSettledReading';
 import { PAGE_TAX_YEAR } from './lib/tax';
 import { pinPageYear, chooseFilingStatus } from './test/pageFixtures';
 

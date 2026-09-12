@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { render } from '@testing-library/react';
-import App from '../App';
-import { RAIL_COLLAPSES_AT } from '../components/BenefitStep';
-import { NARROW_MAX_WIDTH } from '../components/chartFrame';
-import { CHART, PALETTE } from '../styles/palette';
+import App from '../torpedo/App';
+import { RAIL_COLLAPSES_AT } from '../torpedo/components/BenefitStep';
+import { NARROW_MAX_WIDTH } from '../torpedo/components/chartFrame';
+import { CHART, PALETTE } from '../torpedo/styles/palette';
 
 /**
  * A CSS rule that can never match is silent. Nothing throws, nothing warns,
@@ -22,7 +22,7 @@ import { CHART, PALETTE } from '../styles/palette';
    test as a URL string, and under jsdom `import.meta.url` is an http one. The
    run's cwd is the project root, which is where `vite.config.ts` roots the
    test glob too. */
-const stylesheet = readFileSync(resolve(process.cwd(), 'src/styles/index.css'), 'utf8');
+const stylesheet = readFileSync(resolve(process.cwd(), 'src/torpedo/styles/torpedo.css'), 'utf8');
 
 /**
  * Every `.a .b` in the stylesheet, and only those.

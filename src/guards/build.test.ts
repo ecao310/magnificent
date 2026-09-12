@@ -77,7 +77,7 @@ describe('the build\'s chunking', () => {
   });
 
   it('leaves app source in the entry chunk', () => {
-    for (const source of ['src/App.tsx', 'src/lib/tax/income.ts', 'src/main.tsx']) {
+    for (const source of ['src/torpedo/App.tsx', 'src/torpedo/lib/tax/income.ts', 'src/torpedo/main.tsx']) {
       expect(chunkOf(root(source))).toBeUndefined();
     }
   });
