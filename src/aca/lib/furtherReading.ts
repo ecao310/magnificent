@@ -10,12 +10,9 @@
  * article and a date or a summary on the page would go stale while the link
  * did not.
  */
-export interface Reading {
-  href: string;
-  title: string;
-  /** Who published it, as a reader would name them. */
-  source: string;
-}
+import type { Reading } from '../../shared/lib/reading';
+
+export type { Reading };
 
 export const FURTHER_READING: readonly Reading[] = [
   {

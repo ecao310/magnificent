@@ -80,6 +80,7 @@ export const Notes: React.FC<NotesProps> = ({
           cliff={subsidyCliff}
           here={hereSubsidy}
           ssBenefit={ssBenefit}
+          filingStatus={filingStatus}
           year={year}
         />
       )}

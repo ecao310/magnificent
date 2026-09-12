@@ -19,7 +19,7 @@ import type {
 import { formatCompact } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
 import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
-import { usePlotPointer } from '../hooks/usePlotPointer';
+import { usePlotPointer } from '../../shared/hooks/usePlotPointer';
 import { HOVER_QUERY, NARROW_QUERY, frameFor } from './chartFrame';
 import { ChartTooltip } from './ChartTooltip';
 

@@ -2,7 +2,8 @@ import { IRMAA_LOOKBACK_YEARS } from '../lib/tax';
 import type { FilingStatus, IrmaaAssessment, TaxYear } from '../lib/tax';
 import { formatCurrency, formatPercent } from '../lib/format';
 import { FILING_STATUS_PROSE } from '../lib/returnProse';
-import type { CopyState } from '../hooks/useScenarioAddress';
+import type { CopyState } from '../../shared/hooks/useScenarioAddress';
+import { ShareLink } from '../../shared/components/ShareLink';
 
 export interface AnswerProps {
   year: TaxYear;
@@ -156,31 +157,16 @@ export const Answer: React.FC<AnswerProps> = ({
         The address bar has carried the whole return since the query string
         went in, and the only other place it is named is the failure case: the
         note that appears when a link asked for something that could not be
-        shown.
-
-        It belongs here rather than in the header, because what is worth
-        sending is the answer, and this is the one place the answer sits
-        together. The button is the whole of it — the sentence that used to say
-        so in prose came off in the text pass — so a browser with no clipboard
-        (`canCopy`) is left with nothing here at all. */}
-    <div className="answer-share">
-      {canCopy && (
-        <button type="button" className="answer-share-button" onClick={onCopy}>
-          Copy link to this return
-        </button>
-      )}
-      {/* `aria-live` rather than `role="status"`: the same announcement,
-          without becoming the second status region on a document whose first
-          one is the link note. Rendered empty rather than conditionally,
-          because a live region has to be mounted before the message lands in
-          it to be read out reliably; CSS hides it while it is. */}
-      <p className="answer-share-status" aria-live="polite" aria-atomic="true">
-        {copyState === 'copied'
-          ? 'Copied. That link opens this page on this return.'
-          : copyState === 'failed'
-            ? 'This browser would not take the copy. Select the address bar and copy it — it is the same link.'
-            : ''}
-      </p>
-    </div>
+        shown. It belongs here rather than in the header, because what is
+        worth sending is the answer, and this is the one place the answer sits
+        together. */}
+    <ShareLink
+      canCopy={canCopy}
+      copyState={copyState}
+      onCopy={onCopy}
+      label="Copy link to this return"
+      copied="Copied. That link opens this page on this return."
+      failed="This browser would not take the copy. Select the address bar and copy it — it is the same link."
+    />
   </section>
 );

@@ -243,11 +243,6 @@
   margin-top: 0.625rem;
 }
 
-.link-note strong {
-  color: var(--amber-bright);
-  font-weight: 600;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hint-bubble {
     transition: none;

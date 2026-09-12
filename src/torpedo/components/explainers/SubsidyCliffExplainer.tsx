@@ -4,14 +4,17 @@ import {
   PTC_CLIFF_PERCENT,
   fplGuidelineYear,
 } from '../../lib/tax';
-import type { PtcAssessment, PtcCliff, TaxYear } from '../../lib/tax';
+import type { FilingStatus, PtcAssessment, PtcCliff, TaxYear } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
+import { acaLink } from '../../lib/acaLink';
 
 export interface SubsidyCliffExplainerProps {
   cliff: PtcCliff;
   /** Where this return's own household income stands against the line. */
   here: PtcAssessment;
   ssBenefit: number;
+  /** Whose return this is: one person's, or a couple's, for the link across. */
+  filingStatus: FilingStatus;
   year: TaxYear;
 }
 
@@ -28,6 +31,7 @@ export const SubsidyCliffExplainer: React.FC<SubsidyCliffExplainerProps> = ({
   cliff,
   here,
   ssBenefit,
+  filingStatus,
   year,
 }) => (
   <details className="explainer">
@@ -94,6 +98,17 @@ export const SubsidyCliffExplainer: React.FC<SubsidyCliffExplainerProps> = ({
           : `Another ${formatCurrency(
             Math.round(here.headroom ?? 0),
           )} of it reaches the line, and the dollar after that is the one that costs.`}
+      </p>
+      <p>
+        <strong>The plan itself is priced on the Subsidy Slope.</strong>{' '}
+        What this household pays for the benchmark plan each month at this
+        income, what the subsidy pays, and what each extra dollar costs in
+        subsidy given back:{' '}
+        <a href={acaLink({ magi: here.magi, filingStatus })}>
+          open the Subsidy Slope on this household
+        </a>
+        , at {formatCurrency(Math.round(here.magi))} of household income for{' '}
+        {filingStatus === 'single' ? 'one person' : 'a couple'}.
       </p>
       <p>
         <strong>The cliff is back, and it was gone.</strong> From

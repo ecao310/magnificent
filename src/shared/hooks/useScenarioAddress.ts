@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { scenarioUrl } from '../lib/scenarioUrl';
-import type { PageScenario } from '../lib/scenarioUrl';
+
+/** The half of `window.location` a scenario's URL is rebuilt from. */
+export interface Address {
+  pathname: string;
+  hash: string;
+}
+
+/** A page's own `scenarioUrl`: its scenario, at this address, as a URL. */
+export type ToUrl<S> = (scenario: S, location: Address) => string;
 
 /**
  * How long a control has to sit still before the address bar is rewritten, in
@@ -49,13 +56,9 @@ export const ADDRESS_SETTLE_MS = 400;
  * are looking at is what they asked for — so it is swallowed rather than
  * reported.
  */
-const writeAddress = (scenario: PageScenario): void => {
+const writeAddress = <S,>(scenario: S, toUrl: ToUrl<S>): void => {
   try {
-    window.history.replaceState(
-      window.history.state,
-      '',
-      scenarioUrl(scenario, window.location),
-    );
+    window.history.replaceState(window.history.state, '', toUrl(scenario, window.location));
   } catch {
     /* See above: the address bar is a convenience, and the reading outranks it. */
   }
@@ -89,9 +92,19 @@ export interface ScenarioAddress {
  * write that normalises the link the reader came in on, dropping the keys no
  * longer honoured. A link that still names a gain or a tax year is answered by
  * the address bar the moment it is opened rather than four tenths of a second
- * later. See `decodeScenario`.
+ * later. See each page's `decodeScenario`.
+ *
+ * One hook for both pages, handed the page's scenario and the page's own
+ * `scenarioUrl`, because the mechanism — the debounce, the flush, the
+ * clipboard — is the site's and only the keys are the page's. The scenario
+ * is compared by identity, so a caller memoises it and passes a
+ * module-level `toUrl`: a fresh object each render would write the address
+ * on every render and clear "Copied" with it.
  */
-export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
+export const useScenarioAddress = <S extends object>(
+  scenario: S,
+  toUrl: ToUrl<S>,
+): ScenarioAddress => {
   /**
    * `navigator.clipboard` is undefined over plain http and in Safari before
    * 13.1 — the DOM types declare it non-optional, which is why the check is
@@ -104,31 +117,14 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
   );
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
-  const {
-    filingStatus,
-    ssBenefit,
-    ordinaryIncome,
-    isSenior,
-    spouseIsSenior,
-    muniInterest,
-  } = scenario;
-
   const written = useRef(false);
   useEffect(() => {
-    const current = {
-      filingStatus,
-      ssBenefit,
-      ordinaryIncome,
-      isSenior,
-      spouseIsSenior,
-      muniInterest,
-    };
     let timer: number | undefined;
     if (written.current) {
-      timer = window.setTimeout(() => writeAddress(current), ADDRESS_SETTLE_MS);
+      timer = window.setTimeout(() => writeAddress(scenario, toUrl), ADDRESS_SETTLE_MS);
     } else {
       written.current = true;
-      writeAddress(current);
+      writeAddress(scenario, toUrl);
     }
     /* The return just changed, so whatever is on the clipboard is a different
        return from the one on screen and "Copied" has stopped being true of
@@ -136,14 +132,7 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
        arrival cannot be kept current, so it goes when the return moves. */
     setCopyState('idle');
     return () => window.clearTimeout(timer);
-  }, [
-    filingStatus,
-    ssBenefit,
-    ordinaryIncome,
-    isSenior,
-    spouseIsSenior,
-    muniInterest,
-  ]);
+  }, [scenario, toUrl]);
 
   const copy = (): void => {
     /* Flush the address before reading it. The write above is debounced by
@@ -153,14 +142,7 @@ export const useScenarioAddress = (scenario: PageScenario): ScenarioAddress => {
        nobody proofreads. Writing it here is what keeps "the button copies
        what is in the address bar" true at every instant rather than merely
        400ms after the last one. */
-    writeAddress({
-      filingStatus,
-      ssBenefit,
-      ordinaryIncome,
-      isSenior,
-      spouseIsSenior,
-      muniInterest,
-    });
+    writeAddress(scenario, toUrl);
     void navigator.clipboard
       .writeText(window.location.href)
       .then(() => setCopyState('copied'))

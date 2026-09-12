@@ -22,7 +22,8 @@ import type {
   MarginalRatePoint,
   PtcCliff,
 } from './lib/tax';
-import { decodeScenario } from './lib/scenarioUrl';
+import { decodeScenario, scenarioUrl } from './lib/scenarioUrl';
+import { FURTHER_READING } from './lib/furtherReading';
 import { formatCurrency, formatPercent } from './lib/format';
 import {
   FILING_STATUS_PROSE,
@@ -30,12 +31,12 @@ import {
   advancedProse,
   ageProse as ageProseFor,
 } from './lib/returnProse';
-import { useScenarioAddress } from './hooks/useScenarioAddress';
+import { useScenarioAddress } from '../shared/hooks/useScenarioAddress';
 import { useSettledReading } from '../shared/hooks/useSettledReading';
 import { Answer } from './components/Answer';
 import { BenefitStep } from './components/BenefitStep';
-import { FurtherReading } from './components/FurtherReading';
-import { Header } from './components/Header';
+import { FurtherReading } from '../shared/components/FurtherReading';
+import { Header } from '../shared/components/Header';
 import { Notes } from './components/Notes';
 import { TorpedoStep } from './components/TorpedoStep';
 
@@ -180,14 +181,13 @@ const App: React.FC = () => {
    */
   const [announceFrom, announce] = useState<StepId | null>(null);
 
-  const address = useScenarioAddress({
-    filingStatus,
-    ssBenefit,
-    ordinaryIncome,
-    isSenior,
-    spouseIsSenior,
-    muniInterest,
-  });
+  /* Memoised because the address hook compares it by identity: a fresh
+     object each render would rewrite the address on every render. */
+  const pageScenario = useMemo(
+    () => ({ filingStatus, ssBenefit, ordinaryIncome, isSenior, spouseIsSenior, muniInterest }),
+    [filingStatus, ssBenefit, ordinaryIncome, isSenior, spouseIsSenior, muniInterest],
+  );
+  const address = useScenarioAddress(pageScenario, scenarioUrl);
 
   const changeOrdinaryIncome = (next: number): void => {
     setOrdinaryIncome(next);
@@ -486,7 +486,13 @@ const App: React.FC = () => {
         Skip to the chart
       </a>
 
-      <Header linkNotes={linkNotes} onDismissNotes={() => setLinkNotes([])} />
+      <Header
+        page="torpedo"
+        title="Income Tax in Retirement"
+        subtitle="Because of how income tax works with Social Security, tax rates form a torpedo shape, increasing and then decreasing."
+        linkNotes={linkNotes}
+        onDismissNotes={() => setLinkNotes([])}
+      />
 
       {/* What a screen reader hears when a control moves, and the only thing
           here that is heard rather than read. Rendered always and empty until
@@ -600,7 +606,7 @@ const App: React.FC = () => {
           rather than part of it, so the close stays the last thing in the main
           and the disclaimer the last word. */}
       <footer>
-        <FurtherReading />
+        <FurtherReading readings={FURTHER_READING} />
         <p>
           This tool is for educational purposes only and does not constitute tax
           or financial advice. Please consult a qualified tax professional

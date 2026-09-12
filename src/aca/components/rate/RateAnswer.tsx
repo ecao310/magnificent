@@ -9,8 +9,8 @@ import {
   formatPercent,
 } from '../../lib/format';
 import { householdPhrase } from '../../lib/householdProse';
-import type { CopyState } from '../../hooks/useScenarioAddress';
-import { ShareLink } from '../ShareLink';
+import type { CopyState } from '../../../shared/hooks/useScenarioAddress';
+import { ShareLink } from '../../../shared/components/ShareLink';
 
 export interface RateAnswerProps {
   year: CoverageYear;
@@ -162,7 +162,11 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
         </div>
       </dl>
 
-      <ShareLink canCopy={canCopy} copyState={copyState} onCopy={onCopy} />
+      <ShareLink canCopy={canCopy} copyState={copyState} onCopy={onCopy}
+      label="Copy link"
+      copied="Link copied."
+      failed="Couldn’t copy — the address bar holds the same link."
+    />
     </section>
   );
 };

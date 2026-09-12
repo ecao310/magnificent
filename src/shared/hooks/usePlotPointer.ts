@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { PointerEvent } from 'react';
-import { incomeAtX } from '../components/chartFrame';
-import type { Frame } from '../components/chartFrame';
+import { incomeAtX } from '../lib/chartFrame';
+import type { Frame } from '../lib/chartFrame';
 
 /**
  * How far a pointer travels before the page decides what it is doing: under
@@ -12,6 +12,8 @@ const SLOP = 8;
 
 export interface PlotPointerOptions {
   axisMax: number;
+  /** The slider's step, which a pointer's income is rounded to. */
+  step: number;
   frame: Frame;
   onIncome: (next: number) => void;
 }
@@ -35,7 +37,7 @@ export interface PlotPointerOptions {
  * on a touchscreen the hover and the tap arrive together, and a marker
  * that waits for the hover moves one tap late.
  */
-export function usePlotPointer({ axisMax, frame, onIncome }: PlotPointerOptions) {
+export function usePlotPointer({ axisMax, step, frame, onIncome }: PlotPointerOptions) {
   const box = useRef<HTMLDivElement>(null);
   const press = useRef<{ id: number; x: number; y: number; scrubbing: boolean } | null>(null);
 
@@ -43,7 +45,7 @@ export function usePlotPointer({ axisMax, frame, onIncome }: PlotPointerOptions)
     const el = box.current;
     if (el === null) return;
     const rect = el.getBoundingClientRect();
-    const income = incomeAtX(clientX - rect.left, rect.width, axisMax, frame);
+    const income = incomeAtX(clientX - rect.left, rect.width, axisMax, step, frame);
     if (income !== null) onIncome(income);
   };
 

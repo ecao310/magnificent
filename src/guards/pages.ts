@@ -1,12 +1,11 @@
 import type { ComponentType } from 'react';
+import { NARROW_MAX_WIDTH } from '../shared/lib/chartFrame';
 import { fireEvent, screen } from '@testing-library/react';
 import TorpedoApp from '../torpedo/App';
 import { RAIL_COLLAPSES_AT as TORPEDO_RAIL_COLLAPSES_AT } from '../torpedo/components/BenefitStep';
-import { NARROW_MAX_WIDTH as TORPEDO_NARROW_MAX_WIDTH } from '../torpedo/components/chartFrame';
 import { CHART as TORPEDO_CHART, PALETTE as TORPEDO_PALETTE } from '../torpedo/styles/palette';
 import AcaApp from '../aca/App';
 import { RAIL_COLLAPSES_AT as ACA_RAIL_COLLAPSES_AT } from '../aca/components/HouseholdStep';
-import { NARROW_MAX_WIDTH as ACA_NARROW_MAX_WIDTH } from '../aca/components/chartFrame';
 import { CHART as ACA_CHART, PALETTE as ACA_PALETTE } from '../aca/styles/palette';
 
 /**
@@ -70,7 +69,7 @@ export const GUARDED_PAGES: readonly GuardedPage[] = [
     PALETTE: TORPEDO_PALETTE,
     CHART: TORPEDO_CHART,
     RAIL_COLLAPSES_AT: TORPEDO_RAIL_COLLAPSES_AT,
-    NARROW_MAX_WIDTH: TORPEDO_NARROW_MAX_WIDTH,
+    NARROW_MAX_WIDTH,
     chartNotes: ['.chart-axis-label'],
   },
   {
@@ -86,7 +85,7 @@ export const GUARDED_PAGES: readonly GuardedPage[] = [
     PALETTE: ACA_PALETTE,
     CHART: ACA_CHART,
     RAIL_COLLAPSES_AT: ACA_RAIL_COLLAPSES_AT,
-    NARROW_MAX_WIDTH: ACA_NARROW_MAX_WIDTH,
+    NARROW_MAX_WIDTH,
     chartNotes: [],
     reveal: () => fireEvent.click(screen.getByRole('radio', { name: 'Your effective rate' })),
   },

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { PAGE_COVERAGE_YEAR, axisMax as axisMaxFor } from '../lib/aca';
 import type { Adults, CoverageYear, Scenario, StateCode } from '../lib/aca';
-import { decodeScenario, engineScenario } from '../lib/scenarioUrl';
+import { decodeScenario, engineScenario, scenarioUrl } from '../lib/scenarioUrl';
 import type { PageScenario } from '../lib/scenarioUrl';
-import { useScenarioAddress } from './useScenarioAddress';
-import type { ScenarioAddress } from './useScenarioAddress';
+import { useScenarioAddress } from '../../shared/hooks/useScenarioAddress';
+import type { ScenarioAddress } from '../../shared/hooks/useScenarioAddress';
 
 /**
  * Sampling interval for a swept curve, and the step of the slider walking
@@ -87,7 +87,7 @@ export function useHousehold({ onMove }: HouseholdOptions = {}): Household {
     () => ({ adults, age, spouseAge, income, dependents, state, benchmarkPremium }),
     [adults, age, spouseAge, income, dependents, state, benchmarkPremium],
   );
-  const address = useScenarioAddress(pageScenario);
+  const address = useScenarioAddress(pageScenario, scenarioUrl);
 
   const scenario: Scenario = useMemo(
     () => ({ ...engineScenario(pageScenario), year }),

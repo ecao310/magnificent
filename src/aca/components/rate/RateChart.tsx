@@ -18,7 +18,7 @@ import type { RatePoint } from '../../lib/tax';
 import { formatAxisMoney, formatAxisPercent, formatFpl, formatPercent } from '../../lib/format';
 import { CHART, PALETTE } from '../../styles/palette';
 import { useMediaQuery } from '../../../shared/hooks/useMediaQuery';
-import { usePlotPointer } from '../../hooks/usePlotPointer';
+import { usePlotPointer } from '../../../shared/hooks/usePlotPointer';
 import {
   AXIS_PROPS,
   AXIS_TITLE,
@@ -33,7 +33,7 @@ import {
   labelMeetsEdge,
   plotWidthOf,
   textWidth,
-  wordStandsUpright,
+  wordStandsUpright, POINTER_STEP
 } from '../chartFrame';
 import { RateTooltip } from './RateTooltip';
 
@@ -98,7 +98,7 @@ export const RateChart: React.FC<RateChartProps> = ({
   const narrow = useMediaQuery(NARROW_QUERY);
   const frame = frameFor(narrow);
   const hoverable = useMediaQuery(HOVER_QUERY, true);
-  const pointer = usePlotPointer({ axisMax, frame, onIncome });
+  const pointer = usePlotPointer({ axisMax, step: POINTER_STEP, frame, onIncome });
 
   /** The width of the box the chart is drawn in, or null before the first measurement. */
   const [width, setWidth] = useState<number | null>(null);

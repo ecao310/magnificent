@@ -1,5 +1,6 @@
 import type { AllInAssessment } from '../../../lib/tax';
 import { formatCents, formatCurrency, formatFpl, formatPercent } from '../../../lib/format';
+import { torpedoLink } from '../../../lib/torpedoLink';
 
 export interface PremiumAsTaxExplainerProps {
   here: AllInAssessment;
@@ -48,6 +49,14 @@ export const PremiumAsTaxExplainer: React.FC<PremiumAsTaxExplainerProps> = ({ he
             </>
           )}
           .
+        </p>
+        <p>
+          <strong>The same shape comes back with Social Security.</strong> Once a household is
+          on Medicare the subsidy is gone, and another phase-in takes its place: the share of a
+          Social Security benefit that is taxed rises with other income, so the income tax on the
+          next dollar climbs and then falls.{' '}
+          <a href={torpedoLink(here.filingStatus)}>Income Tax in Retirement</a> draws that curve
+          for {here.filingStatus === 'mfj' ? 'a joint return' : 'a single return'}.
         </p>
       </div>
     </details>

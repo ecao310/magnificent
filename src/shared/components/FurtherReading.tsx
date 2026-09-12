@@ -1,4 +1,9 @@
-import { FURTHER_READING } from '../lib/furtherReading';
+import type { Reading } from '../lib/reading';
+
+export interface FurtherReadingProps {
+  /** The page's own list, from its `lib/furtherReading.ts`. */
+  readings: readonly Reading[];
+}
 
 /**
  * The reading list: a closed note under the footer's rule, ahead of the
@@ -16,7 +21,7 @@ import { FURTHER_READING } from '../lib/furtherReading';
  * `p` rule is written for the disclaimer and would set anything else in the
  * same italic.
  */
-export const FurtherReading: React.FC = () => (
+export const FurtherReading: React.FC<FurtherReadingProps> = ({ readings }) => (
   <details className="reading" id="reading">
     <summary>
       <h2 className="reading-heading" id="reading-heading">
@@ -24,7 +29,7 @@ export const FurtherReading: React.FC = () => (
       </h2>
     </summary>
     <ul className="reading-list">
-      {FURTHER_READING.map(({ href, title, source }) => (
+      {readings.map(({ href, title, source }) => (
         <li className="reading-item" key={href}>
           <a href={href}>{title}</a>
           <span className="reading-source">{source}</span>

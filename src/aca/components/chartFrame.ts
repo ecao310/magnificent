@@ -10,6 +10,15 @@
  */
 import type { SubsidyLine } from '../lib/aca';
 import { CHART, PALETTE } from '../styles/palette';
+import { incomeAtX as incomeAtXBy } from '../../shared/lib/chartFrame';
+import type { Frame as SiteFrame } from '../../shared/lib/chartFrame';
+
+export {
+  HOVER_QUERY,
+  NARROW_MAX_WIDTH,
+  NARROW_QUERY,
+  plotWidthOf,
+} from '../../shared/lib/chartFrame';
 
 /**
  * How the axis is drawn, in one object rather than two copies: the frame is
@@ -35,12 +44,11 @@ export const AXIS_TITLE = { fontSize: CHART.label, fill: PALETTE.inkMuted } as c
 export const MARGIN = { top: 22, right: 28, left: 10, bottom: 24 } as const;
 
 /**
- * The frame a plot is drawn in: the gutter the y-axis takes, the margins
- * around the plot, and whether the axes carry their titles.
+ * The frame a plot is drawn in: the site's — the gutter the y-axis takes and
+ * the margins around the plot — and whether the axes carry their titles,
+ * which is this page's question alone.
  */
-export interface Frame {
-  axis: number;
-  margin: { top: number; right: number; left: number; bottom: number };
+export interface Frame extends SiteFrame {
   titles: boolean;
 }
 
@@ -59,22 +67,6 @@ export const NARROW_FRAME: Frame = {
   margin: { top: 22, right: 16, left: 4, bottom: 4 },
   titles: false,
 };
-
-/**
- * The width under which a plot takes the narrow frame: the same 640 the
- * stylesheet's phone rules turn on at, so the slider's inset under the
- * plot and the gutter it is inset to change together. `the fold` in
- * styles.test.tsx holds the two to one number.
- */
-export const NARROW_MAX_WIDTH = 640;
-export const NARROW_QUERY = `(max-width: ${NARROW_MAX_WIDTH}px)`;
-
-/**
- * Where a hover means something: a pointer that can rest on the curve
- * without pressing it. A finger cannot, so on a touchscreen the plot draws
- * no hover reading and a touch moves the marker instead.
- */
-export const HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
 export const frameFor = (narrow: boolean): Frame => (narrow ? NARROW_FRAME : WIDE_FRAME);
 
@@ -147,23 +139,13 @@ export function labelMeetsEdge(
 export const wordStandsUpright = (word: string, stretchPx: number | null): boolean =>
   stretchPx !== null && stretchPx < textWidth(word) + LABEL_GAP;
 
-/** The plot area's width, from the width of the box the chart is drawn in: the y-axis gutter and the margins taken off. */
-export const plotWidthOf = (width: number, frame: Frame = WIDE_FRAME): number =>
-  Math.max(0, width - frame.axis - frame.margin.left - frame.margin.right);
-
 /** The income a pointer on the plot is nearest, rounded to this. */
 export const POINTER_STEP = 500;
 
 /**
- * The income under a pointer: `x` is its distance from the left edge of
- * the box the chart is drawn in, `width` the box's width. Off the plot to
- * either side is the end of the axis on that side; before the box has a
- * width there is no answer.
+ * The income under a pointer, rounded to `POINTER_STEP`: the site's
+ * arithmetic with this page's step, so a chart and a test ask the question
+ * without naming the step each time.
  */
-export function incomeAtX(x: number, width: number, axisMax: number, frame: Frame): number | null {
-  const plot = plotWidthOf(width, frame);
-  if (plot <= 0) return null;
-  const share = (x - frame.margin.left - frame.axis) / plot;
-  const raw = Math.min(1, Math.max(0, share)) * axisMax;
-  return Math.round(raw / POINTER_STEP) * POINTER_STEP;
-}
+export const incomeAtX = (x: number, width: number, axisMax: number, frame: Frame): number | null =>
+  incomeAtXBy(x, width, axisMax, POINTER_STEP, frame);

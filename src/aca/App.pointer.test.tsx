@@ -227,7 +227,7 @@ describe('the link note', () => {
     window.history.replaceState(null, '', '/?age=80');
     render(<App />);
     const note = screen.getByRole('status');
-    expect(note).toHaveTextContent('One setting in this link was out of range and was adjusted.');
+    expect(note).toHaveTextContent('One setting was adjusted; everything else in it came through as sent.');
     expect(within(note).getAllByRole('listitem')).toHaveLength(1);
     expect(note.querySelector('details')).toBeNull();
   });
@@ -236,7 +236,7 @@ describe('the link note', () => {
     window.history.replaceState(null, '', '/?age=80&income=999999&state=zz');
     render(<App />);
     const note = screen.getByRole('status');
-    expect(note).toHaveTextContent('Three settings in this link were out of range and were adjusted.');
+    expect(note).toHaveTextContent('Three settings were adjusted; everything else in it came through as sent.');
     const fold = note.querySelector('details') as HTMLDetailsElement;
     expect(fold).not.toBeNull();
     expect(fold).not.toHaveAttribute('open');

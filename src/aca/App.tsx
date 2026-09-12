@@ -12,6 +12,7 @@ import { chartFor, chartFromFragment, fragmentFor } from './lib/charts';
 import type { ChartId } from './lib/charts';
 import { allInFor, rateAxis as rateAxisFor, rateCurve } from './lib/tax';
 import { formatCurrency } from './lib/format';
+import { FURTHER_READING } from './lib/furtherReading';
 import { householdPhrase } from './lib/householdProse';
 import { rateReadoutText } from './lib/rateReadout';
 import { readoutText } from './lib/readout';
@@ -21,8 +22,8 @@ import { useSettledReading } from '../shared/hooks/useSettledReading';
 import { Answer } from './components/Answer';
 import { ChartChooser } from './components/ChartChooser';
 import { CostStep, NEXT_BLOCK } from './components/CostStep';
-import { FurtherReading } from './components/FurtherReading';
-import { Header } from './components/Header';
+import { FurtherReading } from '../shared/components/FurtherReading';
+import { Header } from '../shared/components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
 import { Notes } from './components/Notes';
 import { RateAnswer } from './components/rate/RateAnswer';
@@ -115,7 +116,13 @@ const App: React.FC = () => {
         Skip to the chart
       </a>
 
-      <Header linkNotes={h.linkNotes} onDismissNotes={h.dismissNotes} />
+      <Header
+        page="aca"
+        title="The ACA Subsidy Slope"
+        subtitle="On an ACA plan, you pay a set share of your household income and the subsidy pays the rest. When household income reaches 400% of the poverty line, the subsidy ends abruptly (the ACA subsidy cliff)."
+        linkNotes={h.linkNotes}
+        onDismissNotes={h.dismissNotes}
+      />
 
       <p className="live-reading" aria-live="polite" aria-atomic="true">
         {announcement}
@@ -211,7 +218,7 @@ const App: React.FC = () => {
       </main>
 
       <footer>
-        <FurtherReading />
+        <FurtherReading readings={FURTHER_READING} />
         <p>
           Educational only; not insurance, tax or financial advice. Figures are modelled
           from published HHS, IRS and CMS numbers and a national- or state-average premium

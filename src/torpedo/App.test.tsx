@@ -611,7 +611,8 @@ describe('the step flow', () => {
   });
 
   /**
-   * The nav and the next-step box, both gone.
+   * The nav and the next-step box, both gone — and one strip on the page for
+   * a different reason.
    *
    * They were the price of length: a sticky strip marking which of four
    * sections you were in, and a box at the foot of each one naming the next.
@@ -620,18 +621,36 @@ describe('the step flow', () => {
    * screen's width and four lines of prose to move the reader past a single
    * heading they could see from where they stood.
    *
-   * Asserted as a shape rather than by class name: no toolbar anywhere, and
-   * no button whose label counts steps. Putting either back under a different
-   * name fails here.
+   * The one navigation on the page now is the site's, not this page's: two
+   * names under the top rule, this page's marked, because the site is two
+   * pages and a reader on one should know the other is there. It is inside
+   * the banner, ahead of the title, and names nothing on this page — a link
+   * from it into a section here would be the old nav back.
+   *
+   * Asserted as a shape rather than by class name: no toolbar anywhere, no
+   * button whose label counts steps, exactly one navigation, and that one in
+   * the banner holding the one `aria-current` on the page.
    */
-  it('offers nothing that navigates between the steps', () => {
+  it('offers nothing that navigates between the steps, and one strip between the pages', () => {
     render(<App />);
     expect(screen.queryByRole('toolbar')).toBeNull();
-    expect(screen.queryByRole('navigation')).toBeNull();
     expect(
       screen.queryAllByRole('button').filter((b) => /step \d+ of/i.test(b.textContent ?? '')),
     ).toEqual([]);
-    expect(document.querySelector('[aria-current]')).toBeNull();
+
+    const nav = screen.getByRole('navigation', { name: 'Pages' });
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    expect(screen.getByRole('banner')).toContainElement(nav);
+    const title = screen.getByRole('heading', { level: 1 });
+    expect(nav.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const current = document.querySelectorAll('[aria-current]');
+    expect(current).toHaveLength(1);
+    expect(nav).toContainElement(current[0] as HTMLElement);
+    expect(current[0]).toHaveTextContent('Tax Torpedo');
+    for (const link of within(nav).getAllByRole('link')) {
+      expect(link.getAttribute('href')).not.toMatch(/^#/);
+    }
   });
 
   /**
