@@ -146,7 +146,7 @@ describe('the cover', () => {
    * copies are held together by a test that reads the original.
    */
   it('is painted in the palette the page is', () => {
-    const css = readFileSync(root('src/torpedo/styles/torpedo.css'), 'utf8');
+    const css = readFileSync(root('src/shared/styles/site.css'), 'utf8');
     const token = (name: string) =>
       new RegExp(`--${name}:\\s*(#[0-9a-f]{3,8})`, 'i').exec(css)?.[1] ?? `--${name} is missing`;
     const surface = token('surface');

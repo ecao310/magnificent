@@ -1,0 +1,1392 @@
+/* ───── The site's sheet ─────────────────────────────────────────────────────
+ *
+ * What both pages paint with, whole: the ground, the type, the shell, the
+ * controls, the plot, the notes, the footer, the collapse and the print
+ * ground. Each page's own sheet — src/torpedo/styles/torpedo.css,
+ * src/aca/styles/aca.css — `@import`s this file first and adds to it: the
+ * hues of its own lines, the gutter its plot holds back, the rules for the
+ * controls and notes only it has. Vite inlines the import, so each page ships
+ * one stylesheet whose text is this file and then its own.
+ *
+ * That order is the one thing a page sheet has to respect. The media blocks
+ * at the foot of this file have already run by the time a page's rules
+ * apply, and a media query adds no specificity, so a page rule that restates
+ * a property one of those blocks sets would win over the block on every
+ * screen. A page changes what it must at a breakpoint or on paper in media
+ * blocks of its own, at the foot of its own file, and never at base level.
+ * `the cascade` in src/guards/styles.test.tsx holds that line.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ───── The ground ──────────────────────────────────────────────────────────
+ *
+ * Every colour, edge and measure both pages paint with, named once. Nothing
+ * below this block writes a colour literal of its own — `the screen
+ * stylesheet` in styles.test.tsx holds that line, because a palette that is
+ * only mostly in one place is not in one place at all.
+ *
+ * The register is a printed financial supplement — the broadsheet — which is
+ * the look this page was redesigned to: warm paper rather than near-black,
+ * ink rather than a light ramp, hairline rules rather than boxes, square
+ * corners, and two typefaces doing two jobs — a serif for everything read and
+ * a monospace for everything counted. What that removes is chrome: there is no
+ * raised surface to float a card on, no shadow, and no corner radius anywhere
+ * on the page, because a rule on paper is a line and not a box.
+ *
+ * The five ink tiers are the five this page has always used, kept apart: a
+ * heading, an emphasis inside prose, prose, a label and a footnote are five
+ * distinct browns. Every one of them clears 4.5:1 on `--surface` — the
+ * lightest, `--ink-dim`, reads 4.8:1 — and every data hue that carries text
+ * clears it too, at the sizes it carries.
+ *
+ * The data colours keep their jobs on both pages: blue is the curve, amber is
+ * the marker, emerald is a subsidy, and each page names the hues of its own
+ * lines in its own sheet — so a reader matches a swatch in the key to a line
+ * in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
+ * that no line on the plot shouts over another; the values here are those
+ * colours written out in sRGB, because a `var()` cannot reach an SVG attribute
+ * and `palette.ts` has to carry the same literals.
+ */
+:root {
+  /* Surfaces. Paper — warm, and never pure white on screen. */
+  --surface: #f7f3eb;
+  --surface-raised: #fdfaf4;
+  --surface-hover: #ede7dc;
+
+  /* Edges. A hairline for a rule between rows, and ink for a rule that opens
+     or closes something — a section, a control, the plot's own axis. */
+  --edge: #c9c3ba;
+  --edge-strong: #261d16;
+
+  /* Ink, darkest first. */
+  --ink-bright: #160d07;
+  --ink: #261d16;
+  --ink-soft: #50453d;
+  --ink-muted: #6c6158;
+  --ink-dim: #756960;
+
+  /* The one accent: the curve, a link, and every focus ring. */
+  --accent: #2769b7;
+  --accent-bright: #02468b;
+
+  /* What a marker and a subsidy mean, on both pages. Each page names the
+     hues of its own lines after these, in its own sheet. */
+  --amber: #b76100;
+  --amber-bright: #9f4600;
+  --emerald: #1d7d3e;
+
+  /* ── The shell ──
+     The reading column stops at 51.5rem and the return's column holds
+     22.5rem beside it, with 4rem between. Named here because three rules and
+     a breakpoint all have to agree on them. */
+  --measure: 51.5rem;
+  --column: 22.5rem;
+  --gutter: 4rem;
+}
+
+/* ───── The type ───────────────────────────────────────────────────────────
+ *
+ * Two faces. Newsreader is the serif — an optical-size axis, so the same
+ * family sets a 92px headline and a 17px paragraph and each is cut for its
+ * size — and IBM Plex Mono is every figure: a dollar amount, a rate, a line
+ * number, a kicker. The rule for which is which is the rule of a ledger — if
+ * it is read, it is serif; if it is counted, it is mono — and it holds the
+ * page together across a slider's readout, the ticks on the plot and the six
+ * closing figures without any of them needing a colour to say what they are.
+ *
+ * Both are loaded from Google Fonts in index.html; the stacks fall back to
+ * Georgia and Menlo, whose metrics are close enough that nothing reflows
+ * badly before the faces arrive.
+ */
+:root {
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  font-family: var(--font-serif);
+  line-height: 1.5;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 18;
+
+  color-scheme: light;
+  color: var(--ink);
+  background-color: var(--surface);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ───── The scale ──────────────────────────────────────────────────────────
+ *
+ * The broadsheet's, at a 16px root so every rem length on the page stays
+ * where it was put:
+ *
+ *   2.75    the page title
+ *   2.125   a section heading, and one of the six closing figures
+ *   2       the page title on a narrow screen
+ *   1.5     the rail's heading, the figures the controls carry
+ *   1.25    a section's deck, the sentence under the slider
+ *   1.125   the deck under the title, a note's heading
+ *   1.0625  body copy, a control's label
+ *   .875    a note, a gloss, a footnote, the recap that closes the return
+ *   .8125   a chart label, a button, a status line
+ *   .75     a kicker, a tooltip, a range label
+ *
+ * `the type scale` in styles.test.tsx holds the list closed: a size that is
+ * not one of these fails, so widening the scale is an edit to the scale
+ * rather than a rounding decision made inside one rule.
+ */
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  font-size: 1.0625rem;
+  background: var(--surface);
+  overflow-x: hidden;
+  text-wrap: pretty;
+}
+
+/* Wide enough for the two columns, their gutter and the page's own margins,
+   and not a pixel wider — so the measure is set by the columns rather than by
+   this number. */
+#root {
+  max-width: calc(var(--measure) + var(--column) + var(--gutter) + 12rem);
+  margin: 0 auto;
+  padding: 0 6rem 3rem;
+  width: 100%;
+}
+
+/* The one blue on the page is the curve's, and a link takes it. */
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--accent-bright);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The page's top rule: the one heavy stroke on it, the way a broadsheet's
+   nameplate sits under one. */
+.card {
+  min-width: 0;
+  border-top: 6px solid var(--ink);
+}
+
+/* ───── The masthead ────────────────────────────────────────────────────────
+ *
+ * The title and the deck, under the page's top rule and over a hairline.
+ */
+.masthead-body {
+  padding: 1.75rem 0 1.25rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+h1 {
+  margin: 0;
+  max-width: 20ch;
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  font-variation-settings: 'opsz' 48;
+  color: var(--ink-bright);
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin: 1rem 0 0;
+  max-width: 38rem;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ───── The shell ──────────────────────────────────────────────────────────
+ *
+ * The return in a column that stays put, and the curve, the figures and the
+ * notes in a column that scrolls past it. Every input that describes the
+ * *return* — the status, the ages, the benefit and the tax-exempt interest —
+ * lives in the rail; other income does not, because it is the axis of the
+ * chart and the slider under the chart sets it.
+ *
+ * Three children, two of them in the reading column: the chart and its
+ * figures, then the notes under them. Collapsed to one column they stack in
+ * the markup's own order — the rail first, folded to a row (`.return-sheet`
+ * below), then the answer, then the working.
+ */
+.shell {
+  display: grid;
+  grid-template-columns: var(--column) minmax(0, var(--measure));
+  column-gap: var(--gutter);
+  align-items: start;
+  margin-top: 1.75rem;
+}
+
+/* Sticky rather than fixed, so it participates in the grid and collapses
+   with it. Taller than the window is the normal case, so it carries its own
+   scroll rather than pinning a top the reader cannot scroll past. */
+.step-config {
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+  scrollbar-gutter: stable;
+  margin-top: 0;
+}
+
+.flow {
+  min-width: 0;
+}
+
+/* The working, under the answer rather than beside it, in the reading column
+   the answer is in. The counter that numbers the notes is reset here because
+   this is the element that holds them all. */
+.notes-section {
+  grid-column: 2;
+  min-width: 0;
+  counter-reset: note;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ───── The line items ──────────────────────────────────────────────────────
+ *
+ * The return is laid out as a form: a row per item, a hairline between rows,
+ * and the whole width of the rail for the control, because a rail this
+ * narrow has none to give away.
+ */
+.step-config .input-group {
+  position: relative;
+  margin-bottom: 0;
+  padding: 1.125rem 0 1.25rem;
+  border-top: 1px solid var(--edge);
+}
+
+/* The first row opens the list with ink; the rest are separated by hairlines. */
+.step-config .filing-status:first-of-type {
+  border-top-color: var(--ink);
+}
+
+label {
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ───── The controls ───────────────────────────────────────────────────────
+ *
+ * Ink on paper, and three rules run through everything below.
+ *
+ * *A border, not a fill.* A control is a hairline of ink around paper; its
+ * chosen state is the same box filled with ink and knocked out in paper. That
+ * is the whole vocabulary — no tint, no wash — and it is what makes a printed
+ * page and the screen the same page.
+ *
+ * *No corners.* Nothing on this page is rounded. `the corners` in
+ * styles.test.tsx holds that line: the only `border-radius` allowed is the
+ * `0` that takes a browser's own rounding off a button.
+ *
+ * *One ring, and only on focus.* Nothing here paints an outline in any other
+ * state, and the ring is solid `--accent` — the one blue on the page — two
+ * pixels off the box. `the controls` holds that line.
+ *
+ * The slider is the platform's own with an `accent-color`, deliberately: a
+ * drawn track would cost the filled run to the left of the thumb, which is
+ * the only thing on a slider that says where the value sits without reading
+ * the number. The 2.75rem height is the hit area, not the track: a thumb's
+ * worth of room above and below it for a finger.
+ */
+input[type='range'] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: var(--ink);
+  height: 2.75rem;
+  cursor: pointer;
+}
+
+input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+fieldset.filing-status {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Floated, so the legend is a label above its control rather than a word
+   the browser cuts into the row's own top rule — which is where a fieldset
+   puts its legend by default the moment the fieldset has a border. */
+fieldset.filing-status legend {
+  float: left;
+  width: 100%;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 0;
+  margin-bottom: 0.75rem;
+}
+
+/* Two stamped boxes side by side. Each takes the width its label needs, so
+   "Married Filing Jointly" is the wider of the pair rather than the two
+   being forced to a size that fits neither. */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.segmented-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.segmented-option input[type='radio'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented-option span {
+  display: block;
+  padding: 0.6875rem 0.625rem;
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented-option input[type='radio']:checked + span {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+/* Hung off the label rather than off the span, because the radio is an
+   `opacity: 0` overlay covering the whole option and only the label is an
+   ancestor of both. */
+.segmented-option:hover input[type='radio']:not(:checked) + span {
+  background: var(--surface-hover);
+}
+
+.segmented-option input[type='radio']:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───── The link note ───────────────────────────────────────────────────
+ *
+ * What a link asked for that this page could not show. Amber and boxed rather
+ * than red: nothing has gone wrong with the return on screen — one value in
+ * the address was out of bounds and is being held at its edge.
+ */
+.link-note {
+  margin: 1.5rem 0 0;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--amber);
+  background: var(--surface-raised);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.link-note p {
+  margin: 0;
+}
+
+.link-note ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.link-note li + li {
+  margin-top: 0.375rem;
+}
+
+.link-note-list {
+  margin: 0.5rem 0 0;
+}
+
+.link-note-list summary {
+  display: inline-block;
+  min-height: 2.75rem;
+  padding: 0.6875rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.link-note-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.link-note-list summary::before {
+  content: '+ ';
+}
+
+.link-note-list[open] summary::before {
+  content: '− ';
+}
+
+.link-note-list summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.link-note button {
+  margin-top: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.link-note button:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.link-note button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A note under a control, set the way a footnote is: smaller, italic, and
+   with its figures upright in mono so they stand out of the sentence. */
+.field-note {
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0.25rem 0 0;
+}
+
+.field-note strong {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.slider-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Three markers across the width of the slider above them: the two ends and
+   whatever is worth pointing at in between. The middle one stays centred on
+   its own text rather than on the slider, which is the honest place for it:
+   the average is not the midpoint of anything. */
+.slider-range-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+
+/* The slider is the chart's cursor, so it is inset to the plot area exactly:
+   the y-axis gutter and the plot's own left margin on one side, its right
+   margin on the other. The thumb then stands under the marker it moves. */
+.chart-slider {
+  margin: 1.25rem 0 0;
+  padding-left: calc(var(--chart-axis) + 10px);
+  padding-right: 28px;
+}
+
+/* The other half of the pairing: the curve read back at the slider's value,
+   set as a pull quote — the one sentence on the page that says what the
+   reader's own dollar costs. Its figures are mono, and the rate on the next
+   dollar takes the marker's amber, so the sentence, the slider and the line
+   on the plot are one thing. */
+.slider-readout {
+  margin: 1.25rem 0 0;
+  max-width: 40rem;
+  font-size: 1.25rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.slider-readout strong {
+  font-family: var(--font-mono);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.slider-readout strong:first-of-type {
+  color: var(--amber-bright);
+  font-weight: 600;
+}
+
+/* Everything that describes one chart, grouped: the plot and the caption
+   under it. */
+.chart-figure {
+  margin: 1rem 0 0;
+  position: relative;
+}
+
+.chart-container {
+  height: max(280px, min(400px, 75vh));
+  width: 100%;
+  /* A finger drawn down the plot scrolls the page; one drawn along it
+     moves the marker. The browser takes the first, the chart the second. */
+  touch-action: pan-y;
+}
+
+/* A tap focuses the plot's own accessible layer, and the browser draws its
+   ring around the whole plot. The ring is for a keyboard, which is what
+   `:focus-visible` says; a finger gets none. */
+.chart-container :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* The plot's own words are set in the mono, at the one size `CHART.label`
+   gives them. recharts writes the size as an attribute; the face it cannot,
+   so the face is set here by the names the library emits. */
+.recharts-cartesian-axis-tick-value,
+.recharts-label {
+  font-family: var(--font-mono);
+}
+
+/* The hover reading. Paper with an ink edge, set in the mono because every
+   line in it is a figure. It follows the pointer and has to stay legible
+   over whatever part of the curve it covers, which the opaque paper does. */
+.chart-tooltip {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--ink);
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.chart-tooltip-head {
+  margin-bottom: 0.375rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--edge);
+  color: var(--ink-soft);
+}
+
+/* ───── The notes ───────────────────────────────────────────────────────────
+ *
+ * The explainers, set as a broadsheet's numbered notes: a kicker over an ink
+ * rule, then one row per note with its number in the margin, its heading, and
+ * a plus that turns to a minus when it is open. The numbers are counted by
+ * the stylesheet rather than written in the markup, so a note added or taken
+ * off renumbers the rest.
+ */
+.notes-kicker {
+  margin: 3rem 0 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.explainer {
+  margin: 0;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--edge);
+  counter-increment: note;
+}
+
+/* The kicker's own rule opens the list. */
+.explainer:first-of-type {
+  border-top: none;
+}
+
+.explainer:last-of-type {
+  border-bottom: 1px solid var(--edge);
+}
+
+.explainer h3 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  margin: 0;
+  font-variation-settings: 'opsz' 24;
+  color: var(--ink-bright);
+}
+
+details.explainer summary {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 1.25rem;
+  column-gap: 0.75rem;
+  align-items: center;
+  min-height: 2.75rem;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+details.explainer summary::-webkit-details-marker {
+  display: none;
+}
+
+details.explainer summary::before {
+  content: counter(note, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+details.explainer summary h3 {
+  transition: color 0.2s ease;
+}
+
+details.explainer summary::after {
+  content: '+';
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--ink);
+}
+
+details.explainer[open] summary::after {
+  content: '−';
+}
+
+details.explainer summary:hover h3 {
+  color: var(--accent);
+}
+
+details.explainer summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Indented to the heading, under the number. */
+.explainer-content {
+  margin: 0.875rem 0 0.5rem;
+  padding-left: 2.75rem;
+  max-width: 40rem;
+  cursor: default;
+}
+
+.explainer p {
+  color: var(--ink);
+  line-height: 1.55;
+  margin: 0 0 1rem;
+}
+
+.explainer p:last-child {
+  margin-bottom: 0;
+}
+
+.explainer strong {
+  color: var(--ink-bright);
+  font-weight: 600;
+}
+
+.explainer ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.explainer li {
+  margin-bottom: 0.75rem;
+}
+
+.explainer li:last-child {
+  margin-bottom: 0;
+}
+
+.slider-amber {
+  accent-color: var(--amber) !important;
+}
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink);
+}
+
+footer p {
+  max-width: 47.5rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ───── Further reading ─────────────────────────────────────────────────────
+ *
+ * The back matter, set as one more of the notes under the footer's own rule:
+ * a closed row with its heading and a plus that turns to a minus, and inside
+ * it one hairline row per piece — its title as the link, its source in the
+ * margin the way a closing figure carries its 1040 line. No number in the
+ * margin: the notes are counted in the step they belong to, and this one
+ * belongs to none of them.
+ */
+.reading {
+  margin: 0 0 1.5rem;
+  padding: 0.25rem 0 1.125rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+.reading > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.5rem;
+  column-gap: 0.75rem;
+  align-items: center;
+  min-height: 2.75rem;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reading > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Set like `.explainer h3`: the same heading, one level up. */
+.reading-heading {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.15;
+  font-variation-settings: 'opsz' 36;
+  color: var(--ink-bright);
+  transition: color 0.2s ease;
+}
+
+.reading > summary::after {
+  content: '+';
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.reading[open] > summary::after {
+  content: '−';
+}
+
+.reading > summary:hover .reading-heading {
+  color: var(--accent);
+}
+
+.reading > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.reading-list {
+  margin: 0.875rem 0 0;
+  padding: 0;
+  max-width: 45rem;
+  list-style: none;
+  cursor: default;
+}
+
+.reading-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--edge);
+}
+
+/* The publisher, in the margin beside the title it published. */
+.reading-source {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* ───── The step flow ────────────────────────────────────────────────────────
+ *
+ * Two sections, both mounted, read top to bottom. Step 1 is the rail and
+ * step 2 the reading column, so nothing separates them but the gutter.
+ */
+.step {
+  margin-top: 0;
+  /* A step is still a scroll target — `#step-torpedo` is in the address bar
+     and in every link this page copies — so it keeps a margin off the top of
+     the window. */
+  scroll-margin-top: 1.5rem;
+}
+
+/* Arriving at a step focuses it, so it has to show where it landed — but only
+   for the keyboard, which is exactly what :focus-visible means on a section
+   that is only ever focused programmatically. */
+.step:focus {
+  outline: none;
+}
+
+.step:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0.75rem;
+}
+
+/* A section heading: the chart's. */
+.step-heading {
+  font-size: 2.125rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 48;
+  margin: 0 0 0.5rem;
+  color: var(--ink-bright);
+}
+
+/* The rail's heading, a size down: it names a column of controls, not the
+   page's subject. */
+.step-config .step-heading {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 1rem;
+}
+
+/* The sentence under a section heading that says what the section draws. */
+.step-deck {
+  margin: 0;
+  max-width: 40rem;
+  font-size: 1.25rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* ───── The figures ─────────────────────────────────────────────────────────
+ *
+ * Six of them, under one rule: the six figures the reader leaves with, each
+ * under a rule of its own with a gloss that says the same figure a second
+ * way, and the button that sends the whole return as a link closes the block.
+ */
+.answer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ink);
+}
+
+.answer-heading {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'opsz' 36;
+  color: var(--ink-bright);
+}
+
+/* The return the six figures are priced for, set as a status line. */
+.answer-subline {
+  margin: 0.375rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+/* Two across. The figures are read one at a time — no row means anything —
+   so stacking on a narrow screen loses nothing but the width. */
+.answer-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2rem;
+  margin: 1.75rem 0 0;
+}
+
+.answer-figure {
+  min-width: 0;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--ink);
+}
+
+.answer-figure dt {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.answer-figure dd {
+  margin: 0.625rem 0 0;
+}
+
+.answer-figure dd strong {
+  font-family: var(--font-mono);
+  font-size: 2.125rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The second half of a figure that is a pair — "of $24,852", "the standard
+   premium" — on a line of its own under the figure, so the figure itself is
+   never the thing that wraps. */
+.answer-of {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.answer-gloss {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+
+/* ───── Sending the figures ─────
+ *
+ * Under the six figures, on their own hairline: what is worth a link is the
+ * answer, and this is the one place the answer sits together. The button is
+ * the one solid block of ink on the page.
+ */
+.answer-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--edge);
+}
+
+.answer-share-button {
+  flex: 0 0 auto;
+  min-height: 3rem;
+  padding: 0.875rem 1.375rem;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.answer-share-button:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.answer-share-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The live region is always mounted so a message lands *in* it rather than
+   arriving with it; empty, it should take up no room at all. */
+.answer-share-status {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.answer-share-status:empty {
+  display: none;
+}
+
+/* ───── The live reading ────────────────────────────────────────────────────
+
+   On the page for a screen reader and off it for everyone else. Neither
+   `display: none` nor `visibility: hidden` will do: both take the element out
+   of the accessibility tree along with the layout, and a live region that is
+   not in the tree is never read. So it is clipped to a pixel instead. */
+.live-reading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ───── The skip link ───────────────────────────────────────────────────────
+
+   Clipped the way the live reading above it is, and for the mirror of its
+   reason: this one has to stay in the tab order and out of the picture.
+   Focused, it unclips onto the viewport rather than back into the flow, and
+   `z-index: 40` clears the whole page: 30 is the highest layer anything else
+   here takes. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 40;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  border: 1px solid var(--ink);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───── The collapse ────────────────────────────────────────────────────────
+ *
+ * Two steps down. Below 1200px the page's own margins halve. Below 1100px the
+ * two columns become one, in the markup's own order: the rail first, folded
+ * to a row (`.return-sheet` above) so it costs the chart one line rather
+ * than a screen; the chart and the figures; the notes last. 1100 rather
+ * than lower because the rail is 22.5rem and the gutter 4rem, so under it the
+ * reading column — and the plot in it — would be narrower than the rail is
+ * tall. `RAIL_COLLAPSES_AT` in BenefitStep.tsx is the same number, and the
+ * component folds at it.
+ *
+ * Last in the screen half on purpose — a media query adds no specificity, so
+ * a rule it overrides has to be above it in the file or the override silently
+ * loses.
+ */
+@media (max-width: 1200px) {
+  #root {
+    padding: 0 3rem 3rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.75rem;
+  }
+
+  .step-config {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .notes-section {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  #root {
+    padding: 0 1.5rem 2.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.0625rem;
+  }
+
+  .step-heading {
+    font-size: 1.5rem;
+  }
+
+  .slider-readout {
+    font-size: 1.125rem;
+  }
+
+  /* The narrow frame: `NARROW_FRAME` in chartFrame.ts, the same gutter with
+     a left margin of 4px and a right of 24px. The slider's track is inset to
+     it, so the thumb still stands under the marker; the slider's label and
+     the sentence under it take the whole measure, which on a phone they
+     need. Taller, because it is narrower. */
+  .chart-container {
+    height: max(280px, min(340px, 75vh));
+  }
+
+  .chart-slider {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* A note's text takes the whole measure; the number in the margin still
+     numbers the row above it. */
+  .explainer-content {
+    padding-left: 0;
+  }
+
+  .answer-figures {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ───── Print ───────────────────────────────────────────────────────────────
+ *
+ * The same page on paper, which for a broadsheet is the shorter journey it
+ * has ever been: the screen is already ink on paper, and what changes here is
+ * that the paper is the printer's own white rather than a warm tint, and that
+ * a printed sheet has no hover, no pointer and no scroll.
+ *
+ * Every token the screen half declares is re-declared here, so every rule
+ * above paints itself. `the print stylesheet` in styles.test.tsx holds the
+ * same line here that `the screen stylesheet` holds above: a colour written
+ * anywhere but this `:root` fails, and a token added to the screen ground
+ * and not to this one fails too.
+ *
+ * Three decisions, none of which reads off the rules.
+ *
+ * *A fill is a thing a printer may drop; a border is not.* Chrome and Safari
+ * both print without background graphics unless the reader asks otherwise,
+ * so anything whose meaning is carried by a fill has to carry it another way
+ * here: the chosen segmented option is re-drawn as a heavier border, and the
+ * checkbox's tick is inked in the accent.
+ *
+ * *The whole page prints.* The chart with the reader's own marker standing on
+ * it is what makes the six figures under it mean anything, so it prints too,
+ * and the figures follow it on the same sheet where they fit.
+ *
+ * *An explainer prints exactly as the reader left it.* Print CSS cannot open
+ * a `<details>`, so what is on screen is what prints, and a closed note is
+ * hidden outright rather than printed as a bare heading.
+ */
+@media print {
+  @page {
+    margin: 0.6in;
+  }
+
+  /* ───── The paper ground ──────────────────────────────────────────────────
+   *
+   * The inks are already inks and stay; the surfaces go to white, and the
+   * one data hue that only clears its contrast at a large size — amber, the
+   * marker's — comes down a step, because a printed figure is never large
+   * enough to lean on that.
+   */
+  :root {
+    color-scheme: light;
+
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-hover: #ffffff;
+
+    --edge: #c9c3ba;
+    --edge-strong: #261d16;
+
+    --ink-bright: #000000;
+    --ink: #1c1510;
+    --ink-soft: #40362f;
+    --ink-muted: #56493f;
+    --ink-dim: #5f524a;
+
+    --accent: #1f5a9e;
+    --accent-bright: #02468b;
+
+    --amber: #9f4600;
+    --amber-bright: #7d3600;
+    --emerald: #176a33;
+  }
+
+  /* ── The sheet ──
+     Paper is one column and scrolls nowhere, so the shell is neither a grid
+     nor sticky nor a scroll container. */
+
+  body {
+    display: block;
+    min-height: 0;
+  }
+
+  #root {
+    max-width: none;
+    padding: 0;
+  }
+
+  .shell {
+    display: block;
+  }
+
+  .step-config {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* ── What a sheet of paper cannot be ──
+     Controls that only do something when clicked, and the marks that promise
+     something will open. Each page hides its own controls in its own sheet. */
+
+  .reading,
+  .answer-share-button,
+  .link-note button,
+  input[type='range'],
+  .slider-range-labels {
+    display: none;
+  }
+
+  details.explainer summary::after {
+    display: none;
+  }
+
+  details.explainer summary {
+    cursor: default;
+  }
+
+  details.explainer:not([open]) {
+    display: none;
+  }
+
+  /* ── What a fill was carrying ──
+     Two controls state their answer with a fill, which is the one thing on
+     this page that may not reach the paper. Both restate it with ink. */
+
+  .segmented-option input[type='radio']:checked + span {
+    background: none;
+    border-width: 3px;
+    padding: calc(0.6875rem - 1.5px) calc(0.625rem - 1.5px);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ── The charts ──
+     `ResponsiveContainer` measures the box it is handed and renders nothing
+     at all when that box is zero high — so the one thing this block may not
+     do is take the height away. 300px is 3.1in, which leaves a chart and
+     everything written under it on one sheet. */
+  .chart-container {
+    height: 300px;
+    margin-top: 1rem;
+  }
+
+  /* The three tiers of chart chrome, re-derived here the same way everything
+     above is. They are set as CSS rather than left to the tokens because
+     recharts writes them as SVG presentation attributes from `palette.ts`,
+     and a rule beats an attribute. */
+  .chart-container svg .recharts-cartesian-grid line {
+    stroke: var(--edge);
+  }
+
+  .chart-container svg .recharts-cartesian-axis-line,
+  .chart-container svg .recharts-cartesian-axis-tick-line {
+    stroke: var(--edge-strong);
+  }
+
+  .chart-container svg .recharts-cartesian-axis-tick-value {
+    fill: var(--ink-muted);
+  }
+
+  /* ── Pagination ──
+     A chart split across a fold is worth nothing, and neither is a heading
+     stranded at the foot of a page. */
+
+  h1,
+  h2,
+  .notes-kicker {
+    break-after: avoid;
+  }
+
+  .chart-figure,
+  .answer-figure,
+  .slider-header,
+  footer {
+    break-inside: avoid;
+  }
+}
