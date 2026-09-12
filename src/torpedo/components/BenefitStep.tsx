@@ -223,6 +223,7 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
           max={benefitSliderMax}
           step={12}
           value={ssBenefit}
+          aria-valuetext={formatCurrency(ssBenefit)}
           onChange={(e) => onSsBenefit(Number(e.target.value))}
         />
         <div className="slider-range-labels">
@@ -263,6 +264,7 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
             max={MAX_MUNI_INTEREST}
             step={250}
             value={muniInterest}
+            aria-valuetext={formatCurrency(muniInterest)}
             onChange={(e) => onMuniInterest(Number(e.target.value))}
             className="slider-violet"
           />

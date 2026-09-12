@@ -26,7 +26,10 @@ export interface ShareLinkProps {
  * becoming the second status region on a document whose first one is the
  * link note. Rendered empty rather than conditionally, because a live region
  * has to be mounted before the message lands in it to be read out reliably;
- * CSS hides it while it is.
+ * the stylesheet collapses it to nothing while it is, and never hides it
+ * outright — `display: none` takes a region out of the accessibility tree,
+ * and a message that arrives as it comes back in is not read out reliably
+ * either.
  */
 export const ShareLink: React.FC<ShareLinkProps> = ({
   canCopy,

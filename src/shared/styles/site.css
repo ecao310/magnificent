@@ -725,9 +725,11 @@ fieldset.filing-status legend {
   touch-action: pan-y;
 }
 
-/* A tap focuses the plot's own accessible layer, and the browser draws its
-   ring around the whole plot. The ring is for a keyboard, which is what
-   `:focus-visible` says; a finger gets none. */
+/* A tap or a click focuses one of the layers recharts stacks the plot in —
+   each carries a `tabindex="-1"`, so a pointer can focus it though a Tab
+   never lands on it — and a browser may draw its ring around the whole plot
+   for that. The ring is for a keyboard, which is what `:focus-visible` says;
+   a finger gets none. */
 .chart-container :focus:not(:focus-visible) {
   outline: none;
 }
@@ -767,6 +769,9 @@ fieldset.filing-status legend {
  * a plus that turns to a minus when it is open. The numbers are counted by
  * the stylesheet rather than written in the markup, so a note added or taken
  * off renumbers the rest.
+ *
+ * The kicker is an `h2` — the section's heading, for a reader jumping by
+ * heading — set at a kicker's size and weight rather than a heading's.
  */
 .notes-kicker {
   margin: 3rem 0 0;
@@ -774,6 +779,7 @@ fieldset.filing-status legend {
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-muted);
@@ -1188,7 +1194,12 @@ footer p {
 }
 
 /* The live region is always mounted so a message lands *in* it rather than
-   arriving with it; empty, it should take up no room at all. */
+   arriving with it, and empty, it should take up no room at all — but never
+   `display: none`, which takes it out of the accessibility tree, so that a
+   message landing as it came back in would not be read out reliably. So
+   while it waits it is a flex item of no width on the button's own row,
+   rather than the full-width row it takes once it has something to say.
+   `the live regions` in styles.test.tsx holds that line. */
 .answer-share-status {
   flex: 1 1 100%;
   margin: 0;
@@ -1199,7 +1210,7 @@ footer p {
 }
 
 .answer-share-status:empty {
-  display: none;
+  flex: 0 0 0;
 }
 
 /* ───── The live reading ────────────────────────────────────────────────────

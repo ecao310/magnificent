@@ -194,7 +194,7 @@ export const CostChart: React.FC<CostChartProps> = ({
   return (
     <PlotBox label={label} pointer={pointer}>
       <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
-        <ComposedChart data={curve} margin={frame.margin}>
+        <ComposedChart data={curve} margin={frame.margin} accessibilityLayer={false}>
           {hatch('costHatch')}
           {grid()}
           <XAxis

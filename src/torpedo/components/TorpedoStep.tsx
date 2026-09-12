@@ -200,6 +200,7 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
             max={axisMax}
             step={incomeSliderStep}
             value={ordinaryIncome}
+            aria-valuetext={formatCurrency(ordinaryIncome)}
             onChange={(e) => onOrdinaryIncome(Number(e.target.value))}
             className="slider-amber"
           />

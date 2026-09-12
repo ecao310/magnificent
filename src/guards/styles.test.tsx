@@ -807,6 +807,29 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
   });
 
   /**
+   * Two regions wait empty for a message: the reading, and the line under the
+   * copy button. Neither may be `display: none` while it waits — that takes a
+   * region out of the accessibility tree, and a message that lands as it comes
+   * back in is not read out reliably — and neither may be `visibility:
+   * hidden`, which does the same. Clipped to a pixel, or collapsed to no
+   * width, is how a region stays in the tree and off the page.
+   */
+  describe('the live regions', () => {
+    it('are never hidden outright while they wait empty', () => {
+      const waiting = leafRules(sheet.screen).filter((rule) =>
+        rule.selectors.some((selector) => /live-reading|answer-share-status/.test(selector)),
+      );
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(waiting.length).toBeGreaterThan(1);
+
+      const hidden = waiting
+        .filter((rule) => /display:\s*none|visibility:\s*hidden/.test(rule.body))
+        .flatMap((rule) => rule.selectors);
+      expect(hidden).toEqual([]);
+    });
+  });
+
+  /**
    * None. The broadsheet is ink on paper, and a rule on paper is a line, not
    * a box — so the only `border-radius` the sheet writes is the `0` that
    * takes a browser's own rounding off a button.

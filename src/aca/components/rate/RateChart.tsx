@@ -156,7 +156,7 @@ export const RateChart: React.FC<RateChartProps> = ({
   return (
     <PlotBox label={label} pointer={pointer}>
       <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
-        <ComposedChart data={curve} margin={frame.margin}>
+        <ComposedChart data={curve} margin={frame.margin} accessibilityLayer={false}>
           {/* The cost page's hatch, for the same thing it stands for there:
               what the household pays for the plan. */}
           {hatch('premiumHatch')}

@@ -78,6 +78,7 @@ describe('the page', () => {
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByRole('heading', { name: 'Notes', level: 2 })).toHaveClass('notes-kicker');
     const household = document.getElementById('step-household') as HTMLElement;
     const cost = document.getElementById('step-cost') as HTMLElement;
     const answer = document.getElementById('answer') as HTMLElement;

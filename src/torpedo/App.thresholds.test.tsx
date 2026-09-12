@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from './App';
 import { ChartTooltip } from './components/ChartTooltip';
 import { PAGE_TAX_YEAR } from './lib/tax';
@@ -296,6 +296,42 @@ describe('the Breakpoints panel on the torpedo chart', () => {
       screen.queryByRole('group', { name: /Health insurance breakpoints/ }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Breakpoints/ })).toHaveFocus();
+  });
+
+  /**
+   * The third way out: a Tab that leaves the panel. Nothing traps focus in a
+   * group of two checkboxes, so a reader can Tab straight through it to the
+   * slider under the plot — and the panel closes behind them, the way it
+   * closes behind a click that lands elsewhere, rather than staying open over
+   * the plot they are now moving along. Focus stays where it went: this is
+   * not Escape, and the reader has somewhere to be. A focus that moves
+   * *within* the panel leaves it open, and so does a blur with nowhere to
+   * relate it to — which is what a click on the panel's own legend is, and
+   * `closes on a click outside itself` already lets that stand.
+   */
+  it('closes behind a Tab that leaves it, and stays open while the focus moves within', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
+    openBreakpointsPanel();
+    const irmaa = screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' });
+    const subsidy = screen.getByRole('checkbox', { name: '400% poverty-line cliff' });
+    const panel = () => screen.queryByRole('group', { name: /Health insurance breakpoints/ });
+
+    act(() => irmaa.focus());
+    act(() => subsidy.focus());
+    expect(panel()).toBeInTheDocument();
+
+    fireEvent.focusOut(subsidy, { relatedTarget: null });
+    expect(panel()).toBeInTheDocument();
+
+    const income = screen.getByRole('slider', { name: /other income/i });
+    act(() => income.focus());
+    expect(panel()).not.toBeInTheDocument();
+    expect(income).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Breakpoints/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('closes on a click outside itself, and not on one inside', () => {

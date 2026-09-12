@@ -118,7 +118,7 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
   <>
     <PlotBox label={label} pointer={pointer}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={curve} margin={frame.margin}>
+        <AreaChart data={curve} margin={frame.margin} accessibilityLayer={false}>
           {hatch('rateHatch')}
           {grid()}
           <XAxis
