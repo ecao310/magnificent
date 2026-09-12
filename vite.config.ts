@@ -57,7 +57,7 @@ const CHUNKS = ['react', 'charts'] as const
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/congenial-octo-spork/',
+  base: '/magnificent/',
   build: {
     rollupOptions: {
       output: {

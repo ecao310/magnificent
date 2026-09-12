@@ -3,9 +3,9 @@
 # Deployment section describes both.
 #
 # The two builds differ in one thing. A Pages site lives under
-# /congenial-octo-spork/, so vite.config.ts's `base` says so — and a build
+# /magnificent/, so vite.config.ts's `base` says so — and a build
 # made with that `base` asks a Netlify domain for
-# /congenial-octo-spork/assets/…, which is a 404 for every file but
+# /magnificent/assets/…, which is a 404 for every file but
 # index.html. A Netlify site is the whole domain, so this one is passed
 # `--base=/` on the command line, the same override deploy.yml uses for the
 # /preview/ build, and the link-preview card's absolute URLs are built on

@@ -88,8 +88,8 @@ describe('the link preview', () => {
   /* A crawler fetches the card out of band, with no page to resolve a
      relative path against. So the URLs are absolute, and both halves are
      placeholders vite fills at build time. `%BASE_URL%` is how the path stays
-     right across builds — `/congenial-octo-spork/` in production,
-     `/congenial-octo-spork/preview/` in the preview, so the preview's card is
+     right across builds — `/magnificent/` in production,
+     `/magnificent/preview/` in the preview, so the preview's card is
      its own rather than production's, and `/` on Netlify. `%VITE_SITE_ORIGIN%`
      is how the origin does: the GitHub Pages one from `.env` unless the build
      sets it, which netlify.toml does, to the Netlify domain. */
@@ -318,7 +318,7 @@ describe('the front door', () => {
 
   it('is published by one workflow, from the branches it declares', () => {
     expect(workflowFiles).toEqual(['deploy.yml']);
-    expect(configBase).toBe('/congenial-octo-spork/');
+    expect(configBase).toBe('/magnificent/');
 
     // The `env` values are only what the job publishes if the steps read
     // them: the checkouts by ref, the preview build by `--base=`.
@@ -381,10 +381,10 @@ describe('the front door', () => {
  * has to differ from the first.
  *
  * `the front door` above holds the GitHub Pages deploy, where
- * `vite.config.ts`'s `base` is `/congenial-octo-spork/` because that is where
+ * `vite.config.ts`'s `base` is `/magnificent/` because that is where
  * a Pages site lives. Netlify serves the same build from the root of its own
  * domain, and a build made with that `base` asks it for
- * `/congenial-octo-spork/assets/…` — a 404 for everything but index.html,
+ * `/magnificent/assets/…` — a 404 for everything but index.html,
  * which is an empty page. So netlify.toml builds with `--base=/` on the
  * command line, the same override deploy.yml uses for /preview/, and hands
  * the card Netlify's own `URL` in place of the Pages origin `.env` defaults

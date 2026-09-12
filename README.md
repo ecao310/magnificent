@@ -9,7 +9,7 @@ This is one page that draws that cost across every income level for one
 reader's own return, and marks the stretches worth filling and the ones worth
 stepping around.
 
-**Live:** https://ecao310.github.io/congenial-octo-spork/
+**Live:** https://ecao310.github.io/magnificent/
 
 ## The two steps
 
@@ -187,10 +187,10 @@ pointer.
 The repo has one GitHub Pages site and one workflow that publishes it,
 `.github/workflows/deploy.yml`, which runs on a push to either branch. Every
 push to `main` tests, builds and publishes it at
-https://ecao310.github.io/congenial-octo-spork/
+https://ecao310.github.io/magnificent/
 
 Every push to `dev` publishes a preview nested under it, at
-https://ecao310.github.io/congenial-octo-spork/preview/ .
+https://ecao310.github.io/magnificent/preview/ .
 
 Whichever branch pushed, the run checks out both, builds `main` at the root
 and `dev` under `/preview/`, and publishes the combined tree. It has to: a
@@ -205,7 +205,7 @@ fails the run and nothing is published.
 `main` is also built by Netlify, from `netlify.toml`, and served at the root
 of its own domain: https://magnificent-fi.netlify.app . That build is the
 Pages one with one difference. A Pages site lives under
-`/congenial-octo-spork/`, and `vite.config.ts`'s `base` says so; a Netlify
+`/magnificent/`, and `vite.config.ts`'s `base` says so; a Netlify
 site is the whole domain, so the build there is passed `--base=/` on the
 command line, and the link-preview card is addressed to Netlify's own `URL`
 rather than the GitHub Pages origin that `.env` gives `VITE_SITE_ORIGIN`.
