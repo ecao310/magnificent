@@ -11,7 +11,7 @@ import { defaultTaxYear } from './params';
 import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
 import { agiFor, splitOtherIncome } from './income';
-import { toCents } from './money';
+import { toCents } from '../../../shared/lib/money';
 import { otherIncomeAt } from './solve';
 
 /**

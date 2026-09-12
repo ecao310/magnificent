@@ -1,6 +1,7 @@
 import type { CoverageYear, PtcAssessment, Scenario } from '../lib/aca';
 import type { ChartId } from '../lib/charts';
 import type { AllInAssessment } from '../lib/tax';
+import { NotesSection } from '../../shared/components/NotesSection';
 import { CliffExplainer } from './explainers/CliffExplainer';
 import { CreditExplainer } from './explainers/CreditExplainer';
 import { FloorExplainer } from './explainers/FloorExplainer';
@@ -30,10 +31,6 @@ export interface NotesProps {
  * starts at, and what is not priced. Under the rate chart: how the tax is
  * added, why the premium is on that side of the ledger, and what is not
  * priced on either side.
- *
- * Below the figures rather than beside them: the figures are the answer, and
- * these are the working. Each is numbered by the stylesheet, so a note added
- * or dropped renumbers the rest.
  */
 export const Notes: React.FC<NotesProps> = ({
   chart,
@@ -44,8 +41,7 @@ export const Notes: React.FC<NotesProps> = ({
   runsOutMagi,
   rate,
 }) => (
-  <section className="notes-section" aria-label="Notes">
-    <p className="notes-kicker">Notes</p>
+  <NotesSection>
     {chart === 'cost' ? (
       <>
         <CreditExplainer here={here} year={year} />
@@ -63,5 +59,5 @@ export const Notes: React.FC<NotesProps> = ({
         <LeftOutExplainer tax />
       </>
     )}
-  </section>
+  </NotesSection>
 );

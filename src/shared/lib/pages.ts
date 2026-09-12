@@ -9,12 +9,11 @@
  * the strip in the masthead that moves between them and for the note on
  * each that points at the other.
  *
- * An address is the site's base and then the page's path, never a bare `/`:
- * the same build is served at the root of a Netlify domain and under
- * /magnificent/ on GitHub Pages (and /magnificent/preview/ for the preview
- * branch), and `import.meta.env.BASE_URL` is whichever of those the build
- * was made for. `the pages` in src/guards/pages.test.tsx holds every link
- * to that.
+ * An address is the site's base and then the page's path, never a bare `/`.
+ * The base is `/` for every deploy today, and was `/magnificent/` for the
+ * years the site was on GitHub Pages; `import.meta.env.BASE_URL` is
+ * whichever the build was made for, and no page needs to know. `the pages`
+ * in src/guards/pages.test.tsx holds every link to that.
  */
 export type PageId = 'torpedo' | 'aca';
 

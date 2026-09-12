@@ -2,6 +2,8 @@ import { defaultTaxYear, irmaaFor, irmaaMagi, totalIncomeFor } from '../lib/tax'
 import type { FilingStatus, TaxYear } from '../lib/tax';
 import { formatCurrency } from '../lib/format';
 import { PALETTE } from '../styles/palette';
+import { TooltipCard } from '../../shared/components/TooltipCard';
+import type { TooltipProps } from '../../shared/components/TooltipCard';
 
 interface TooltipPayloadPoint {
   income: number;
@@ -9,9 +11,7 @@ interface TooltipPayloadPoint {
   totalTax: number;
 }
 
-export interface ChartTooltipProps {
-  active?: boolean;
-  payload?: Array<{ payload: TooltipPayloadPoint }>;
+export interface ChartTooltipProps extends TooltipProps<TooltipPayloadPoint> {
   ssBenefit: number;
   filingStatus?: FilingStatus;
   muniInterest?: number;
@@ -76,15 +76,18 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
   // watch fail.
   const totalIncome = totalIncomeFor(scenario);
   return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip-head">
-        Total income {formatCurrency(totalIncome)} · {formatCurrency(ssBenefit)}{' '}
-        SS
-        {muniInterest > 0
-          ? ` + ${formatCurrency(muniInterest)} tax-exempt`
-          : ''}{' '}
-        + {formatCurrency(point.income)} other income
-      </div>
+    <TooltipCard
+      head={
+        <>
+          Total income {formatCurrency(totalIncome)} · {formatCurrency(ssBenefit)}{' '}
+          SS
+          {muniInterest > 0
+            ? ` + ${formatCurrency(muniInterest)} tax-exempt`
+            : ''}{' '}
+          + {formatCurrency(point.income)} other income
+        </>
+      }
+    >
       <div>
         Marginal Rate: <strong style={{ color: PALETTE.accent }}>{point.marginalRate}%</strong>
       </div>
@@ -98,6 +101,6 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
         </strong>
         {irmaa.tier > 0 ? ` (tier ${irmaa.tier} of 5)` : ''}
       </div>
-    </div>
+    </TooltipCard>
   );
 };

@@ -7,8 +7,8 @@
 
   <!-- The favicon is drawn in the page's own two colours; `apple-touch-icon`
        is the same mark rasterised, because iOS will not take an SVG. Both
-       hrefs go through %BASE_URL% rather than a bare `/`, which vite rewrites
-       for the production build and the /preview/ one alike. -->
+       hrefs go through %BASE_URL% rather than a bare `/`, which vite fills in
+       for whatever base the build is made for. -->
   <link rel="icon" type="image/svg+xml" href="%BASE_URL%aca/favicon.svg" />
   <link rel="apple-touch-icon" href="%BASE_URL%aca/apple-touch-icon.png" />
   <meta name="theme-color" content="#f7f3eb" />
@@ -32,10 +32,12 @@
 
   <!-- What the link looks like when it is sent rather than opened. The card
        is deliberately not the reader's own household: this is static files
-       on GitHub Pages, so no server sees the query string. It says what the
-       page is, and the figures stay on the page. Absolute URLs, assembled
-       from the origin plus %BASE_URL% so the preview build under /preview/
-       points at its own copy rather than production's. -->
+       on Netlify, so no server sees the query string. It says what the page
+       is, and the figures stay on the page. Absolute URLs, assembled from
+       %VITE_SITE_ORIGIN% plus %BASE_URL%: the origin is the site's own from
+       .env unless the build sets it, which netlify.toml does for a branch
+       deploy and a deploy preview, so a preview's card is its own rather
+       than production's. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Subsidy Slope" />
   <meta property="og:title" content="How Much Subsidy Does the Next Dollar Cost?" />

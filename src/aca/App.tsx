@@ -18,12 +18,10 @@ import { rateReadoutText } from './lib/rateReadout';
 import { readoutText } from './lib/readout';
 import { useHousehold } from './hooks/useHousehold';
 import type { Moved } from './hooks/useHousehold';
-import { useSettledReading } from '../shared/hooks/useSettledReading';
+import { Page } from '../shared/components/Page';
 import { Answer } from './components/Answer';
 import { ChartChooser } from './components/ChartChooser';
 import { CostStep, NEXT_BLOCK } from './components/CostStep';
-import { FurtherReading } from '../shared/components/FurtherReading';
-import { Header } from '../shared/components/Header';
 import { HouseholdStep } from './components/HouseholdStep';
 import { Notes } from './components/Notes';
 import { RateAnswer } from './components/rate/RateAnswer';
@@ -108,124 +106,111 @@ const App: React.FC = () => {
     }
   })();
 
-  const announcement = useSettledReading(reading);
+  /** The button under the figures that sends the household as a link, whichever chart is showing. */
+  const share = {
+    canCopy: h.address.canCopy,
+    copyState: h.address.copyState,
+    onCopy: h.address.copy,
+    label: 'Copy link',
+    copied: 'Link copied.',
+    failed: 'Couldn’t copy — the address bar holds the same link.',
+  };
 
   return (
-    <div className="card">
-      <a className="skip-link" href={`#${chartFor(chart).section}`}>
-        Skip to the chart
-      </a>
-
-      <Header
-        page="aca"
-        title="The ACA Subsidy Slope"
-        subtitle="On an ACA plan, you pay a set share of your household income and the subsidy pays the rest. When household income reaches 400% of the poverty line, the subsidy ends abruptly (the ACA subsidy cliff)."
-        linkNotes={h.linkNotes}
-        onDismissNotes={h.dismissNotes}
+    <Page
+      page="aca"
+      title="The ACA Subsidy Slope"
+      subtitle="On an ACA plan, you pay a set share of your household income and the subsidy pays the rest. When household income reaches 400% of the poverty line, the subsidy ends abruptly (the ACA subsidy cliff)."
+      linkNotes={h.linkNotes}
+      onDismissNotes={h.dismissNotes}
+      skipTo={chartFor(chart).section}
+      reading={reading}
+      readings={FURTHER_READING}
+      disclaimer="Educational only; not insurance, tax or financial advice. Figures are modelled from published HHS, IRS and CMS numbers and a national- or state-average premium unless you enter your own."
+    >
+      <HouseholdStep
+        year={year}
+        adults={h.adults}
+        onAdults={h.setAdults}
+        age={h.age}
+        onAge={h.setAge}
+        spouseAge={h.spouseAge}
+        onSpouseAge={h.setSpouseAge}
+        dependents={h.dependents}
+        onDependents={h.setDependents}
+        state={h.state}
+        onState={h.setState}
+        benchmarkPremium={h.benchmarkPremium}
+        onBenchmarkPremium={h.setBenchmarkPremium}
       />
 
-      <p className="live-reading" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </p>
+      <div className="flow">
+        <ChartChooser chart={chart} onChart={choose} />
 
-      <main className="shell">
-        <HouseholdStep
-          year={year}
-          adults={h.adults}
-          onAdults={h.setAdults}
-          age={h.age}
-          onAge={h.setAge}
-          spouseAge={h.spouseAge}
-          onSpouseAge={h.setSpouseAge}
-          dependents={h.dependents}
-          onDependents={h.setDependents}
-          state={h.state}
-          onState={h.setState}
-          benchmarkPremium={h.benchmarkPremium}
-          onBenchmarkPremium={h.setBenchmarkPremium}
-        />
+        {chart === 'cost' ? (
+          <>
+            <CostStep
+              scenario={scenario}
+              curve={curve}
+              axisMax={axisMax}
+              income={income}
+              onIncome={h.setIncome}
+              incomeSliderStep={incomeSliderStep}
+              lines={lines}
+              here={here}
+            />
 
-        <div className="flow">
-          <ChartChooser chart={chart} onChart={choose} />
+            <Answer
+              year={year}
+              adults={h.adults}
+              ages={h.ages}
+              state={h.state}
+              income={income}
+              here={here}
+              nextBlock={NEXT_BLOCK}
+              nextBlockCost={nextBlockCost}
+              nextBlockCrossesCliff={nextBlockCrossesCliff}
+              cliffCost={cliffCost}
+              share={share}
+            />
+          </>
+        ) : (
+          <>
+            <RateStep
+              scenario={scenario}
+              curve={rates}
+              axisMax={axisMax}
+              rateAxis={rateAxis}
+              income={income}
+              onIncome={h.setIncome}
+              incomeSliderStep={incomeSliderStep}
+              lines={lines}
+              here={rate}
+            />
 
-          {chart === 'cost' ? (
-            <>
-              <CostStep
-                scenario={scenario}
-                curve={curve}
-                axisMax={axisMax}
-                income={income}
-                onIncome={h.setIncome}
-                incomeSliderStep={incomeSliderStep}
-                lines={lines}
-                here={here}
-              />
+            <RateAnswer
+              year={year}
+              adults={h.adults}
+              ages={h.ages}
+              state={h.state}
+              income={income}
+              here={rate}
+              share={share}
+            />
+          </>
+        )}
+      </div>
 
-              <Answer
-                year={year}
-                adults={h.adults}
-                ages={h.ages}
-                state={h.state}
-                income={income}
-                here={here}
-                nextBlock={NEXT_BLOCK}
-                nextBlockCost={nextBlockCost}
-                nextBlockCrossesCliff={nextBlockCrossesCliff}
-                cliffCost={cliffCost}
-                canCopy={h.address.canCopy}
-                copyState={h.address.copyState}
-                onCopy={h.address.copy}
-              />
-            </>
-          ) : (
-            <>
-              <RateStep
-                scenario={scenario}
-                curve={rates}
-                axisMax={axisMax}
-                rateAxis={rateAxis}
-                income={income}
-                onIncome={h.setIncome}
-                incomeSliderStep={incomeSliderStep}
-                lines={lines}
-                here={rate}
-              />
-
-              <RateAnswer
-                year={year}
-                adults={h.adults}
-                ages={h.ages}
-                state={h.state}
-                income={income}
-                here={rate}
-                canCopy={h.address.canCopy}
-                copyState={h.address.copyState}
-                onCopy={h.address.copy}
-              />
-            </>
-          )}
-        </div>
-
-        <Notes
-          chart={chart}
-          year={year}
-          scenario={scenario}
-          here={here}
-          cliffCost={cliffCost}
-          runsOutMagi={runsOutMagi}
-          rate={rate}
-        />
-      </main>
-
-      <footer>
-        <FurtherReading readings={FURTHER_READING} />
-        <p>
-          Educational only; not insurance, tax or financial advice. Figures are modelled
-          from published HHS, IRS and CMS numbers and a national- or state-average premium
-          unless you enter your own.
-        </p>
-      </footer>
-    </div>
+      <Notes
+        chart={chart}
+        year={year}
+        scenario={scenario}
+        here={here}
+        cliffCost={cliffCost}
+        runsOutMagi={runsOutMagi}
+        rate={rate}
+      />
+    </Page>
   );
 };
 

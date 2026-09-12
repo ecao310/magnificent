@@ -667,15 +667,21 @@ describe('the step flow', () => {
 
   /**
    * The notes are the working, and they sit under the figures rather than
-   * inside the chart's step: a section of their own, last in the main, with
-   * every explainer in it and none left behind in the step.
+   * inside the chart's step: a section of their own, under a heading of its
+   * own, last in the main, with every explainer in it and none left behind
+   * in the step. The heading is the kicker — an `h2`, so each note's `h3`
+   * hangs under it rather than under the figures' heading, and a reader
+   * jumping by heading lands on the notes before the first of them.
    */
   it('keeps the notes in a section of their own, after the figures', () => {
     const { container } = render(<App />);
     const notes = container.querySelector('.notes-section') as HTMLElement;
     expect(notes).not.toBeNull();
     expect(notes.tagName).toBe('SECTION');
-    expect(notes).toHaveAttribute('aria-label', 'Notes');
+    expect(notes).toHaveAccessibleName('Notes');
+    expect(within(notes).getByRole('heading', { name: 'Notes', level: 2 })).toHaveClass(
+      'notes-kicker',
+    );
     expect(notes.previousElementSibling).toHaveClass('flow');
     expect(notes.parentElement).toHaveClass('shell');
     expect(notes.querySelectorAll('.explainer').length).toBeGreaterThan(0);
@@ -1160,5 +1166,29 @@ describe('the year the page prices', () => {
     expect(scenarioRecap()).toHaveTextContent(
       `${PAGE_TAX_YEAR} brackets and standard deduction`,
     );
+  });
+});
+
+/**
+ * A slider's own value is a bare number, and that is how a screen reader
+ * reads it: "24852" for a benefit every other line on the page sets as
+ * $24,852. So each slider says its value the way the readout beside it does.
+ */
+describe('the sliders', () => {
+  it('say their value as the dollar figure beside them', () => {
+    render(<App />);
+    const benefit = screen.getByRole('slider', { name: /social security benefit/i });
+    expect(benefit).toHaveAttribute('aria-valuetext', '$24,852');
+    fireEvent.change(benefit, { target: { value: '30000' } });
+    expect(benefit).toHaveAttribute('aria-valuetext', '$30,000');
+
+    const income = screen.getByRole('slider', { name: /other income/i });
+    fireEvent.change(income, { target: { value: '90000' } });
+    expect(income).toHaveAttribute('aria-valuetext', '$90,000');
+
+    const muni = document.getElementById('muni-interest') as HTMLElement;
+    expect(muni).toHaveAttribute('aria-valuetext', '$0');
+    fireEvent.change(muni, { target: { value: '5000' } });
+    expect(muni).toHaveAttribute('aria-valuetext', '$5,000');
   });
 });

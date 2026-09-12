@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import { GUARDED_PAGES, SITE_SHEET } from './pages';
 import type { GuardedPage } from './pages';
+import { NARROW_MAX_WIDTH } from '../shared/lib/chartFrame';
+import { RAIL_COLLAPSES_AT } from '../shared/lib/layout';
 
 /**
  * A CSS rule that can never match is silent. Nothing throws, nothing warns,
@@ -570,16 +572,18 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
    *
    * The rail folds to a row at the width the columns collapse to one, and the
    * plot takes its narrow frame at the width the phone rules turn on: each is
-   * a `matchMedia` in a component and an `@media` in the sheet, and the two
-   * copies of a number drift the same silent way two copies of a colour do.
+   * a `matchMedia` in a shared component and an `@media` in the sheet, and
+   * the two copies of a number drift the same silent way two copies of a
+   * colour do. Both numbers are the site's, so both are asked of each page's
+   * whole sheet.
    */
   describe('the fold', () => {
     it('happens at the width the stylesheet collapses the columns', () => {
-      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${page.RAIL_COLLAPSES_AT}px\\)`));
+      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${RAIL_COLLAPSES_AT}px\\)`));
     });
 
     it('narrows the plot at the width the stylesheet turns its phone rules on', () => {
-      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${page.NARROW_MAX_WIDTH}px\\)`));
+      expect(sheet.screen).toMatch(new RegExp(`@media \\(max-width: ${NARROW_MAX_WIDTH}px\\)`));
     });
   });
 
@@ -725,7 +729,7 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
       expect(pinned.length).toBeGreaterThan(0);
 
       const released = leafRules(
-        mediaBlocks(sheet.all, `@media (max-width: ${page.RAIL_COLLAPSES_AT}px)`),
+        mediaBlocks(sheet.all, `@media (max-width: ${RAIL_COLLAPSES_AT}px)`),
       )
         .filter((rule) => /position:\s*static/.test(rule.body))
         .flatMap((rule) => rule.selectors);
@@ -799,6 +803,29 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
 
       const focused = Number(/z-index:\s*(\d+)/.exec(rule('.skip-link:focus')?.body ?? '')?.[1]);
       expect(focused).toBe(Math.max(...layers));
+    });
+  });
+
+  /**
+   * Two regions wait empty for a message: the reading, and the line under the
+   * copy button. Neither may be `display: none` while it waits — that takes a
+   * region out of the accessibility tree, and a message that lands as it comes
+   * back in is not read out reliably — and neither may be `visibility:
+   * hidden`, which does the same. Clipped to a pixel, or collapsed to no
+   * width, is how a region stays in the tree and off the page.
+   */
+  describe('the live regions', () => {
+    it('are never hidden outright while they wait empty', () => {
+      const waiting = leafRules(sheet.screen).filter((rule) =>
+        rule.selectors.some((selector) => /live-reading|answer-share-status/.test(selector)),
+      );
+      // Guards the extractor itself: an empty list would pass vacuously.
+      expect(waiting.length).toBeGreaterThan(1);
+
+      const hidden = waiting
+        .filter((rule) => /display:\s*none|visibility:\s*hidden/.test(rule.body))
+        .flatMap((rule) => rule.selectors);
+      expect(hidden).toEqual([]);
     });
   });
 

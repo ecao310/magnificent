@@ -4,12 +4,12 @@ Two pages, one question: what one more dollar of income actually costs, for
 the reader's own household — which is often nothing like the bracket it lands
 in.
 
-**Live:** https://ecao310.github.io/magnificent/
+**Live:** https://magnificent-fi.netlify.app/
 
 | Page | What it prices | Where |
 | --- | --- | --- |
-| **How Much Can You Take Out This Year?** — the Tax Torpedo | One more dollar out of an IRA can drag Social Security into the tax base behind it: 12% becomes 22.2% and 22% becomes 40.7%, and then the curve falls back down again. The marginal rate on the next dollar of retirement income, across every income level, for one reader's own return. | https://ecao310.github.io/magnificent/ |
-| **How Much Subsidy Does the Next Dollar Cost?** — the ACA Subsidy Slope | A Marketplace household pays a set share of its income for the benchmark plan and the subsidy pays the rest, so every extra dollar gives some of it back — about 17 cents mid-table for a couple, and the whole subsidy at once at 400% of the poverty line. What you pay at every income, and the premium and income tax drawn as one rate. | https://ecao310.github.io/magnificent/aca/ |
+| **How Much Can You Take Out This Year?** — the Tax Torpedo | One more dollar out of an IRA can drag Social Security into the tax base behind it: 12% becomes 22.2% and 22% becomes 40.7%, and then the curve falls back down again. The marginal rate on the next dollar of retirement income, across every income level, for one reader's own return. | https://magnificent-fi.netlify.app/ |
+| **How Much Subsidy Does the Next Dollar Cost?** — the ACA Subsidy Slope | A Marketplace household pays a set share of its income for the benchmark plan and the subsidy pays the rest, so every extra dollar gives some of it back — about 17 cents mid-table for a couple, and the whole subsidy at once at 400% of the poverty line. What you pay at every income, and the premium and income tax drawn as one rate. | https://magnificent-fi.netlify.app/aca/ |
 
 The two pages are two HTML entries of one Vite build, and share a shell:
 the masthead, the two-column layout with a household in a column that stays
@@ -209,11 +209,11 @@ stands under the marker. Under each page's footer rule, one more note,
 closed like the rest: the page's own reading list, and then the disclaimer.
 
 The strip in the masthead and the two notes that link across are built on
-the base the build was made for — `/` on Netlify, `/magnificent/` on GitHub
-Pages — never on a bare `/`. `src/guards/pages.test.tsx` renders both pages
-and holds every rooted link to that, and decodes each cross-link with the
-other page's own decoder, so a key one page writes for the other cannot
-drift.
+the base the build was made for — `/` today, `/magnificent/` for the years
+the site was on GitHub Pages — never on a bare `/`. `src/guards/pages.test.tsx`
+renders both pages and holds every rooted link to that, and decodes each
+cross-link with the other page's own decoder, so a key one page writes for
+the other cannot drift.
 
 ### The cards
 
@@ -227,7 +227,9 @@ the page.
 The curve on each card is the real one. `scripts/og-cover.mjs` bundles
 `marginalRateCurve` out of `src/torpedo/lib`, and `scripts/og-cover-aca.mjs`
 bundles `costCurve` out of `src/aca/lib`; each samples it for the scenario
-its page opens on and rasterises the result:
+its page opens on, draws its plot inside the frame `scripts/card.mjs` holds
+— the kicker and the rule, the headline, the hook at the right, the site's
+faces and tokens — and rasterises the result:
 
 ```bash
 node scripts/og-cover.mjs       # rewrites public/og-cover.png and public/apple-touch-icon.png
@@ -247,7 +249,7 @@ the description quotes is no longer the rate the arithmetic reaches.
 
 ```bash
 npm install
-npm run dev      # start dev server: /magnificent/ and /magnificent/aca/
+npm run dev      # start dev server: / and /aca/
 npm run test     # vitest: both pages' suites and the guards
 npm run lint     # eslint
 npm run build    # tsc -b && vite build
@@ -258,14 +260,14 @@ npm run build    # tsc -b && vite build
 | Path | What it is |
 | --- | --- |
 | `index.html`, `aca/index.html` | The two entries, one per page, each with its own card. |
-| `src/shared/` | What the pages share: the masthead and the strip between the pages, the reading list, the copy button, the address-bar hook, the plot as a cursor, the frame every plot is drawn in, whole dollars, and `styles/site.css`. |
+| `src/shared/` | What the pages share. `components/`: the page shell (`Page`), the masthead and the strip between the pages, the rail and its fold, the figures and one figure, the notes section and one note, the hover reading's card, the plot's box and the marks every plot draws, the reading list, the copy button. `hooks/`: the address bar, the plot as a cursor and what a plot asks the window, the live reading's settle. `lib/`: the frame every plot is drawn in and how its axis is drawn, the fold's width, whole dollars and whole cents, the pages' addresses, how a page mounts. `styles/`: `site.css` and the palette every chart paints with. |
 | `src/torpedo/` | The Tax Torpedo: `App.tsx`, its rail, chart, figures, notes and explainers under `components/`, its engine under `lib/tax/`, the return in the address bar in `lib/scenarioUrl.ts`, its hues and gutter in `styles/`, and its page suites beside `App.tsx`. |
 | `src/aca/` | The ACA Subsidy Slope: the same shape — `App.tsx`, the household in `hooks/useHousehold.ts`, the cost and rate charts under `components/`, the subsidy under `lib/aca/`, the return under `lib/tax/`, the two charts and the fragment that chooses one in `lib/charts.ts`, its gutter in `styles/`, and its page suites. |
 | `src/guards/` | The suites that hold down what no other test reads, each run once per page: the build's chunking and entries, the link previews and this README, the rendered prose, the stylesheets, the pages and the links between them, the reading lists. `pages.ts` is the table they iterate. |
-| `src/test/` | Test setup. Each page keeps its own fixtures under `src/<page>/test/`. |
+| `src/test/` | Test setup, and the fixtures both pages' suites build on: the stopped clock, a strip's radio, a slider. Each page keeps its own under `src/<page>/test/`. |
 | `docs/` | The published figures each engine is checked against, and their sources. |
 | `public/`, `public/aca/` | Each page's favicon, touch icon and link-preview card. |
-| `scripts/` | Redraws each card from its page's own arithmetic. Run by hand; see above. |
+| `scripts/` | Redraws each card from its page's own arithmetic, on the frame, faces and tokens in `card.mjs`. Run by hand; see above. |
 
 Tests sit beside what they test: `src/torpedo/lib/tax/irmaa.test.ts` next to
 `irmaa.ts`, and each page's `App.*.test.tsx` suites next to its `App.tsx`,
@@ -273,47 +275,53 @@ each rendering the whole page and asking about one subject.
 
 ## Deployment
 
-The repo has one GitHub Pages site and one workflow that publishes it,
-`.github/workflows/deploy.yml`, which runs on a push to either branch. Every
-push to `main` tests, builds and publishes both pages, at
+Netlify builds and serves the site, from `netlify.toml`. Every push to `main`
+tests, builds and publishes both pages, at
+https://magnificent-fi.netlify.app/ and
+https://magnificent-fi.netlify.app/aca/ .
+
+Every push to `dev` publishes a branch deploy of both, at
+https://dev--magnificent-fi.netlify.app/ and
+https://dev--magnificent-fi.netlify.app/aca/ , and every pull request a
+deploy preview at `deploy-preview-<number>--magnificent-fi.netlify.app`.
+Each is a whole site at the root of its own address, so `dev` never needs
+to be merged to be seen, and nothing about a preview is a path under
+production. Tests run before every build, so a branch that fails them
+publishes nowhere. Which branches Netlify builds is set in its dashboard,
+which nothing in the repo can read.
+
+The build is `vite.config.ts`'s, at its own `base` of `/`. What differs by
+deploy is the origin each page's link-preview card is addressed to:
+production's is Netlify's own `URL`, the primary domain, and a branch
+deploy's or a deploy preview's is its `DEPLOY_PRIME_URL`, so a preview's
+card is its own rather than production's. `.env` gives `VITE_SITE_ORIGIN`
+the production origin for any build that does not set it. The one header
+the file sets is for `/assets/`, where every file Vite emits carries a
+content hash in its name: kept a year, immutable, so a returning reader
+downloads the chunk that changed and nothing else. Everything else, the
+pages and the cards included, is served with Netlify's default and
+revalidated on every visit, so a deploy is seen at once. `the Netlify
+build` in `src/guards/meta.test.ts` reads `netlify.toml` and holds it to
+all of that.
+
+Until September 2026 the site was GitHub Pages, at
 https://ecao310.github.io/magnificent/ and
-https://ecao310.github.io/magnificent/aca/ .
-
-Every push to `dev` publishes a preview nested under it, at
+https://ecao310.github.io/magnificent/aca/ , with `dev` under
 https://ecao310.github.io/magnificent/preview/ and
-https://ecao310.github.io/magnificent/preview/aca/ .
+https://ecao310.github.io/magnificent/preview/aca/ . Those four addresses
+now forward: `.github/workflows/deploy.yml` publishes `pages/`, four files
+that each send the reader on to the same page here, query string and all,
+because a link shared from the close's copy button carries the reader's
+whole return in it. Nothing is built there any more.
 
-Whichever branch pushed, the run checks out both, builds `main` at the root
-and `dev` under `/preview/`, and publishes the combined tree. It has to: a
-Pages deploy replaces the whole site, and when each branch had a workflow of
-its own, every push to `main` took the preview down until `dev` was next
-pushed. The production URL therefore always serves `main`, and `dev` never
-needs to be merged to be seen. A broken `dev` does not hold `main` back —
-pushed from `main`, a preview that fails its tests or build is logged and
-production ships without it; pushed from `dev`, it fails the run and nothing
-is published.
-
-`main` is also built by Netlify, from `netlify.toml`, and served at the root
-of its own domain: https://magnificent-fi.netlify.app , with the Subsidy
-Slope at `/aca/` under it. That build is the Pages one with one difference.
-A Pages site lives under `/magnificent/`, and `vite.config.ts`'s `base` says
-so; a Netlify site is the whole domain, so the build there is passed
-`--base=/` on the command line, and each page's link-preview card is
-addressed to Netlify's own `URL` rather than the GitHub Pages origin that
-`.env` gives `VITE_SITE_ORIGIN`. Tests run first there too, so a `main` that
-fails them publishes nowhere. `the Netlify build` in
-`src/guards/meta.test.ts` reads `netlify.toml` and holds it to that. What the
-file cannot say — which branches Netlify builds, and whether the site is
-public — lives in its dashboard.
-
-`the front door` in `src/guards/meta.test.ts` holds this section to that
-file: it reads each "push to `branch`" sentence above and the URLs it gives,
-the branches the workflow fires on and the branch→base pairs its `env`
-declares, and fails if any of them stop agreeing — if a page goes unnamed
-under a branch, or if **Live:** at the top names a URL no branch here
-publishes. What it cannot see is which branch is ahead of which: moving the
-front door is a README edit, and noticing that nobody made it is still a
-human job.
+`the front door` in `src/guards/meta.test.ts` holds this section to those
+files: it reads each "push to" sentence above and the URL it gives, and
+holds `main` to the site's own origin and any other branch to its
+branch-deploy address; it reads each Pages URL named here and holds
+`pages/` to forwarding it to an address a branch publishes; and it fails
+if **Live:** at the top names a URL no branch here publishes. What it
+cannot see is which branch is ahead of which: moving the front door is a
+README edit, and noticing that nobody made it is still a human job.
 
 ---
 

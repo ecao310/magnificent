@@ -1,6 +1,7 @@
 import { IRMAA_LOOKBACK_YEARS, irmaaMagiYear } from '../../lib/tax';
 import type { TaxYear } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface IrmaaExplainerProps {
   /** The jump at the first cliff this return can reach, in dollars a year. */
@@ -17,11 +18,7 @@ export const IrmaaExplainer: React.FC<IrmaaExplainerProps> = ({
   muniInterest,
   year,
 }) => (
-  <details className="explainer">
-    <summary>
-      <h3 id="irmaa-cliffs-heading">Medicare&apos;s IRMAA cliffs</h3>
-    </summary>
-    <div className="explainer-content">
+  <Explainer id="irmaa-cliffs-heading" title={<>Medicare&apos;s IRMAA cliffs</>}>
       <p>
         Above a MAGI threshold, Medicare adds an{' '}
         <strong>income-related monthly adjustment amount</strong> to the
@@ -63,6 +60,5 @@ export const IrmaaExplainer: React.FC<IrmaaExplainerProps> = ({
         The surcharge never appears on a tax return, so nothing about the filing reveals that one
         dollar of income cost {formatCurrency(firstCliffStep)}.
       </p>
-    </div>
-  </details>
+    </Explainer>
 );

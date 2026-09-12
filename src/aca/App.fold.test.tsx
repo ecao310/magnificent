@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
-import { RAIL_COLLAPSES_AT } from './components/HouseholdStep';
+import { RAIL_COLLAPSES_AT } from '../shared/lib/layout';
 import { formatCurrency } from './lib/format';
 import { chooseAdults, chooseChildren, chooseState, money, pinPageYear, premiumField } from './test/pageFixtures';
 

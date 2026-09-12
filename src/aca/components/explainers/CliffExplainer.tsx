@@ -2,6 +2,7 @@ import { PTC_CLIFF_PERCENT, applicablePercentage, fplGuidelineYear } from '../..
 import type { CoverageYear, PtcAssessment } from '../../lib/aca';
 import { formatCurrency, formatFpl } from '../../lib/format';
 import { householdProse } from '../../lib/householdProse';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface CliffExplainerProps {
   here: PtcAssessment;
@@ -45,11 +46,7 @@ export const CliffExplainer: React.FC<CliffExplainerProps> = ({
               Math.round(here.headroom),
             )} away, costs nothing to cross.`;
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="cliff-heading">The {PTC_CLIFF_PERCENT * 100}% cliff, back since 2026</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="cliff-heading" title={<>The {PTC_CLIFF_PERCENT * 100}% cliff, back since 2026</>}>
         <p>
           The subsidy goes to a household with income from 100% to 400% of the poverty line.
           Past 400% it is not smaller &mdash; it is gone. For{' '}
@@ -90,7 +87,6 @@ export const CliffExplainer: React.FC<CliffExplainerProps> = ({
           <strong>The poverty line runs a year behind.</strong> {year} coverage uses the{' '}
           {fplGuidelineYear(year)} guidelines, the ones in force when open enrollment began.
         </p>
-      </div>
-    </details>
+      </Explainer>
   );
 };

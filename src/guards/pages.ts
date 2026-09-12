@@ -1,11 +1,8 @@
 import type { ComponentType } from 'react';
-import { NARROW_MAX_WIDTH } from '../shared/lib/chartFrame';
 import { fireEvent, screen } from '@testing-library/react';
 import TorpedoApp from '../torpedo/App';
-import { RAIL_COLLAPSES_AT as TORPEDO_RAIL_COLLAPSES_AT } from '../torpedo/components/BenefitStep';
 import { CHART as TORPEDO_CHART, PALETTE as TORPEDO_PALETTE } from '../torpedo/styles/palette';
 import AcaApp from '../aca/App';
-import { RAIL_COLLAPSES_AT as ACA_RAIL_COLLAPSES_AT } from '../aca/components/HouseholdStep';
 import { CHART as ACA_CHART, PALETTE as ACA_PALETTE } from '../aca/styles/palette';
 
 /**
@@ -37,8 +34,6 @@ export interface GuardedPage {
   App: ComponentType;
   PALETTE: Record<string, string>;
   CHART: { axis: number; axisNarrow?: number; label: number };
-  RAIL_COLLAPSES_AT: number;
-  NARROW_MAX_WIDTH: number;
   /**
    * The selectors under the plot whose text is set at `CHART.label`, if any
    * are set in CSS rather than in the SVG.
@@ -55,6 +50,9 @@ export interface GuardedPage {
 /** The stylesheet both pages begin with. */
 export const SITE_SHEET = 'src/shared/styles/site.css';
 
+/** The frame, the faces and the tokens both link-preview cards are drawn on. */
+export const SITE_CARD = 'scripts/card.mjs';
+
 export const GUARDED_PAGES: readonly GuardedPage[] = [
   {
     id: 'torpedo',
@@ -68,8 +66,6 @@ export const GUARDED_PAGES: readonly GuardedPage[] = [
     App: TorpedoApp,
     PALETTE: TORPEDO_PALETTE,
     CHART: TORPEDO_CHART,
-    RAIL_COLLAPSES_AT: TORPEDO_RAIL_COLLAPSES_AT,
-    NARROW_MAX_WIDTH,
     chartNotes: ['.chart-axis-label'],
   },
   {
@@ -84,8 +80,6 @@ export const GUARDED_PAGES: readonly GuardedPage[] = [
     App: AcaApp,
     PALETTE: ACA_PALETTE,
     CHART: ACA_CHART,
-    RAIL_COLLAPSES_AT: ACA_RAIL_COLLAPSES_AT,
-    NARROW_MAX_WIDTH,
     chartNotes: [],
     reveal: () => fireEvent.click(screen.getByRole('radio', { name: 'Your effective rate' })),
   },

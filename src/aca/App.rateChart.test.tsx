@@ -127,3 +127,16 @@ describe('the rate tooltip', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+/** As `the plot` in App.chart.test.tsx: one image, with no tab stop inside it. */
+describe('the plot', () => {
+  it('holds nothing a Tab can land on', () => {
+    renderRate();
+    expect(plot().querySelector('svg')).not.toBeNull();
+    expect(
+      marks('[tabindex]:not([tabindex="-1"]), [role="application"], a[href], button, input, select, textarea').map(
+        (el) => `${el.tagName.toLowerCase()} tabindex=${el.getAttribute('tabindex')} role=${el.getAttribute('role')}`,
+      ),
+    ).toEqual([]);
+  });
+});

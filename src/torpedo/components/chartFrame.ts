@@ -6,11 +6,15 @@ import type { Frame } from '../../shared/lib/chartFrame';
  * takes and the margins around the plot. The chart's caption is HTML under
  * the plot rather than an axis title inside it, so there is no title for a
  * frame to carry or drop. The width the narrow frame turns on at, where a
- * hover means something, and the pointer arithmetic are the site's, and are
- * re-exported here so a chart imports from one place.
+ * hover means something, how the axis and a hover are drawn, and the
+ * pointer arithmetic are the site's, and are re-exported here so a chart
+ * imports from one place.
  */
 export type { Frame };
 export {
+  AXIS_PROPS,
+  HOVER_CURSOR,
+  HOVER_DOT,
   HOVER_QUERY,
   NARROW_MAX_WIDTH,
   NARROW_QUERY,

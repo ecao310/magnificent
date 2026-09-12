@@ -161,3 +161,27 @@ describe('the hover', () => {
     expect(document.querySelector('.chart-tooltip')).toBeNull();
   });
 });
+
+/**
+ * The plot is one image to a screen reader — `role="img"`, named by the
+ * sentence that describes the axis end to end — and an image has no children
+ * a reader can reach. recharts would put a tab stop inside it anyway: its
+ * own accessibility layer gives the SVG a `tabindex="0"` and a role the
+ * `img` around it then hides, so a Tab that landed there landed on nothing a
+ * reader could hear. The slider under the plot is the keyboard's way along
+ * the axis, and the plot holds nothing in the tab order. The `tabindex="-1"`
+ * recharts still writes on the layers it stacks the plot in is the same
+ * selector's exception the skip-link suite makes: a pointer can focus one,
+ * and a Tab never reaches it.
+ */
+describe('the plot', () => {
+  it('holds nothing a Tab can land on', () => {
+    render(<App />);
+    expect(plot().querySelector('svg')).not.toBeNull();
+    expect(
+      marks('[tabindex]:not([tabindex="-1"]), [role="application"], a[href], button, input, select, textarea').map(
+        (el) => `${el.tagName.toLowerCase()} tabindex=${el.getAttribute('tabindex')} role=${el.getAttribute('role')}`,
+      ),
+    ).toEqual([]);
+  });
+});

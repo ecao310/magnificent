@@ -5,6 +5,7 @@ import {
 } from '../../lib/tax';
 import type { FilingStatus } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
+import { Explainer } from '../../../shared/components/Explainer';
 
 /** What the torpedo is, and why the thresholds that make it never move. */
 export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
@@ -13,11 +14,7 @@ export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
   // Never read off the tax year: IRC 86(c) has never been indexed. See SS_BASES.
   const { ssBase50, ssBase85 } = SS_BASES[filingStatus];
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="tax-torpedo-heading">What is the tax torpedo?</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="tax-torpedo-heading" title="What is the tax torpedo?">
         <p>
           Social Security benefits are not taxed dollar-for-dollar. The taxable
           share depends on <strong>provisional income</strong> (100% of other income
@@ -59,7 +56,6 @@ export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
           So a retirement that has not changed at all in real terms sits
           further past the same line every year.
         </p>
-      </div>
-    </details>
+      </Explainer>
   );
 };

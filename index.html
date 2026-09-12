@@ -7,8 +7,8 @@
 
   <!-- The favicon is drawn in the page's own two colours; `apple-touch-icon`
        is the same mark rasterised, because iOS will not take an SVG. Both
-       hrefs go through %BASE_URL% rather than a bare `/`, which vite rewrites
-       for the production build and the /preview/ one alike. -->
+       hrefs go through %BASE_URL% rather than a bare `/`, which vite fills in
+       for whatever base the build is made for. -->
   <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
   <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
   <meta name="theme-color" content="#f7f3eb" />
@@ -40,18 +40,17 @@
        `?filing=mfj&income=90000` with nothing saying what it showed.
 
        The card is deliberately *not* the reader's own scenario. This page is
-       static files, on GitHub Pages and on Netlify: no server sees the query
-       string, so no
+       static files on Netlify: no server sees the query string, so no
        preview can be rendered from it, and a card that quoted figures would
        be quoting the default's figures at everyone who shared a link. So it
        says what the page is, and the figures stay on the page.
 
        Absolute URLs, because a crawler will not resolve a relative og:image —
        assembled from %VITE_SITE_ORIGIN% plus %BASE_URL%, both filled in by
-       vite at build time. The base is what makes the preview build under
-       /preview/ point at its own copy rather than production's; the origin is
-       the GitHub Pages one .env declares unless the build sets it, which
-       netlify.toml does, to the Netlify domain. -->
+       vite at build time. The origin is the site's own, from .env, unless the
+       build sets it, which netlify.toml does for a branch deploy and a deploy
+       preview, to the deploy's own address, so a preview's card is its own
+       rather than production's. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Tax Torpedo" />
   <meta property="og:title" content="How Much Can You Take Out This Year?" />

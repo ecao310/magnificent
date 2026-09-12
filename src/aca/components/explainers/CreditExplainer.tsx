@@ -2,6 +2,7 @@ import { FPL_YEAR_PARAMS, PTC_CLIFF_PERCENT } from '../../lib/aca';
 import type { CoverageYear, PtcAssessment } from '../../lib/aca';
 import { formatCurrency, formatFpl, formatPercent } from '../../lib/format';
 import { householdProse } from '../../lib/householdProse';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface CreditExplainerProps {
   here: PtcAssessment;
@@ -13,11 +14,7 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here, year }) 
   const { table } = FPL_YEAR_PARAMS[year];
   const bands = table.filter((band) => Number.isFinite(band.to) || band.from < PTC_CLIFF_PERCENT);
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="credit-heading">How the subsidy is figured</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="credit-heading" title="How the subsidy is figured">
         <p>
           For ACA plans, you pay a percentage of your income as your premium, and a subsidy pays the rest.
           Your share is determined by a table based on your income as a percentage of the federal poverty line.
@@ -71,7 +68,6 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here, year }) 
           if the extra income carried you over the 400% line, the whole year&rsquo;s
           advance. Update your estimate on the Marketplace when your income changes.
         </p>
-      </div>
-    </details>
+      </Explainer>
   );
 };

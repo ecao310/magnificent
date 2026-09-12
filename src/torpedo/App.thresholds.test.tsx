@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from './App';
 import { ChartTooltip } from './components/ChartTooltip';
 import { PAGE_TAX_YEAR } from './lib/tax';
-import { pinPageYear, AVG_ANNUAL_SS_BENEFIT } from './test/pageFixtures';
+import { pinPageYear, AVG_ANNUAL_SS_BENEFIT, slide } from './test/pageFixtures';
 
 /**
  * The two threshold lines the chart can draw, the panel that switches them on,
@@ -296,6 +296,42 @@ describe('the Breakpoints panel on the torpedo chart', () => {
       screen.queryByRole('group', { name: /Health insurance breakpoints/ }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Breakpoints/ })).toHaveFocus();
+  });
+
+  /**
+   * The third way out: a Tab that leaves the panel. Nothing traps focus in a
+   * group of two checkboxes, so a reader can Tab straight through it to the
+   * slider under the plot — and the panel closes behind them, the way it
+   * closes behind a click that lands elsewhere, rather than staying open over
+   * the plot they are now moving along. Focus stays where it went: this is
+   * not Escape, and the reader has somewhere to be. A focus that moves
+   * *within* the panel leaves it open, and so does a blur with nowhere to
+   * relate it to — which is what a click on the panel's own legend is, and
+   * `closes on a click outside itself` already lets that stand.
+   */
+  it('closes behind a Tab that leaves it, and stays open while the focus moves within', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
+    openBreakpointsPanel();
+    const irmaa = screen.getByRole('checkbox', { name: 'Medicare IRMAA cliffs' });
+    const subsidy = screen.getByRole('checkbox', { name: '400% poverty-line cliff' });
+    const panel = () => screen.queryByRole('group', { name: /Health insurance breakpoints/ });
+
+    act(() => irmaa.focus());
+    act(() => subsidy.focus());
+    expect(panel()).toBeInTheDocument();
+
+    fireEvent.focusOut(subsidy, { relatedTarget: null });
+    expect(panel()).toBeInTheDocument();
+
+    const income = screen.getByRole('slider', { name: /other income/i });
+    act(() => income.focus());
+    expect(panel()).not.toBeInTheDocument();
+    expect(income).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Breakpoints/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('closes on a click outside itself, and not on one inside', () => {
@@ -628,10 +664,6 @@ describe('the axis, taken apart', () => {
       .getByRole('img', { name: /^Chart: the marginal tax rate/ })
       .getAttribute('aria-label')!;
 
-  const setSlider = (name: RegExp, value: string): void => {
-    fireEvent.change(screen.getByRole('slider', { name }), { target: { value } });
-  };
-
   it('adds up on the return the page opens with', () => {
     render(<App />);
     // from, to, the benefit, the $0 the other-income range starts at, the edge
@@ -651,7 +683,7 @@ describe('the axis, taken apart', () => {
     render(<App />);
     // Start narrow — under 65 — and widen by claiming the deduction.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
-    setSlider(/tax-exempt \(municipal\) interest/i, '3750');
+    slide(/tax-exempt \(municipal\) interest/i, 3750);
     const [, toBefore, , , , edgeBefore] = dollars(chartLabel());
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Age 65 or older' }));
@@ -670,7 +702,7 @@ describe('the axis, taken apart', () => {
    */
   it('names both fixed halves to a screen reader, and still adds up', () => {
     render(<App />);
-    setSlider(/tax-exempt \(municipal\) interest/i, '3750');
+    slide(/tax-exempt \(municipal\) interest/i, 3750);
     expect(chartLabel()).toContain(
       'a fixed $24,852 of Social Security and $3,750 of municipal interest',
     );

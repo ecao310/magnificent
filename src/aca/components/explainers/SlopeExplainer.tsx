@@ -1,6 +1,7 @@
 import { FPL_YEAR_PARAMS } from '../../lib/aca';
 import type { CoverageYear, PtcAssessment } from '../../lib/aca';
 import { formatCents, formatCurrency, formatFpl, formatPercent } from '../../lib/format';
+import { Explainer } from '../../../shared/components/Explainer';
 
 export interface SlopeExplainerProps {
   here: PtcAssessment;
@@ -16,11 +17,7 @@ export const SlopeExplainer: React.FC<SlopeExplainerProps> = ({ here, year }) =>
   const fromRise = width > 0 ? (here.magi * rise) / width : 0;
   const onSlope = !here.belowFloor && !here.overCliff && here.credit > 0;
   return (
-    <details className="explainer">
-      <summary>
-        <h3 id="slope-heading">The slope: why 8% of income costs 17% of the next dollar</h3>
-      </summary>
-      <div className="explainer-content">
+    <Explainer id="slope-heading" title="The slope: why 8% of income costs 17% of the next dollar">
         <p>
           When your income rises by a dollar, two things move. You are a dollar further up
           the band, so your <strong>share</strong> is a little higher &mdash; and that share
@@ -57,7 +54,6 @@ export const SlopeExplainer: React.FC<SlopeExplainerProps> = ({ here, year }) =>
                 : 'Your share already covers the full premium, so there is no subsidy left to lose.'}
           </p>
         )}
-      </div>
-    </details>
+      </Explainer>
   );
 };

@@ -1,3 +1,4 @@
+import { Explainer } from '../../../shared/components/Explainer';
 /**
  * What to do about it, in three bullets and a caveat.
  *
@@ -6,11 +7,7 @@
  * this reader is standing, so nothing in it moves when a slider does.
  */
 export const MitigationExplainer: React.FC = () => (
-  <details className="explainer">
-    <summary>
-      <h3 id="torpedo-strategies-heading">How to mitigate the tax torpedo</h3>
-    </summary>
-    <div className="explainer-content">
+  <Explainer id="torpedo-strategies-heading" title="How to mitigate the tax torpedo">
       <ul>
         <li>
           <strong>Spend from Roth accounts.</strong> Qualified withdrawals
@@ -35,6 +32,5 @@ export const MitigationExplainer: React.FC = () => (
         surcharges, and more. The goal itself is concrete: keep
         provisional income out of the spike, or jump clean over it.
       </p>
-    </div>
-  </details>
+    </Explainer>
 );

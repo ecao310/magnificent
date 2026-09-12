@@ -1,7 +1,6 @@
 import {
   Area,
   AreaChart,
-  CartesianGrid,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -18,57 +17,11 @@ import type {
 } from '../lib/tax';
 import { formatCompact } from '../lib/format';
 import { CHART, PALETTE } from '../styles/palette';
-import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
-import { usePlotPointer } from '../../shared/hooks/usePlotPointer';
-import { HOVER_QUERY, NARROW_QUERY, frameFor } from './chartFrame';
+import { usePlot } from '../../shared/hooks/usePlot';
+import { PlotBox } from '../../shared/components/PlotBox';
+import { grid, hatch } from '../../shared/components/marks';
+import { AXIS_PROPS, HOVER_CURSOR, HOVER_DOT, frameFor } from './chartFrame';
 import { ChartTooltip } from './ChartTooltip';
-
-/**
- * How the axis is drawn, in one object rather than two copies.
- *
- * Three tiers, each spending a token the stylesheet already declares: the
- * frame is `--edge-strong`, the mesh behind it is `--edge`, and the words are
- * `--ink-muted`. recharts defaults a tick label's `fill` to the axis's own
- * `stroke`, which is what made the axis line and its labels the same colour
- * before — an axis line as bright as its numbers, in a register whose whole
- * point is that chrome is quieter than content.
- *
- * `tickLine` is off because the grid already says where a tick is, and
- * `fontSize` is set on the axis rather than only on `tick` because recharts
- * measures label widths with it when it decides how many ticks fit.
- */
-const AXIS_PROPS = {
-  stroke: PALETTE.edgeStrong,
-  strokeWidth: CHART.hairline,
-  fontSize: CHART.label,
-  tickLine: false,
-  tick: { fill: PALETTE.inkMuted },
-} as const;
-
-/**
- * What a hover draws: the rule that follows the pointer down the plot, and
- * the dot it puts on the curve.
- *
- * The one part of the chart no test here can read back, because recharts
- * decides a hover from `getBoundingClientRect` and jsdom reports every box as
- * zero — so this is the one place the register is held by having been looked
- * at rather than by an assertion. Both were recharts' own defaults until now,
- * which is to say `#ccc` and `#fff`: two colours nothing else declares, and
- * the brightest things on a plot whose whole point is that chrome is quieter
- * than content.
- *
- * The dot's ring is the ground rather than a colour, so it reads as the curve
- * being cut away from under the dot rather than as a second mark on top of it.
- */
-const HOVER_CURSOR = {
-  stroke: PALETTE.inkMuted,
-  strokeWidth: CHART.hairline,
-} as const;
-
-const HOVER_DOT = {
-  stroke: PALETTE.surface,
-  strokeWidth: CHART.rule,
-} as const;
 
 /**
  * The dashed vertical marking the reader's own place on the chart.
@@ -159,53 +112,15 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
   beneficiaries,
   year,
 }) => {
-  const narrow = useMediaQuery(NARROW_QUERY);
-  const frame = frameFor(narrow);
-  const hoverable = useMediaQuery(HOVER_QUERY, true);
-  const pointer = usePlotPointer({ axisMax, step: incomeStep, frame, onIncome });
+  const { frame, hoverable, pointer } = usePlot({ axisMax, step: incomeStep, onIncome, frameFor });
 
   return (
   <>
-    <div
-      className="chart-container"
-      role="img"
-      aria-label={label}
-      ref={pointer.ref}
-      onPointerDown={pointer.onPointerDown}
-      onPointerMove={pointer.onPointerMove}
-      onPointerUp={pointer.onPointerUp}
-      onPointerCancel={pointer.onPointerCancel}
-    >
+    <PlotBox label={label} pointer={pointer}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={curve} margin={frame.margin}>
-          <defs>
-            {/* The engraver's hatch under the curve: a diagonal hairline in
-                the curve's own blue, at `CHART.fill`. A pattern rather than a
-                gradient because a broadsheet's plot is drawn in lines, and
-                because `the chart register` reads the alpha back off it. */}
-            <pattern
-              id="rateHatch"
-              width="6"
-              height="6"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="6"
-                stroke={PALETTE.accent}
-                strokeWidth={CHART.hairline}
-                strokeOpacity={CHART.fill}
-              />
-            </pattern>
-          </defs>
-          <CartesianGrid
-            stroke={PALETTE.edge}
-            strokeWidth={CHART.hairline}
-            vertical={false}
-          />
+        <AreaChart data={curve} margin={frame.margin} accessibilityLayer={false}>
+          {hatch('rateHatch')}
+          {grid()}
           <XAxis
             {...AXIS_PROPS}
             dataKey="totalIncome"
@@ -283,7 +198,7 @@ export const TorpedoChart: React.FC<TorpedoChartProps> = ({
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </PlotBox>
     <p className="chart-axis-label">{caption}</p>
   </>
   );

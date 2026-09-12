@@ -32,11 +32,9 @@ import {
   ageProse as ageProseFor,
 } from './lib/returnProse';
 import { useScenarioAddress } from '../shared/hooks/useScenarioAddress';
-import { useSettledReading } from '../shared/hooks/useSettledReading';
+import { Page } from '../shared/components/Page';
 import { Answer } from './components/Answer';
 import { BenefitStep } from './components/BenefitStep';
-import { FurtherReading } from '../shared/components/FurtherReading';
-import { Header } from '../shared/components/Header';
 import { Notes } from './components/Notes';
 import { TorpedoStep } from './components/TorpedoStep';
 
@@ -188,6 +186,22 @@ const App: React.FC = () => {
     [filingStatus, ssBenefit, ordinaryIncome, isSenior, spouseIsSenior, muniInterest],
   );
   const address = useScenarioAddress(pageScenario, scenarioUrl);
+
+  /**
+   * The link is the return. The address bar has carried the whole return
+   * since the query string went in, and the only other place it is named is
+   * the failure case: the note that appears when a link asked for something
+   * that could not be shown. The button that copies it closes the figures,
+   * because what is worth sending is the answer.
+   */
+  const share = {
+    canCopy: address.canCopy,
+    copyState: address.copyState,
+    onCopy: address.copy,
+    label: 'Copy link to this return',
+    copied: 'Copied. That link opens this page on this return.',
+    failed: 'This browser would not take the copy. Select the address bar and copy it — it is the same link.',
+  };
 
   const changeOrdinaryIncome = (next: number): void => {
     setOrdinaryIncome(next);
@@ -448,12 +462,6 @@ const App: React.FC = () => {
   })();
 
   /**
-   * The same reading, held back until the control that changed it has stopped
-   * moving. What is on screen never waits on this; only what is said does.
-   */
-  const announcement = useSettledReading(reading);
-
-  /**
    * The year's federal tax at the reader's point.
    *
    * Read off the curve rather than recomputed, so the close quotes the figure
@@ -465,155 +473,100 @@ const App: React.FC = () => {
   const hereTax = herePoint?.totalTax ?? Math.round(totalTax(hereScenario));
 
   return (
-    <div className="card">
-      {/* The way past the rail.
-
-          The rail is ten controls deep before the chart begins, and a reader
-          who has already set the return — or who arrived on a link that set it
-          for them — has to tab through every one of them to reach the thing
-          this is about. So the first focusable element is the way out of that.
-
-          It lands on `#step-torpedo` rather than on `#answer` because the
-          fragment is already how a place is named here: `scenarioUrl` keeps
-          whatever fragment the reader arrived on precisely so a link can point
-          at a step, and the chart is what the steps lead to. The figures sit
-          after it in reading order and one heading jump away, so landing on the
-          chart reaches both and landing on the figures reaches only one.
-
-          No handler: the target carries `tabIndex={-1}`, which is what makes a
-          browser move focus into it rather than only scrolling to it. */}
-      <a className="skip-link" href="#step-torpedo">
-        Skip to the chart
-      </a>
-
-      <Header
-        page="torpedo"
-        title="Income Tax in Retirement"
-        subtitle="Because of how income tax works with Social Security, tax rates form a torpedo shape, increasing and then decreasing."
-        linkNotes={linkNotes}
-        onDismissNotes={() => setLinkNotes([])}
+    <Page
+      page="torpedo"
+      title="Income Tax in Retirement"
+      subtitle="Because of how income tax works with Social Security, tax rates form a torpedo shape, increasing and then decreasing."
+      linkNotes={linkNotes}
+      onDismissNotes={() => setLinkNotes([])}
+      /* The skip link lands on the chart rather than on the figures: the
+         fragment is already how a place is named here — `scenarioUrl` keeps
+         whatever fragment the reader arrived on so a link can point at a
+         step — and the chart is what the steps lead to. */
+      skipTo="step-torpedo"
+      reading={reading}
+      readings={FURTHER_READING}
+      disclaimer="This tool is for educational purposes only and does not constitute tax or financial advice. Please consult a qualified tax professional regarding your specific situation."
+    >
+      <BenefitStep
+        year={year}
+        filingStatus={filingStatus}
+        onFilingStatus={changeFilingStatus}
+        isSenior={isSenior}
+        onSenior={changeIsSenior}
+        spouseIsSenior={spouseIsSenior}
+        onSpouseSenior={(next) => {
+          setSpouseIsSenior(next);
+          announce('benefit');
+        }}
+        seniors={seniors}
+        ageProse={ageProse}
+        ssBenefit={ssBenefit}
+        onSsBenefit={(next) => {
+          setSsBenefit(next);
+          announce('benefit');
+        }}
+        muniInterest={muniInterest}
+        onMuniInterest={(next) => {
+          setMuniInterest(next);
+          announce('benefit');
+        }}
       />
 
-      {/* What a screen reader hears when a control moves, and the only thing
-          here that is heard rather than read. Rendered always and empty until
-          there is something to say, because a live region has to be mounted
-          before the message lands in it to be read out reliably — the same
-          reason the copy-link status is. `aria-atomic` because each reading is
-          one sentence that replaces the last rather than an addition to it.
-
-          Where it sits changes nothing about when it is read, so it sits above
-          the steps rather than below them: the close is the last thing before
-          the footer, and that adjacency is part of the shape. Empty and a
-          pixel wide, it interrupts nothing here. */}
-      <p className="live-reading" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </p>
-
-      {/* The main landmark, and everything that is not the title or the
-          footer: the rail, the chart with its figures, and the notes.
-
-          `.shell` is already the box that holds exactly that, so it becomes the
-          landmark rather than gaining a wrapper — a second box here would be a
-          grid parent with one grid child, which is a layout bug waiting to be
-          written. The footer stays outside it on purpose: a `<footer>` inside
-          `<main>` is not `contentinfo`, so folding it in would have traded the
-          one landmark there already was for the one that was missing. */}
-      <main className="shell">
-        <BenefitStep
+      <div className="flow">
+        <TorpedoStep
           year={year}
           filingStatus={filingStatus}
-          onFilingStatus={changeFilingStatus}
-          isSenior={isSenior}
-          onSenior={changeIsSenior}
-          spouseIsSenior={spouseIsSenior}
-          onSpouseSenior={(next) => {
-            setSpouseIsSenior(next);
-            announce('benefit');
-          }}
-          seniors={seniors}
+          ssBenefit={ssBenefit}
+          muniInterest={muniInterest}
+          beneficiaries={beneficiaries}
+          ordinaryIncome={ordinaryIncome}
+          onOrdinaryIncome={changeOrdinaryIncome}
+          curve={curve}
+          axisMax={axisMax}
+          incomeSliderStep={Math.max(500, curveStep)}
+          herePoint={herePoint}
+          totalIncome={totalIncome}
+          totalIncomeAt={totalIncomeAt}
+          cliffsOnChart={cliffsOnChart}
+          subsidyCliff={subsidyCliff}
+          subsidyCliffOnChart={subsidyCliffOnChart}
+        />
+
+        <Answer
+          year={year}
+          filingStatus={filingStatus}
           ageProse={ageProse}
           ssBenefit={ssBenefit}
-          onSsBenefit={(next) => {
-            setSsBenefit(next);
-            announce('benefit');
-          }}
+          ordinaryIncome={ordinaryIncome}
           muniInterest={muniInterest}
-          onMuniInterest={(next) => {
-            setMuniInterest(next);
-            announce('benefit');
-          }}
+          totalIncome={totalIncome}
+          tax={hereTax}
+          marginalRate={herePoint?.marginalRate ?? null}
+          taxableSS={taxableSocialSecurity(hereScenario)}
+          irmaa={irmaaFor(irmaaMagi(hereScenario), {
+            filingStatus,
+            beneficiaries,
+            year,
+          })}
+          share={share}
         />
+      </div>
 
-        <div className="flow">
-          <TorpedoStep
-            year={year}
-            filingStatus={filingStatus}
-            ssBenefit={ssBenefit}
-            muniInterest={muniInterest}
-            beneficiaries={beneficiaries}
-            ordinaryIncome={ordinaryIncome}
-            onOrdinaryIncome={changeOrdinaryIncome}
-            curve={curve}
-            axisMax={axisMax}
-            incomeSliderStep={Math.max(500, curveStep)}
-            herePoint={herePoint}
-            totalIncome={totalIncome}
-            totalIncomeAt={totalIncomeAt}
-            cliffsOnChart={cliffsOnChart}
-            subsidyCliff={subsidyCliff}
-            subsidyCliffOnChart={subsidyCliffOnChart}
-          />
-
-          <Answer
-            year={year}
-            filingStatus={filingStatus}
-            ageProse={ageProse}
-            ssBenefit={ssBenefit}
-            ordinaryIncome={ordinaryIncome}
-            muniInterest={muniInterest}
-            totalIncome={totalIncome}
-            tax={hereTax}
-            marginalRate={herePoint?.marginalRate ?? null}
-            taxableSS={taxableSocialSecurity(hereScenario)}
-            irmaa={irmaaFor(irmaaMagi(hereScenario), {
-              filingStatus,
-              beneficiaries,
-              year,
-            })}
-            canCopy={address.canCopy}
-            copyState={address.copyState}
-            onCopy={address.copy}
-          />
-        </div>
-
-        {/* The working, under the figures it explains and in the same column;
-            the stylesheet puts it last when the columns collapse to one. */}
-        <Notes
-          year={year}
-          filingStatus={filingStatus}
-          ssBenefit={ssBenefit}
-          muniInterest={muniInterest}
-          seniors={seniors}
-          beneficiaries={beneficiaries}
-          cliffs={cliffs}
-          subsidyCliff={subsidyCliff}
-          hereSubsidy={ptcFor(acaMagi(hereScenario), hereScenario)}
-        />
-      </main>
-
-      {/* The back matter: where to read on, then the disclaimer. In the footer
-          because `contentinfo` is the landmark for what is about a document
-          rather than part of it, so the close stays the last thing in the main
-          and the disclaimer the last word. */}
-      <footer>
-        <FurtherReading readings={FURTHER_READING} />
-        <p>
-          This tool is for educational purposes only and does not constitute tax
-          or financial advice. Please consult a qualified tax professional
-          regarding your specific situation.
-        </p>
-      </footer>
-    </div>
+      {/* The working, under the figures it explains and in the same column;
+          the stylesheet puts it last when the columns collapse to one. */}
+      <Notes
+        year={year}
+        filingStatus={filingStatus}
+        ssBenefit={ssBenefit}
+        muniInterest={muniInterest}
+        seniors={seniors}
+        beneficiaries={beneficiaries}
+        cliffs={cliffs}
+        subsidyCliff={subsidyCliff}
+        hereSubsidy={ptcFor(acaMagi(hereScenario), hereScenario)}
+      />
+    </Page>
   );
 };
 

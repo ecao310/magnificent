@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   FILING_STATUSES,
   SENIOR_DEDUCTION,
@@ -21,7 +20,7 @@ import {
   advancedInputs,
   returnSummary,
 } from '../lib/returnProse';
-import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
+import { Rail } from '../../shared/components/Rail';
 import { ProseList } from './ProseList';
 
 export interface BenefitStepProps {
@@ -42,13 +41,6 @@ export interface BenefitStepProps {
 }
 
 /**
- * The width under which the page is one column and the rail folds. The same
- * 1100 as the stylesheet's collapse, and `the fold` in styles.test.tsx holds
- * the two together.
- */
-export const RAIL_COLLAPSES_AT = 1100;
-
-/**
  * The rail: the return every figure on the page prices — who files it, who
  * on it has reached 65, and how much Social Security it collects.
  *
@@ -59,12 +51,8 @@ export const RAIL_COLLAPSES_AT = 1100;
  * chart, and the slider under the chart sets it.
  *
  * Beside the chart on a wide screen, and on a narrow one folded to a row
- * under the masthead: the return in a phrase, and the word that opens it.
- * A phone reader who scrolled past a chart and six figures to find the
- * controls found them too late to change the return the figures were
- * priced for; a row that says "a single filer, 65 or older" before the
- * chart says the figures are somebody's, and one tap makes them theirs.
- * Open, the controls stand in place, directly over the chart they move.
+ * under the masthead that says "a single filer, 65 or older" before the
+ * chart does — see `Rail`. What is here is the controls and that phrase.
  */
 export const BenefitStep: React.FC<BenefitStepProps> = ({
   year,
@@ -129,17 +117,12 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
     ),
   }));
 
-  const folds = useMediaQuery(`(max-width: ${RAIL_COLLAPSES_AT}px)`);
-  const [open, setOpen] = useState(false);
-
-  const heading = (
-    <h2 className="step-heading" id="step-benefit-heading">
-      Your Social Security benefit
-    </h2>
-  );
-
-  const controls = (
-    <>
+  return (
+    <Rail
+      id="step-benefit"
+      heading="Your Social Security benefit"
+      summary={returnSummary(filingStatus, ageProse, ssBenefit, muniInterest)}
+    >
       <fieldset className="input-group filing-status">
         <legend>Filing Status</legend>
         <div className="segmented">
@@ -240,6 +223,7 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
           max={benefitSliderMax}
           step={12}
           value={ssBenefit}
+          aria-valuetext={formatCurrency(ssBenefit)}
           onChange={(e) => onSsBenefit(Number(e.target.value))}
         />
         <div className="slider-range-labels">
@@ -280,6 +264,7 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
             max={MAX_MUNI_INTEREST}
             step={250}
             value={muniInterest}
+            aria-valuetext={formatCurrency(muniInterest)}
             onChange={(e) => onMuniInterest(Number(e.target.value))}
             className="slider-violet"
           />
@@ -327,41 +312,6 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
           </>
         )}
       </p>
-    </>
-  );
-
-  if (!folds) {
-    return (
-      <section
-        className="step step-config"
-        id="step-benefit"
-        tabIndex={-1}
-        aria-labelledby="step-benefit-heading"
-      >
-        {heading}
-        {controls}
-      </section>
-    );
-  }
-
-  return (
-    <details
-      className="step step-config return-sheet"
-      id="step-benefit"
-      aria-labelledby="step-benefit-heading"
-      open={open}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-    >
-      <summary>
-        {heading}
-        <span className="return-sheet-gloss">
-          {returnSummary(filingStatus, ageProse, ssBenefit, muniInterest)}
-        </span>
-        <span className="return-sheet-toggle" aria-hidden="true">
-          {open ? 'Done' : 'Change'}
-        </span>
-      </summary>
-      <div className="return-sheet-body">{controls}</div>
-    </details>
+    </Rail>
   );
 };

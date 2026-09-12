@@ -2,8 +2,7 @@
  *
  * What this page paints that the site's sheet does not: the gutter its plot
  * holds back, and the rules for the controls and notes only this page has —
- * the household's fold, the state select, the typed figure, the plot's key,
- * the chart chooser.
+ * the state select, the typed figure, the plot's key, the chart chooser.
  *
  * The site's sheet comes first, whole. Its media blocks have already run by
  * the time a rule here applies, so nothing at base level here restates a
@@ -45,79 +44,6 @@
 
 .step-config > :last-child {
   border-bottom: 1px solid var(--ink);
-}
-
-/* ───── The fold ────────────────────────────────────────────────────────────
- *
- * On one column the rail is a `details` under the masthead, and this is its
- * closed row: the heading, the household in a phrase under it, and a stamped
- * word at the right that says what a tap does. Under the masthead's own
- * hairline and over an ink rule, the way the rail's list opens, so the row
- * reads as the rail folded rather than as a note. Open, the body takes over
- * the bottom rule, and the first item drops its top one so the row and the
- * list share a hairline.
- */
-.household-sheet > summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'heading toggle'
-    'gloss toggle';
-  column-gap: 1rem;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0 0 0.75rem;
-  border-bottom: 1px solid var(--ink);
-  list-style: none;
-  cursor: pointer;
-  user-select: none;
-}
-
-.household-sheet > summary::-webkit-details-marker {
-  display: none;
-}
-
-.household-sheet > summary .step-heading {
-  grid-area: heading;
-  margin: 0;
-}
-
-.household-sheet-gloss {
-  grid-area: gloss;
-  margin-top: 0.125rem;
-  font-size: 0.875rem;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--ink-soft);
-}
-
-.household-sheet-toggle {
-  grid-area: toggle;
-  padding: 0.4375rem 0.75rem;
-  border: 1px solid var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.household-sheet[open] .household-sheet-toggle {
-  background: var(--ink);
-  color: var(--surface);
-}
-
-.household-sheet[open] > summary {
-  border-bottom-color: var(--edge);
-}
-
-.household-sheet-body .filing-status:first-of-type {
-  border-top: none;
-}
-
-.household-sheet > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
 }
 
 /* ───── The select ─────────────────────────────────────────────────────────

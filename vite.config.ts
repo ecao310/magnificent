@@ -8,8 +8,9 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 /**
  * The two pages, one HTML entry each: the Tax Torpedo at the site's root and
  * the ACA Subsidy Slope under aca/. Vite writes each to the same path under
- * dist/, so Pages and Netlify both serve aca/index.html at `<base>aca/` with
- * nothing to configure, and a plain link between them is enough.
+ * dist/, and Netlify serves a directory's index.html at the directory's
+ * address, so aca/index.html is /aca/ with nothing to configure, and a plain
+ * link between them is enough.
  *
  * `%BASE_URL%` inside either file is the *site's* base, not the page's
  * directory, so aca/index.html spells its own icons and card `%BASE_URL%aca/…`.
@@ -40,7 +41,8 @@ const PAGES = {
  * rolldown emits to link them. Vite writes a `modulepreload` for each into
  * index.html, so a first-time reader still fetches them in parallel off one
  * HTML parse and pays nothing for the split; a returning one fetches the
- * ~47 kB that changed and keeps the rest by content hash. Both vendor chunks
+ * ~47 kB that changed and keeps the rest, which netlify.toml serves as
+ * immutable for a year on the strength of the content hash in each name. Both vendor chunks
  * are under the 500 kB line, which is what retires the warning rather than
  * silencing it with `chunkSizeWarningLimit`.
  *
@@ -72,19 +74,23 @@ function chunkFor(id: string): string | undefined {
  * against the name-function form's 0.80 / 496.78.
  *
  * `site` is the third layer: src/shared, which both pages import — the
- * masthead and its page strip, the reading list, the address-bar and
- * pointer hooks. Rolldown would split it out on its own, since two entries
- * share it, but under a name derived from whichever module it met first;
- * naming the group is what lets `the build it emits` find it.
+ * page shell and its masthead, the rail's fold, the figures, the notes, the
+ * plot's box and marks, the address-bar and pointer hooks. Rolldown would
+ * split it out on its own, since two entries share it, but under a name
+ * derived from whichever module it met first; naming the group is what lets
+ * `the build it emits` find it.
  */
 const CHUNKS = ['react', 'charts', 'site'] as const
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/magnificent/',
+  /* The site is the whole of its domain. It lived under /magnificent/ on
+     GitHub Pages until September 2026, which is why nothing in a page writes
+     a bare `/`: every address goes through this. */
+  base: '/',
   /* Two pages, no client-side routes: an address neither page owns is a 404
-     in dev and preview, as it is on Pages and Netlify. */
+     in dev and preview, as it is on Netlify. */
   appType: 'mpa',
   build: {
     rollupOptions: {

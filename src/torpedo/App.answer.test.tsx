@@ -4,7 +4,7 @@ import App from './App';
 import { ADDRESS_SETTLE_MS } from '../shared/hooks/useScenarioAddress';
 import { READING_SETTLE_MS } from '../shared/hooks/useSettledReading';
 import { PAGE_TAX_YEAR } from './lib/tax';
-import { pinPageYear, chooseFilingStatus } from './test/pageFixtures';
+import { pinPageYear, chooseFilingStatus, slide } from './test/pageFixtures';
 
 /**
  * What the two steps add up to: the close, the link that carries the return,
@@ -33,11 +33,6 @@ pinPageYear();
 describe('the total the return owes', () => {
   const readout = (step: string): HTMLElement =>
     document.querySelector(`#step-${step} .slider-readout`) as HTMLElement;
-  const set = (name: RegExp, value: number): void => {
-    fireEvent.change(screen.getByRole('slider', { name }), {
-      target: { value: String(value) },
-    });
-  };
 
   it('states the bill and the effective rate under the torpedo slider', () => {
     render(<App />);
@@ -74,7 +69,7 @@ describe('the total the return owes', () => {
 
   it('moves all three figures when the income does', () => {
     render(<App />);
-    set(/other income \(excluding social security\)/i, 90_000);
+    slide(/other income \(excluding social security\)/i, 90_000);
     expect(readout('torpedo')).toHaveTextContent(
       'owes $14,323 in federal tax on $114,852 of total income — an effective rate of 12.47%',
     );
@@ -87,7 +82,7 @@ describe('the total the return owes', () => {
    */
   it('counts tax-exempt interest as income received', () => {
     render(<App />);
-    set(/tax-exempt \(municipal\) interest/i, 10_000);
+    slide(/tax-exempt \(municipal\) interest/i, 10_000);
     expect(readout('torpedo')).toHaveTextContent(
       'owes $4,189 in federal tax on $74,852 of total income',
     );
@@ -95,8 +90,8 @@ describe('the total the return owes', () => {
 
   it('says nothing at all when nothing comes in', () => {
     render(<App />);
-    set(/social security benefit/i, 0);
-    set(/other income \(excluding social security\)/i, 0);
+    slide(/social security benefit/i, 0);
+    slide(/other income \(excluding social security\)/i, 0);
     expect(readout('torpedo')).not.toHaveTextContent('of total income');
     expect(readout('torpedo')).not.toHaveTextContent('effective rate');
   });
@@ -814,10 +809,6 @@ describe('the live reading under the controls', () => {
     });
   };
 
-  const slider = (name: RegExp): HTMLElement => screen.getByRole('slider', { name });
-  const set = (name: RegExp, value: number): void => {
-    fireEvent.change(slider(name), { target: { value: String(value) } });
-  };
   const income = /other income \(excluding social security\)/i;
   const benefit = /social security benefit/i;
 
@@ -842,7 +833,7 @@ describe('the live reading under the controls', () => {
 
   it('reads step 2 back once the income slider has settled', () => {
     render(<App />);
-    set(income, 10_000);
+    slide(income, 10_000);
     expect(region().textContent).toBe('');
     settle();
     expect(region()).toHaveTextContent(
@@ -859,11 +850,11 @@ describe('the live reading under the controls', () => {
    */
   it('reads the end of a drag rather than every notch of it', () => {
     render(<App />);
-    set(income, 10_000);
+    slide(income, 10_000);
     nudge();
-    set(income, 20_000);
+    slide(income, 20_000);
     nudge();
-    set(income, 30_000);
+    slide(income, 30_000);
     expect(region().textContent).toBe('');
     settle();
     expect(region()).toHaveTextContent('At $30,000 of other income');
@@ -878,14 +869,14 @@ describe('the live reading under the controls', () => {
    */
   it('carries the reading of the step whose control moved, and only that one', () => {
     render(<App />);
-    set(benefit, 30_000);
+    slide(benefit, 30_000);
     settle();
     expect(region()).toHaveTextContent(
       '2026 brackets, a single filer, 65 or older, collecting $30,000 of Social Security per year.',
     );
     expect(region()).not.toHaveTextContent('the next dollar is taxed at');
 
-    set(income, 50_000);
+    slide(income, 50_000);
     settle();
     expect(region()).toHaveTextContent('At $50,000 of other income');
     expect(region()).not.toHaveTextContent('brackets, a single filer');
@@ -899,7 +890,7 @@ describe('the live reading under the controls', () => {
   it('names the advanced inputs the way the recap on screen does', () => {
     render(<App />);
     fireEvent.click(screen.getByText('Advanced inputs'));
-    set(/tax-exempt \(municipal\) interest/i, 10_000);
+    slide(/tax-exempt \(municipal\) interest/i, 10_000);
     settle();
     expect(region()).toHaveTextContent(
       'collecting $24,852 of Social Security per year. Plus $10,000 in ' +

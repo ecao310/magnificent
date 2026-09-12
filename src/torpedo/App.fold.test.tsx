@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
-import { RAIL_COLLAPSES_AT } from './components/BenefitStep';
+import { RAIL_COLLAPSES_AT } from '../shared/lib/layout';
 import { PAGE_TAX_YEAR, avgAnnualSSBenefit } from './lib/tax';
 import { formatCurrency } from './lib/format';
 import { AVG_ANNUAL_SS_BENEFIT, chooseFilingStatus, pinPageYear } from './test/pageFixtures';
