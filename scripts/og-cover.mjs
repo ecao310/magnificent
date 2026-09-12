@@ -246,7 +246,7 @@ function cover(curve, hook) {
   <circle cx="${x(valley.totalIncome).toFixed(1)}" cy="${y(valley.marginalRate).toFixed(1)}" r="6.5" fill="${INK_MUTED}" stroke="${SURFACE}" stroke-width="2"/>
   <text x="${(x(valley.totalIncome) + 20).toFixed(1)}" y="${(y(valley.marginalRate) + 32).toFixed(1)}" fill="${INK_SOFT}" font-size="24" font-style="italic">back to ${valley.marginalRate}%</text>
 
-  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">ecao310.github.io/congenial-octo-spork</text>
+  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">ecao310.github.io/magnificent</text>
   <text x="1128" y="608" fill="${INK_MUTED}" font-size="17" font-style="italic" text-anchor="end">Total income →</text>
 </svg>`;
 }

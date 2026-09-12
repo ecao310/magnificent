@@ -21,7 +21,7 @@ on:
 env:
   PRODUCTION_BRANCH: main
   PREVIEW_BRANCH: dev
-  PREVIEW_BASE: /congenial-octo-spork/preview/
+  PREVIEW_BASE: /magnificent/preview/
 
 concurrency:
   group: pages

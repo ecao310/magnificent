@@ -109,10 +109,10 @@ describe('scenarioUrl', () => {
   it('keeps the path and the step fragment around the return', () => {
     expect(
       scenarioUrl(moved({ ordinaryIncome: 90_000 }), {
-        pathname: '/congenial-octo-spork/',
+        pathname: '/magnificent/',
         hash: '#step-conversion',
       }),
-    ).toBe('/congenial-octo-spork/?income=90000#step-conversion');
+    ).toBe('/magnificent/?income=90000#step-conversion');
   });
 
   it('writes no fragment when there is none', () => {
