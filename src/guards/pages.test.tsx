@@ -9,11 +9,12 @@ import { decodeScenario as decodeHousehold } from '../aca/lib/scenarioUrl';
 /**
  * Two pages, one site, and the ways between them.
  *
- * The same build is served at the root of one domain and under a path on
- * another, so every address one page writes for the other has to be built
- * on the base the build was made for and never on a bare `/` — a link that
- * works on Netlify and 404s on Pages is the failure this exists to catch,
- * and nothing in a jsdom render would notice it. The strip and the two
+ * The build is served at the root of its domain today and was served under
+ * `/magnificent/` on GitHub Pages until September 2026, so every address one
+ * page writes for the other has to be built on the base the build was made
+ * for and never on a bare `/` — a link that works at the root and 404s under
+ * a path is the failure this exists to catch, and nothing in a jsdom render
+ * would notice it. The strip and the two
  * notes that link across are rendered and read back; the two notes' query
  * strings are decoded by the *other* page's decoder, which is the only
  * honest test of a contract written in one page's source about another's

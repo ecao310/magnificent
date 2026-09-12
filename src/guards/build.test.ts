@@ -118,6 +118,8 @@ describe('the build\'s chunking', () => {
 describe('the build it emits', () => {
   /** The real production build, in memory — no `dist/` is written or read. */
   const chunks = new Map<string, Rolldown.OutputChunk>();
+  /** Every file it writes, by the path `dist/` would hold it at. */
+  const emitted: string[] = [];
 
   beforeAll(async () => {
     /*
@@ -140,6 +142,7 @@ describe('the build it emits', () => {
       const bundle = Array.isArray(result) ? result[0] : result;
       if (!('output' in bundle)) throw new Error('expected a one-shot build');
       for (const item of bundle.output) {
+        emitted.push(item.fileName);
         if (item.type === 'chunk') chunks.set(item.name, item);
       }
     } finally {
@@ -192,6 +195,23 @@ describe('the build it emits', () => {
     for (const page of ['torpedo', 'aca']) {
       expect(sourcesIn(page).filter((m) => m.startsWith('src/shared/'))).toEqual([]);
     }
+  });
+
+  /* netlify.toml keeps /assets/ for a year without revalidating, on the
+     strength of the content hash in every name under it. So everything the
+     build emits that is not a page's HTML has to be there, and hashed: a file
+     that landed anywhere else would be revalidated on every visit, and one
+     that landed there without a hash would be served stale for a year. The
+     icons and cards under public/ are copied rather than emitted, to the
+     page's own directory, which is what keeps them out of the rule. */
+  it('emits every file but the pages’ HTML under assets/, hashed', () => {
+    expect(emitted.filter((f) => f.endsWith('.html')).sort()).toEqual([
+      'aca/index.html',
+      'index.html',
+    ]);
+    const rest = emitted.filter((f) => !f.endsWith('.html'));
+    expect(rest.length).toBeGreaterThan(0);
+    expect(rest.filter((f) => !/^assets\/[\w.-]+-[\w-]{8}\.\w+$/.test(f))).toEqual([]);
   });
 
   it('keeps every chunk under the 500 kB Vite warns at', () => {

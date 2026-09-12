@@ -46,10 +46,11 @@ const documentOf = (page: GuardedPage) => {
 const torpedo = documentOf(GUARDED_PAGES[0]);
 
 /**
- * The origin the card's absolute URLs are built on, as `.env` declares it.
- * Vite reads the same file, so this is what `%VITE_SITE_ORIGIN%` becomes in
- * any build that does not set the variable itself — both GitHub Pages builds.
- * netlify.toml sets it to Netlify's own `URL` for the build it publishes.
+ * The origin the card's absolute URLs are built on, as `.env` declares it:
+ * the site's own. Vite reads the same file, so this is what
+ * `%VITE_SITE_ORIGIN%` becomes in any build that does not set the variable
+ * itself — production's, and a local one. netlify.toml sets it to the
+ * deploy's own address for a branch deploy and a deploy preview.
  */
 const siteOrigin = /^VITE_SITE_ORIGIN=(\S+)/m.exec(readFileSync(root('.env'), 'utf8'))?.[1];
 
@@ -101,12 +102,12 @@ describe.each(GUARDED_PAGES)('$name’s link preview', (page) => {
 
   /* A crawler fetches the card out of band, with no page to resolve a
      relative path against. So the URLs are absolute, and both halves are
-     placeholders vite fills at build time. `%BASE_URL%` is how the path stays
-     right across builds — `/magnificent/` in production,
-     `/magnificent/preview/` in the preview, so the preview's card is
-     its own rather than production's, and `/` on Netlify. `%VITE_SITE_ORIGIN%`
-     is how the origin does: the GitHub Pages one from `.env` unless the build
-     sets it, which netlify.toml does, to the Netlify domain. */
+     placeholders vite fills at build time. `%BASE_URL%` is the base the build
+     was made for — `/` for every deploy today, and `/magnificent/` for the
+     years the site was on GitHub Pages. `%VITE_SITE_ORIGIN%` is the site's own
+     origin from `.env` unless the build sets it, which netlify.toml does for a
+     branch deploy and a deploy preview, to the deploy's own address, so a
+     preview's card is its own rather than production's. */
   it('gives the crawler absolute URLs, built through the origin and the base', () => {
     for (const key of ['og:url', 'og:image', 'twitter:image']) {
       expect(metaTags[key]).toMatch(ORIGIN_AND_BASE);
@@ -298,103 +299,84 @@ describe.each(GUARDED_PAGES)('$name’s search snippet', (page) => {
  *
  * The fix is a link, and a link rots the moment the branch under it moves. So
  * this reads the README's own account of what deploys where — every "push to
- * `branch`" sentence in its Deployment section, paired with the Pages URL that
- * sentence gives — and holds it to the one workflow that publishes the site:
- * the branches it fires on, and the branch→base pairs it declares under
- * `env`. Production builds with `vite.config.ts`'s `base`; the preview with
- * `PREVIEW_BASE`. **Live:** must then be one of the URLs the README says a
- * branch publishes. Retiring a branch, adding a workflow, or moving a base
- * path therefore turns red here until the README says so too.
+ * `branch`" sentence in its Deployment section, paired with the URL that
+ * sentence gives — and holds it to where Netlify serves a branch: production
+ * at the site's origin, the one `.env` addresses the card to, and any other
+ * branch at `<branch>--<host>`. **Live:** must then be the production URL.
+ * Which branch is production, and which others deploy, is set in Netlify's
+ * dashboard, where nothing here can read it; the README is the copy that can
+ * be held, and `PRODUCTION_BRANCH` is the one fact this file has to carry.
+ *
+ * The site was GitHub Pages until September 2026, and the addresses it had
+ * there are still in links people kept. So the second half holds the
+ * forwarders: `pages/`, one file per address the README says the site used
+ * to have, each sending the reader on to a page a branch publishes with the
+ * query string intact, and the one workflow, which publishes that tree from
+ * the production branch and builds nothing.
  */
 describe('the front door', () => {
   const readme = readFileSync(root('README.md'), 'utf8');
-  const ORIGIN = 'https://ecao310.github.io';
+
+  /** The branch Netlify's dashboard calls production; the forwarders publish from it too. */
+  const PRODUCTION_BRANCH = 'main';
+
+  /** Where the site was, for as long as it was on GitHub Pages. */
+  const PAGES_SITE = 'https://ecao310.github.io/magnificent/';
+
+  const origin = siteOrigin ?? '';
+  const host = origin.replace(/^https:\/\//, '');
+  const literal = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  /** A URL on the site, or on a branch deploy of it. */
+  const SITE_URL = `https://(?:[\\w-]+--)?${literal(host)}/[\\w./-]*`;
+  const slashed = (url: string) => (url.endsWith('/') ? url : `${url}/`);
+
+  /** Where Netlify serves a branch: production at the origin, any other at `<branch>--<host>`. */
+  const baseOf = (branch: string) =>
+    branch === PRODUCTION_BRANCH ? `${origin}/` : `https://${branch}--${host}/`;
 
   /** The URL under **Live:**. */
   const liveUrl = /^\*\*Live:\*\*\s+(\S+)/m.exec(readme)?.[1];
 
   /**
    * What the README says deploys where: each branch its Deployment section
-   * names in a "push to `branch`" sentence, with the first Pages URL that
+   * names in a "push to `branch`" sentence, with the first site URL that
    * follows it. Non-greedy so that each URL is claimed by the nearest branch
    * before it rather than the first one in the section.
    */
   const deployment = readme.slice(readme.indexOf('## Deployment'));
   const described = [
-    ...deployment.matchAll(
-      new RegExp(`push to \`([\\w.-]+)\`[\\s\\S]*?(${ORIGIN}/[\\w./-]*)`, 'g'),
-    ),
-  ].map(([, branch, url]) => ({ branch, url: url.endsWith('/') ? url : `${url}/` }));
+    ...deployment.matchAll(new RegExp(`push to\\s+\`([\\w.-]+)\`[\\s\\S]*?(${SITE_URL})`, 'g')),
+  ].map(([, branch, url]) => ({ branch, url: slashed(url) }));
 
   const configBase = /^\s*base:\s*'([^']+)'/m.exec(
     readFileSync(root('vite.config.ts'), 'utf8'),
   )?.[1];
 
-  /**
-   * The workflow, as the branches it fires on and the branch→base pairs its
-   * `env` declares. There is exactly one: a Pages deploy replaces the whole
-   * site, so a second workflow publishing on its own would wipe whatever the
-   * first one put there — which is how `/preview/` kept going 404.
-   */
-  const workflowFiles = readdirSync(root('.github/workflows'));
-  const yaml = readFileSync(root('.github/workflows/deploy.yml'), 'utf8');
-  const env = (name: string) => new RegExp(`^\\s*${name}:\\s*(\\S+)`, 'm').exec(yaml)?.[1];
-
-  const triggers = (/branches:\s*\[([^\]]*)\]/.exec(yaml)?.[1] ?? '')
-    .split(',')
-    .map((b) => b.trim())
-    .filter(Boolean);
-
-  /** Each branch's base, and under it, each page. */
-  const bases = [
-    { branch: env('PRODUCTION_BRANCH'), base: configBase },
-    { branch: env('PREVIEW_BRANCH'), base: env('PREVIEW_BASE') },
-  ];
-  const publishes = bases.flatMap(({ branch, base }) =>
-    GUARDED_PAGES.map((page) => ({ branch, page: page.id, base: `${base}${page.prefix}` })),
+  /** Each described branch's base, and under it, each page. */
+  const publishes = described.flatMap(({ branch }) =>
+    GUARDED_PAGES.map((page) => ({ branch, page: page.id, url: `${baseOf(branch)}${page.prefix}` })),
   );
+  const published = new Set(publishes.map((p) => p.url));
 
-  it('is published by one workflow, from the branches it declares', () => {
-    expect(workflowFiles).toEqual(['deploy.yml']);
-    expect(configBase).toBe('/magnificent/');
-
-    // The `env` values are only what the job publishes if the steps read
-    // them: the checkouts by ref, the preview build by `--base=`.
-    expect(yaml).toContain('ref: ${{ env.PRODUCTION_BRANCH }}');
-    expect(yaml).toContain('ref: ${{ env.PREVIEW_BRANCH }}');
-    expect(yaml).toMatch(/--base="?\$PREVIEW_BASE"?/);
-
-    // `on.push.branches` cannot read `env`, so the list is written twice and
-    // the two copies have to agree. Sorted, so a diff names the branch.
-    expect([...triggers].sort()).toEqual(bases.map((p) => p.branch).sort());
+  it('is the whole of its domain, on the origin the card is addressed to', () => {
+    expect(configBase).toBe('/');
+    expect(origin).toMatch(/^https:\/\/[^/]+$/);
+    expect(liveUrl).toBe(`${origin}/`);
   });
 
   it('says which branches deploy, and where', () => {
-    expect(liveUrl).toBeDefined();
-    expect(described.length).toBeGreaterThan(0);
-
-    // Every branch the workflow fires on is one the README describes, and
-    // the other way round.
-    expect(described.map((d) => d.branch).sort()).toEqual([...triggers].sort());
-  });
-
-  it('gives each branch the URL the workflow publishes it at', () => {
+    expect(described.map((d) => d.branch)).toContain(PRODUCTION_BRANCH);
     for (const { branch, url } of described) {
-      // Compared as paths, and with the branch alongside: the origin is
-      // asserted on its own, and a whole-URL diff is long enough that vitest
-      // elides the half that differs.
-      expect(url.startsWith(`${ORIGIN}/`)).toBe(true);
-      expect({ branch, base: url.slice(ORIGIN.length) }).toEqual({
-        branch,
-        base: publishes.find((p) => p.branch === branch && p.page === 'torpedo')?.base,
-      });
+      // With the branch alongside, so a failure names it rather than diffing
+      // two long URLs.
+      expect({ branch, url }).toEqual({ branch, url: baseOf(branch) });
     }
   });
 
   /* Each branch publishes both pages, and the section says where each is. */
   it('names each page under each branch', () => {
-    for (const { base } of publishes) {
-      expect(deployment).toContain(`${ORIGIN}${base}`);
+    for (const { url } of publishes) {
+      expect(deployment).toContain(url);
     }
   });
 
@@ -408,58 +390,134 @@ describe('the front door', () => {
     }
   });
 
-  it('points Live: at a URL some branch publishes', () => {
-    expect(described.map((d) => d.url)).toContain(liveUrl);
-  });
-
-  /* The card's default origin is the one every URL above is on, so a Pages
-     build addresses its card to the site it is. */
-  it('addresses the card to the origin the README links to', () => {
-    expect(siteOrigin).toBe(ORIGIN);
-  });
-
-  it('names no Pages URL that no workflow publishes', () => {
-    const published = new Set(publishes.map((p) => `${ORIGIN}${p.base}`));
-    const named = new Set(
-      (readme.match(new RegExp(`${ORIGIN}/[\\w./-]*`, 'g')) ?? []).map((u) =>
-        u.endsWith('/') ? u : `${u}/`,
-      ),
-    );
+  it('names no URL on the site that no branch publishes', () => {
+    const named = new Set((readme.match(new RegExp(SITE_URL, 'g')) ?? []).map(slashed));
 
     expect([...named].filter((u) => !published.has(u))).toEqual([]);
     expect(named).toEqual(published);
   });
+
+  /* The card's footer sets the address in type, so it is the one the README
+     sends a reader to, and not the one the site left. */
+  it('is the address the card’s footer prints', () => {
+    const card = readFileSync(root(SITE_CARD), 'utf8');
+    expect(card).toContain(`>${host}\${path}<`);
+    expect(card).not.toContain('github.io');
+  });
+
+  /** Every file under `pages/`, which is the tree Pages serves. */
+  const forwarders = (dir = 'pages'): string[] =>
+    readdirSync(root(dir), { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? forwarders(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
+    );
+
+  /* One forwarder per Pages address the README names, at that address's
+     path, and nothing under `pages/` the README does not name. */
+  it('forwards each address the site used to have, and no other', () => {
+    const named = new Set(
+      (readme.match(new RegExp(`${literal(PAGES_SITE)}[\\w./-]*`, 'g')) ?? []).map(slashed),
+    );
+    const files = forwarders();
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) expect(file.endsWith('/index.html')).toBe(true);
+
+    const served = new Set(
+      files.map((f) => `${PAGES_SITE}${f.slice('pages/'.length, -'index.html'.length)}`),
+    );
+    expect(served).toEqual(named);
+  });
+
+  /* Each forwarder sends the reader to a page some branch publishes — the
+     same page, under the same path — three ways, all agreeing: the canonical
+     link for a crawler, the refresh for a reader with no script, and the
+     script, which alone can carry the query string across. */
+  it('forwards each to the same page on the site, query string and all', () => {
+    for (const file of forwarders()) {
+      const html = readFileSync(root(file), 'utf8');
+      const target = /<link rel="canonical" href="([^"]+)"/.exec(html)?.[1] ?? 'no canonical link';
+      const page = file.endsWith('aca/index.html') ? 'aca' : 'torpedo';
+
+      expect({ file, target, page }).toEqual({
+        file,
+        target,
+        page: publishes.find((p) => p.url === target)?.page,
+      });
+      expect(html).toContain(`<meta http-equiv="refresh" content="0; url=${target}" />`);
+      expect(html).toContain(`location.replace('${target}' + location.search + location.hash)`);
+    }
+  });
+
+  /**
+   * The workflow, as the branches it fires on and the tree it uploads. It is
+   * the only one, it fires on the production branch alone — the forwarders
+   * are the site's, not a branch's — and it runs no build: what is committed
+   * is what is served.
+   */
+  it('publishes the forwarders from the production branch, and builds nothing', () => {
+    expect(readdirSync(root('.github/workflows'))).toEqual(['deploy.yml']);
+    const yaml = readFileSync(root('.github/workflows/deploy.yml'), 'utf8');
+    const triggers = (/branches:\s*\[([^\]]*)\]/.exec(yaml)?.[1] ?? '')
+      .split(',')
+      .map((b) => b.trim())
+      .filter(Boolean);
+
+    expect(triggers).toEqual([PRODUCTION_BRANCH]);
+    expect(yaml).toMatch(/^\s*path:\s*pages\s*$/m);
+    expect(yaml).not.toMatch(/\b(npm|npx|vite)\b/);
+  });
 });
 
 /**
- * The second place the site is published from, held to the one thing that
- * has to differ from the first.
+ * Where the site is served from, held to the few things the file has to say.
  *
- * `the front door` above holds the GitHub Pages deploy, where
- * `vite.config.ts`'s `base` is `/magnificent/` because that is where
- * a Pages site lives. Netlify serves the same build from the root of its own
- * domain, and a build made with that `base` asks it for
- * `/magnificent/assets/…` — a 404 for everything but index.html,
- * which is an empty page. So netlify.toml builds with `--base=/` on the
- * command line, the same override deploy.yml uses for /preview/, and hands
- * the card Netlify's own `URL` in place of the Pages origin `.env` defaults
- * to. Tests run first, as they do in deploy.yml, so nothing publishes that
- * fails them. What netlify.toml cannot say — which branches Netlify builds,
- * and whether the site is public — lives in its dashboard, and nothing here
- * can read it.
+ * The build is vite.config.ts's own — `the front door` holds its `base` to
+ * `/` — so what netlify.toml adds is small, and every piece of it fails
+ * silently. The card's origin is handed to the build on the command line,
+ * per deploy context: production's `URL`, and the deploy's own
+ * `DEPLOY_PRIME_URL` for a branch deploy or a deploy preview, so a preview's
+ * card is its own; a context that lost its command would fall back to
+ * production's and address every preview's card to the live site. Tests run
+ * before the build in each, so nothing publishes that fails them. And the one
+ * header keeps `/assets/` for a year, which is only safe because everything
+ * Vite puts there carries a content hash — `the build it emits` in
+ * build.test.ts holds the build to that — and only right if nothing else is
+ * kept, since a page held for a year would name chunks a later deploy no
+ * longer has.
  */
 describe('the Netlify build', () => {
   const toml = readFileSync(root('netlify.toml'), 'utf8');
-  const command = /^\s*command\s*=\s*(['"])(.*)\1\s*$/m.exec(toml)?.[2] ?? '';
+
+  /** One table's lines: from `[name]` to the next header. */
+  const table = (name: string) => {
+    const start = toml.indexOf(`[${name}]\n`);
+    if (start < 0) return '';
+    const rest = toml.slice(start + name.length + 3);
+    const end = rest.search(/^\[/m);
+    return end < 0 ? rest : rest.slice(0, end);
+  };
+  const commandUnder = (name: string) =>
+    /^\s*command\s*=\s*(['"])(.*)\1\s*$/m.exec(table(name))?.[2] ?? '';
 
   it('publishes what vite builds', () => {
-    expect(toml).toMatch(/^\s*publish\s*=\s*['"]dist['"]/m);
+    expect(table('build')).toMatch(/^\s*publish\s*=\s*['"]dist['"]/m);
   });
 
-  it('builds at the domain root, on its own origin, after the tests', () => {
-    expect(command).toMatch(/\bvite build\b.*--base=\/(?:\s|$)/);
-    expect(command).toMatch(/VITE_SITE_ORIGIN="?\$URL"?\s+npx vite build/);
+  it.each([
+    ['build', '$URL'],
+    ['context.deploy-preview', '$DEPLOY_PRIME_URL'],
+    ['context.branch-deploy', '$DEPLOY_PRIME_URL'],
+  ])('builds [%s] after the tests, with the card addressed to %s', (name, variable) => {
+    const command = commandUnder(name);
+    expect(command).toContain(`VITE_SITE_ORIGIN="${variable}" npm run build`);
     expect(command.indexOf('npm run test')).toBeGreaterThanOrEqual(0);
-    expect(command.indexOf('npm run test')).toBeLessThan(command.indexOf('vite build'));
+    expect(command.indexOf('npm run test')).toBeLessThan(command.indexOf('npm run build'));
+    expect(command).not.toContain('--base');
+  });
+
+  it('keeps the hashed assets for a year, and revalidates everything else', () => {
+    expect(toml.match(/^\[\[headers\]\]/gm)).toHaveLength(1);
+    const rule = toml.slice(toml.indexOf('[[headers]]'));
+    expect(rule).toMatch(/^\s*for\s*=\s*"\/assets\/\*"/m);
+    expect(rule).toMatch(/^\s*Cache-Control\s*=\s*"public, max-age=31536000, immutable"/m);
   });
 });

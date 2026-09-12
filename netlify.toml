@@ -1,6 +1,7 @@
-# How Netlify builds the site, which is the second place it is published from:
-# .github/workflows/deploy.yml publishes GitHub Pages, and the README's
-# Deployment section describes both.
+# How Netlify builds and serves the site. .github/workflows/deploy.yml is what
+# is left of the GitHub Pages deploy the site had until September 2026: it
+# publishes the forwarders in pages/. The README's Deployment section
+# describes both.
 #
 # The site is two pages from one build: index.html at the domain's root and
 # aca/index.html at /aca/. Both come out of the one `vite build` below, each
@@ -8,25 +9,44 @@
 # the directory's address without being told, so nothing here names the second
 # page. (Pretty URLs, on by default, send /aca to /aca/.)
 #
-# The two builds differ in one thing. A Pages site lives under
-# /magnificent/, so vite.config.ts's `base` says so — and a build
-# made with that `base` asks a Netlify domain for
-# /magnificent/assets/…, which is a 404 for every file but
-# index.html. A Netlify site is the whole domain, so this one is passed
-# `--base=/` on the command line, the same override deploy.yml uses for the
-# /preview/ build, and the link-preview card's absolute URLs are built on
-# Netlify's own `URL` (the primary domain, custom domain included) in place of
-# the GitHub Pages origin that .env gives VITE_SITE_ORIGIN.
+# The build is vite.config.ts's own, at its `base` of `/`. What differs by
+# deploy is the origin the link-preview card is addressed to, which the
+# command hands the build as VITE_SITE_ORIGIN: production's is `URL`, the
+# site's primary domain, custom domain included; a branch deploy's and a
+# deploy preview's is `DEPLOY_PRIME_URL`, the deploy's own address, so a
+# preview's card is its own rather than production's. (.env gives the
+# variable the production origin for any build that does not set it.) It is
+# expanded on the command line because Netlify does not expand a variable
+# inside [context.*.environment].
 #
-# Tests run first for the same reason they do in deploy.yml: a build that
-# fails its tests does not publish. `the Netlify build` in
-# src/guards/meta.test.ts reads this file and holds it to all of that.
+# Tests run first, so a build that fails its tests does not publish.
+#
+# One header. Every file Vite emits under assets/ carries a content hash in
+# its name, so it can be kept for a year and never revalidated — which is
+# what makes the chunking in vite.config.ts worth having, since Netlify's
+# default is to revalidate every file on every visit. Everything else keeps
+# that default: the pages, so a deploy is seen at once, and the cards and
+# icons under public/, whose names carry no hash. `the Netlify build` in
+# src/guards/meta.test.ts reads this file and holds it to all of that, and
+# `the build it emits` in src/guards/build.test.ts holds the build to putting
+# every hashed file, and nothing else, under assets/.
 
 [build]
   publish = "dist"
-  command = 'npm run test && npx tsc -b && VITE_SITE_ORIGIN="$URL" npx vite build --base=/'
+  command = 'npm run test && VITE_SITE_ORIGIN="$URL" npm run build'
 
 [build.environment]
   # Vite 8 needs Node 20.19+ or 22.12+. Pinned so that a change to the build
   # image's default cannot change the build.
   NODE_VERSION = "24"
+
+[context.deploy-preview]
+  command = 'npm run test && VITE_SITE_ORIGIN="$DEPLOY_PRIME_URL" npm run build'
+
+[context.branch-deploy]
+  command = 'npm run test && VITE_SITE_ORIGIN="$DEPLOY_PRIME_URL" npm run build'
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

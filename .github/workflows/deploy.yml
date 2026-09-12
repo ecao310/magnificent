@@ -1,30 +1,20 @@
-name: Deploy to GitHub Pages
+name: Forward GitHub Pages to Netlify
 
-# The repo has one GitHub Pages site and two branches that publish to it:
-# PRODUCTION_BRANCH at the root, PREVIEW_BRANCH nested under PREVIEW_BASE.
-# A Pages deploy replaces the whole site, so a workflow that published only
-# the branch that pushed would take the other branch's build down with every
-# run — which is what happened: each push to main wiped /preview/ until dev
-# was next pushed. So a push to either branch runs this one job, which checks
-# out both, builds both, and publishes the combined tree.
+# The site left GitHub Pages for Netlify on 12 September 2026 (netlify.toml,
+# and the README's Deployment section). This is what is left of the Pages
+# deploy: a push to main publishes pages/, four files that forward each
+# address the site used to have to the one it has now, query string and all.
+# Nothing is built — the files are committed as they are served. Without
+# this, the last real build would go on being served at
+# ecao310.github.io/magnificent/ for as long as the repo exists.
 #
-# Each build is two pages — index.html at its base and aca/index.html under
-# it — so the four addresses are the two bases and the two bases plus aca/.
-#
-# `the front door` in src/guards/meta.test.ts reads the three values under
-# `env` and the branch list under `on.push` and holds README.md's Deployment
-# section to them, so a change here that the README does not describe turns
-# the test suite red.
+# `the front door` in src/guards/meta.test.ts reads this file and pages/, and
+# holds both to the README.
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
   workflow_dispatch:
-
-env:
-  PRODUCTION_BRANCH: main
-  PREVIEW_BRANCH: dev
-  PREVIEW_BASE: /magnificent/preview/
 
 concurrency:
   group: pages
@@ -42,64 +32,13 @@ jobs:
       id-token: write
 
     steps:
-      - name: Check out production branch
+      - name: Check out the forwarders
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.PRODUCTION_BRANCH }}
-          path: production-src
 
-      - name: Check out preview branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.PREVIEW_BRANCH }}
-          path: preview-src
-
-      # Production builds with vite.config's own `base`, the site root.
-      - name: Test and build production site
-        working-directory: production-src
-        run: |
-          npm install
-          npm run test
-          npm run build
-
-      # Best-effort when production pushed: a broken preview branch must not
-      # hold up production, so its failure is recorded and production ships
-      # without it. The step after this turns that failure back into a red
-      # run when the preview branch is the one that pushed.
-      - name: Test and build preview site
-        id: preview
-        continue-on-error: true
-        working-directory: preview-src
-        run: |
-          npm install
-          npm run test
-          npx tsc -b
-          npx vite build --base="$PREVIEW_BASE"
-
-      - name: Fail if the preview branch pushed a build that does not pass
-        if: steps.preview.outcome == 'failure' && github.ref_name == env.PREVIEW_BRANCH
-        run: |
-          echo "::error::${PREVIEW_BRANCH} failed its tests or build; nothing published."
-          exit 1
-
-      - name: Assemble combined site
-        run: |
-          mkdir -p site
-          cp -R production-src/dist/. site/
-          if [ -d preview-src/dist ]; then
-            preview_dir="site/$(basename "$PREVIEW_BASE")"
-            mkdir -p "$preview_dir"
-            cp -R preview-src/dist/. "$preview_dir/"
-          else
-            echo "::warning::${PREVIEW_BRANCH} did not build; publishing production without ${PREVIEW_BASE}"
-          fi
-          echo "--- published tree ---"
-          find site -maxdepth 2 -mindepth 1 | sort
-
-      - name: Upload artifact
+      - name: Upload them as the site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './site'
+          path: pages
 
       - name: Deploy to GitHub Pages
         id: deployment

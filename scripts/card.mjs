@@ -213,7 +213,7 @@ export function card({ kicker, tag, title, deck, hook, plot, path, axis }) {
 
   ${plot}
 
-  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">ecao310.github.io/magnificent${path}</text>
+  <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">magnificent-fi.netlify.app${path}</text>
   <text x="1128" y="608" fill="${INK_MUTED}" font-size="17" font-style="italic" text-anchor="end">${axis} →</text>
 </svg>`;
 }
