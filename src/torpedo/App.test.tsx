@@ -443,7 +443,7 @@ describe('App', () => {
     expect(slider).toHaveAttribute('min', '0');
     expect(slider).toHaveAttribute('max', '50000');
     expect(
-      screen.getByText(/^Municipal bond interest never enters taxable income/),
+      screen.getByText(/^Municipal bond interest isn't taxable income/),
     ).toBeInTheDocument();
   });
 
@@ -836,23 +836,10 @@ describe('advanced inputs', () => {
       .getByText('Advanced inputs', { selector: '.advanced-label' })
       .closest('details') as HTMLElement;
 
-  /** The status line beside the label — what the section still says while shut. */
-  const advancedState = (): HTMLElement =>
-    advanced().querySelector('.advanced-state') as HTMLElement;
-
   it('starts collapsed', () => {
     render(<App />);
     expect(advanced()).toBeInTheDocument();
     expect(advanced()).not.toHaveAttribute('open');
-  });
-
-  /**
-   * The line that justifies the whole disclosure: at its default it changes
-   * nothing, so there is nothing to see until it is moved.
-   */
-  it('reports it sitting at its default', () => {
-    render(<App />);
-    expect(advancedState()).toHaveTextContent('At $0');
   });
 
   it('holds the input that belongs to no chart axis', () => {
@@ -884,21 +871,6 @@ describe('advanced inputs', () => {
     }
   });
 
-  it('names the input once it has been moved off zero', () => {
-    render(<App />);
-    fireEvent.change(
-      screen.getByLabelText('Tax-Exempt (Municipal) Interest'),
-      { target: { value: '5000' } },
-    );
-    expect(advancedState()).toHaveTextContent('Muni interest $5,000');
-
-    fireEvent.change(
-      screen.getByLabelText('Tax-Exempt (Municipal) Interest'),
-      { target: { value: '0' } },
-    );
-    expect(advancedState()).toHaveTextContent('At $0');
-  });
-
   /**
    * The disclosure sits at the foot of step 1 and the step below it prices off
    * what is in there, so a value set once has to survive everything the reader
@@ -918,7 +890,6 @@ describe('advanced inputs', () => {
     expect(
       screen.getByLabelText('Tax-Exempt (Municipal) Interest'),
     ).toHaveValue('9000');
-    expect(advancedState()).toHaveTextContent('Muni interest $9,000');
   });
 });
 

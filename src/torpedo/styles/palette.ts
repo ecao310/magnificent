@@ -8,8 +8,8 @@ import { SITE_CHART, SITE_PALETTE } from '../../shared/styles/palette';
  *
  * This is a *subset* of the ground the two sheets declare, and the rule for
  * what belongs is exact: a colour some chart hands to an SVG attribute.
- * `--violet` and `--emerald` are colours on this page and are not here,
- * because CSS paints both. Anything that has stopped being spent on either
+ * `--violet` is a colour on this page and is not here, because CSS paints
+ * it. Anything that has stopped being spent on either
  * side is deleted from both rather than kept against a use that might come
  * back.
  */

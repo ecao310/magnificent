@@ -638,7 +638,6 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
       '0.875rem',
       '1.0625rem',
       '1.125rem',
-      '1.25rem',
       '1.5rem',
       '2rem',
       '2.125rem',

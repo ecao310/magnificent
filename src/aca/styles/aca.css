@@ -13,7 +13,8 @@
 
 /* ───── This page's ground ──────────────────────────────────────────────────
  *
- * This page draws its lines in the site's own hues, and adds none.
+ * This page draws its lines in the site's own hues, and adds one: the
+ * emerald a subsidy is drawn in.
  */
 :root {
   /* The gutter recharts holds back for the y-axis — its ticks and its rotated
@@ -24,6 +25,11 @@
      other. Narrower on a phone, where the title comes off the axis. */
   --chart-axis: 76px;
   --chart-axis-narrow: 56px;
+
+  /* What a subsidy means: the tint between what you pay and the full premium,
+     on the plot and in the key. `palette.ts` carries the same literal for the
+     SVG. */
+  --emerald: #1d7d3e;
 }
 
 /* ───── What this page sets its own way ─────────────────────────────────────
@@ -44,6 +50,17 @@
 
 .step-config > :last-child {
   border-bottom: 1px solid var(--ink);
+}
+
+/* The sentence under the rate chart's heading that says what the chart draws.
+   This page's rather than the site's, because the torpedo page opens its
+   chart without one. */
+.step-deck {
+  margin: 0;
+  max-width: 40rem;
+  font-size: 1.125rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
 }
 
 /* ───── The select ─────────────────────────────────────────────────────────
@@ -448,6 +465,11 @@
 }
 
 @media print {
+  /* The subsidy's hue, a shade darker for paper, as the site's own are. */
+  :root {
+    --emerald: #176a33;
+  }
+
   /* The chooser and the reset: controls that only do something when clicked. */
   .chart-chooser,
   .reset-button {

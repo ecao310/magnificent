@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from './App';
 import { ADDRESS_SETTLE_MS } from '../shared/hooks/useScenarioAddress';
 import { PAGE_TAX_YEAR } from './lib/tax';
-import { pinPageYear, chooseFilingStatus, slide } from './test/pageFixtures';
+import { pinPageYear, chooseFilingStatus } from './test/pageFixtures';
 
 /**
  * What the two steps add up to: the close, and the link that carries the
@@ -107,18 +107,6 @@ describe('the closing answer', () => {
     );
   });
 
-  /**
-   * The denominator of the effective rate is the total income the axis label
-   * under step 2's chart already defines, and for the same reason: tax-exempt
-   * interest is money received.
-   */
-  it('counts tax-exempt interest as income received', () => {
-    render(<App />);
-    slide(/tax-exempt \(municipal\) interest/i, 10_000);
-    expect(figure('Total income')).toHaveTextContent('$74,852');
-    expect(figure('Federal tax')).toHaveTextContent('$4,189');
-  });
-
   it('re-prices every figure when step 2 moves the income', () => {
     render(<App />);
     setIncome(90_000);
@@ -192,9 +180,7 @@ describe('the closing answer', () => {
       { target: { value: '10000' } },
     );
     expect(figure('Total income')).toHaveTextContent('$74,852');
-    expect(figure('Total income')).toHaveTextContent(
-      'plus $10,000 of tax-exempt interest',
-    );
+    expect(figure('Federal tax')).toHaveTextContent('$4,189');
     expect(figure('Effective rate')).toHaveTextContent('5.6%');
 
     fireEvent.change(
@@ -202,7 +188,7 @@ describe('the closing answer', () => {
       { target: { value: '0' } },
     );
     expect(figure('Total income')).toHaveTextContent('$64,852');
-    expect(figure('Total income')).not.toHaveTextContent('tax-exempt interest');
+    expect(figure('Federal tax')).toHaveTextContent('$4,073');
   });
 
   /** No income is no denominator, and "0.00%" would be a claim about nothing. */

@@ -378,21 +378,6 @@
   color: var(--accent);
 }
 
-/* Pushed hard right, ahead of the mark, so the set values read as a status
- * line rather than as a subtitle to the label. */
-.advanced-state {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--ink-muted);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.advanced-state-set {
-  color: var(--emerald);
-}
-
 .advanced-inputs > summary::after {
   content: '+';
   font-family: var(--font-mono);

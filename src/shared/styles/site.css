@@ -44,9 +44,9 @@
  * clears it too, at the sizes it carries.
  *
  * The data colours keep their jobs on both pages: blue is the curve, amber is
- * the marker, emerald is a subsidy, and each page names the hues of its own
- * lines in its own sheet — so a reader matches a swatch in the key to a line
- * in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
+ * the marker, and each page names the hues of its own lines — the ACA page's
+ * emerald for a subsidy among them — in its own sheet, so a reader matches a
+ * swatch in the key to a line in the SVG by hue alone. Every one is chosen in oklch at a matched lightness and chroma so
  * that no line on the plot shouts over another; the values here are those
  * colours written out in sRGB, because a `var()` cannot reach an SVG attribute
  * and `palette.ts` has to carry the same literals.
@@ -73,11 +73,10 @@
   --accent: #2769b7;
   --accent-bright: #02468b;
 
-  /* What a marker and a subsidy mean, on both pages. Each page names the
-     hues of its own lines after these, in its own sheet. */
+  /* What a marker means, on both pages. Each page names the hues of its
+     own lines after this, in its own sheet. */
   --amber: #b76100;
   --amber-bright: #9f4600;
-  --emerald: #1d7d3e;
 
   /* ── The shell ──
      The reading column stops at 51.5rem and the return's column holds
@@ -131,8 +130,7 @@
  *   2.125   a section heading, and one of the six closing figures
  *   2       the page title on a narrow screen
  *   1.5     the rail's heading, the figures the controls carry
- *   1.25    a section's deck, the sentence under the slider
- *   1.125   the deck under the title, a note's heading
+ *   1.125   the deck under the title, a section's deck, a note's heading
  *   1.0625  body copy, a control's label
  *   .875    a note, a gloss, a footnote, the recap that closes the return
  *   .8125   a chart label, a button, a status line
@@ -1029,15 +1027,6 @@ footer p {
   margin-bottom: 1rem;
 }
 
-/* The sentence under a section heading that says what the section draws. */
-.step-deck {
-  margin: 0;
-  max-width: 40rem;
-  font-size: 1.25rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
-}
-
 /* ───── The figures ─────────────────────────────────────────────────────────
  *
  * Six of them, under one rule: the six figures the reader leaves with, each
@@ -1378,7 +1367,6 @@ footer p {
 
     --amber: #9f4600;
     --amber-bright: #7d3600;
-    --emerald: #176a33;
   }
 
   /* ── The sheet ──
