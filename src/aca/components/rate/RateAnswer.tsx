@@ -1,13 +1,7 @@
 import type { Adults, CoverageYear, StateCode } from '../../lib/aca';
 import { FILING_STATUS_PROSE } from '../../lib/tax';
 import type { AllInAssessment } from '../../lib/tax';
-import {
-  formatAxisPercent,
-  formatCents,
-  formatCurrency,
-  formatFpl,
-  formatPercent,
-} from '../../lib/format';
+import { formatCents, formatCurrency, formatFpl, formatPercent } from '../../lib/format';
 import { householdPhrase } from '../../lib/householdProse';
 import { Answer as Figures, Figure } from '../../../shared/components/Answer';
 import type { ShareLinkProps } from '../../../shared/components/ShareLink';
@@ -53,8 +47,8 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
         : ptc.credit === 0
           ? `${formatCurrency(monthly)}/mo: your share already covers the full premium.`
           : `${formatCurrency(monthly)}/mo, ${formatCurrency(
-              Math.round(here.premium ?? 0),
-            )} a year, after a subsidy of ${formatCurrency(Math.round(ptc.credit / 12))}/mo.`;
+            Math.round(here.premium ?? 0),
+          )} a year, after a subsidy of ${formatCurrency(Math.round(ptc.credit / 12))}/mo.`;
 
   return (
     <Figures
@@ -97,22 +91,7 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
         label="Federal income tax"
         value={formatCurrency(Math.round(here.incomeTax))}
         of="for the year"
-        gloss={
-          <>
-            {formatPercent(here.incomeTaxShare)} of income
-            {here.taxableIncome === 0
-              ? `: the ${formatCurrency(here.standardDeduction)} standard deduction covers it all.`
-              : `, on ${formatCurrency(here.taxableIncome)} after the ${formatCurrency(
-                  here.standardDeduction,
-                )} standard deduction; the last dollar is in the ${formatAxisPercent(
-                  here.bracketRate,
-                )} bracket${
-                  here.childTaxCredit > 0
-                    ? `, and ${formatCurrency(Math.round(here.childTaxCredit))} of child tax credit is taken off`
-                    : ''
-                }.`}
-          </>
-        }
+        gloss={`${formatPercent(here.incomeTaxShare)} of income.`}
       />
 
       <Figure
@@ -141,8 +120,8 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
             ptc.floorMultiple > 1
               ? 'No Marketplace premium under the Medicaid line.'
               : `No subsidy under 100% of the poverty line; the full premium would be ${formatCurrency(
-                  ptc.benchmarkMonthly,
-                )}/mo.`
+                ptc.benchmarkMonthly,
+              )}/mo.`
           }
         />
       ) : (

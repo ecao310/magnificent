@@ -49,7 +49,6 @@ describe('the rate section', () => {
     // $1,780 of tax and $3,970 of premium on $50,000.
     expect(figure('All in')).toHaveTextContent('11.5%');
     expect(figure('Federal income tax')).toHaveTextContent('$1,780');
-    expect(figure('Federal income tax')).toHaveTextContent('$32,200 standard deduction');
     expect(figure('The plan’s share of income')).toHaveTextContent('7.9%');
     expect(figure('The plan’s share of income')).toHaveTextContent('$331/mo');
     expect(figure('Each extra $1 of income costs')).toHaveTextContent('10.0¢ in income tax');
@@ -66,11 +65,8 @@ describe('the rate section', () => {
     renderRate();
     chooseAdults('One adult');
     expect(document.querySelector('#answer .answer-subline')).toHaveTextContent('filing single');
-    expect(figure('Federal income tax')).toHaveTextContent('$16,100 standard deduction');
     chooseChildren(2);
     expect(document.querySelector('#answer .answer-subline')).toHaveTextContent('head of household');
-    expect(figure('Federal income tax')).toHaveTextContent('$24,150 standard deduction');
-    expect(figure('Federal income tax')).toHaveTextContent('child tax credit');
   });
 
   it('prices the full premium over the 400% line', () => {

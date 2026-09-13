@@ -52,17 +52,6 @@
   border-bottom: 1px solid var(--ink);
 }
 
-/* The sentence under the rate chart's heading that says what the chart draws.
-   This page's rather than the site's, because the torpedo page opens its
-   chart without one. */
-.step-deck {
-  margin: 0;
-  max-width: 40rem;
-  font-size: 1.125rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
-}
-
 /* ───── The select ─────────────────────────────────────────────────────────
  *
  * The one list on the page too long for a strip: fifty-one names. The box is
