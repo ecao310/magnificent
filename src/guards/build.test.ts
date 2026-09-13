@@ -90,7 +90,7 @@ describe('the build\'s chunking', () => {
   });
 
   it('sends what the pages share to one chunk of its own', () => {
-    for (const source of ['src/shared/hooks/useMediaQuery.ts', 'src/shared/hooks/useSettledReading.ts']) {
+    for (const source of ['src/shared/hooks/useMediaQuery.ts', 'src/shared/hooks/useScenarioAddress.ts']) {
       expect(chunkOf(root(source))).toBe('site');
     }
   });

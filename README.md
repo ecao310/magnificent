@@ -50,10 +50,9 @@ itself stands where the chart stands beside it.
    figure under it is a federal one.
 
    A dashed amber marker stands at your income — click or tap the chart,
-   drag a finger along it, or drag the slider under it to move it — and the
-   sentence under the slider is its reading. The hover reading over the
-   curve is drawn only for a pointer that can hover; a finger moves the
-   marker instead.
+   drag a finger along it, or drag the slider under it to move it. The hover
+   reading over the curve is drawn only for a pointer that can hover; a
+   finger moves the marker instead.
 
 Six figures follow the chart: total income, federal tax, effective rate, the
 rate on the next dollar, the taxable share of the benefit, and the Medicare

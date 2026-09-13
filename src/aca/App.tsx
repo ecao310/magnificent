@@ -11,13 +11,8 @@ import {
 import { chartFor, chartFromFragment, fragmentFor } from './lib/charts';
 import type { ChartId } from './lib/charts';
 import { allInFor, rateAxis as rateAxisFor, rateCurve } from './lib/tax';
-import { formatCurrency } from './lib/format';
 import { FURTHER_READING } from './lib/furtherReading';
-import { householdPhrase } from './lib/householdProse';
-import { rateReadoutText } from './lib/rateReadout';
-import { readoutText } from './lib/readout';
 import { useHousehold } from './hooks/useHousehold';
-import type { Moved } from './hooks/useHousehold';
 import { Page } from '../shared/components/Page';
 import { Answer } from './components/Answer';
 import { ChartChooser } from './components/ChartChooser';
@@ -49,13 +44,6 @@ const writeChart = (chart: ChartId): void => {
  * the other chart is one click away, in place.
  */
 const App: React.FC = () => {
-  /**
-   * Whose reading the live region is carrying, or null before the reader has
-   * moved anything. One region, keyed to the control last touched, so a drag
-   * is one announcement and arrival is none.
-   */
-  const [announceFrom, announce] = useState<Moved | null>(null);
-
   /** Which chart is showing: what the fragment asked for, the cost chart by default. */
   const [chart, setChart] = useState<ChartId>(() => chartFromFragment(window.location.hash));
   const choose = (next: ChartId): void => {
@@ -63,7 +51,7 @@ const App: React.FC = () => {
     writeChart(next);
   };
 
-  const h = useHousehold({ onMove: announce });
+  const h = useHousehold();
   const { year, income, scenario, axisMax, curveStep } = h;
 
   /** The first curve: what you pay, month by month, across every income. */
@@ -92,20 +80,6 @@ const App: React.FC = () => {
 
   const incomeSliderStep = Math.max(500, curveStep);
 
-  /** What the live region will read out, once whatever changed it has settled. */
-  const reading = ((): string => {
-    switch (announceFrom) {
-      case 'household':
-        return `${year} coverage for ${householdPhrase(h.adults, h.ages, h.state)}, benchmark ${formatCurrency(
-          here.benchmarkMonthly,
-        )} a month.`;
-      case 'income':
-        return chart === 'rate' ? rateReadoutText(rate) : readoutText(here);
-      default:
-        return '';
-    }
-  })();
-
   /** The button under the figures that sends the household as a link, whichever chart is showing. */
   const share = {
     canCopy: h.address.canCopy,
@@ -124,7 +98,6 @@ const App: React.FC = () => {
       linkNotes={h.linkNotes}
       onDismissNotes={h.dismissNotes}
       skipTo={chartFor(chart).section}
-      reading={reading}
       readings={FURTHER_READING}
       disclaimer="Educational only; not insurance, tax or financial advice. Figures are modelled from published HHS, IRS and CMS numbers and a national- or state-average premium unless you enter your own."
     >

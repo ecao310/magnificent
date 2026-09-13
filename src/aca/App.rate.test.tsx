@@ -14,7 +14,7 @@ import {
 
 /**
  * The rate chart's section as a reader meets it, once chosen: its own
- * figures, its own readout, and its own notes.
+ * figures and its own notes.
  */
 
 pinPageYear();
@@ -31,10 +31,6 @@ const figure = (name: string): HTMLElement => {
   const dt = within(block).getByText(name, { selector: '.answer-figure dt' });
   return dt.parentElement as HTMLElement;
 };
-
-/** The sentence under the rate chart's slider. */
-const readout = (): HTMLElement =>
-  document.querySelector('#step-rate .slider-readout') as HTMLElement;
 
 describe('the rate section', () => {
   it('takes the cost chart’s place, headed by its own figures for the same household', () => {
@@ -59,11 +55,9 @@ describe('the rate section', () => {
     expect(figure('Each extra $1 of income costs')).toHaveTextContent('10.0¢ in income tax');
   });
 
-  it('reads the sentence under its slider in its own terms', () => {
+  it('says under the Medicaid line that income tax is all there is', () => {
     renderRate();
-    expect(readout()).toHaveTextContent(/you pay 11\.5% all in: 3\.6% in income tax and 7\.9% for the plan/);
     slide(INCOME, 25_000);
-    expect(readout()).toHaveTextContent(/under the Medicaid line/);
     expect(figure('All in')).toHaveTextContent('tax alone');
     expect(figure('The plan’s share of income')).toHaveTextContent('Medicaid');
   });
@@ -93,7 +87,6 @@ describe('the rate section', () => {
     renderRate();
     chooseState('TX');
     typeMoney(INCOME, 15_000);
-    expect(readout()).toHaveTextContent(/no subsidy and no Medicaid/);
     expect(figure('The plan’s share of income')).toHaveTextContent('None');
     expect(figure('The plan’s share of income')).toHaveTextContent('full premium would be');
   });

@@ -1,7 +1,6 @@
 import type { Scenario, SubsidyLine } from '../../lib/aca';
 import type { AllInAssessment, RatePoint } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
-import { rateReadoutParts } from '../../lib/rateReadout';
 import { IncomeSlider } from '../IncomeSlider';
 import { RateChart } from './RateChart';
 
@@ -30,9 +29,7 @@ export interface RateStepProps {
  * one's place when the reader chooses it.
  *
  * The chart, a key under it — three marks is one more than a plot can name
- * in place — and then the one control that says where on it you are. The
- * sentence under the slider prices the point the marker is on, in this
- * chart's terms.
+ * in place — and then the one control that says where on it you are.
  */
 export const RateStep: React.FC<RateStepProps> = ({
   scenario,
@@ -92,7 +89,6 @@ export const RateStep: React.FC<RateStepProps> = ({
         onIncome={onIncome}
         axisMax={axisMax}
         step={incomeSliderStep}
-        readout={rateReadoutParts(here)}
       />
     </section>
   );

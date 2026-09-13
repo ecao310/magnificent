@@ -1,6 +1,5 @@
 import type { CostPoint, PtcAssessment, Scenario, SubsidyLine } from '../lib/aca';
 import { formatCurrency } from '../lib/format';
-import { readoutParts } from '../lib/readout';
 import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import { NARROW_QUERY } from './chartFrame';
 import { CostChart } from './CostChart';
@@ -33,9 +32,9 @@ export interface CostStepProps {
  *
  * The chart, then the one control that says where on it you are: a slider
  * inset to the plot area, so the thumb stands under the marker, and a field
- * for a figure nobody wants to drag to. The sentence under them prices the
- * point the marker is on. On a phone a key sits between the chart and the
- * slider, naming the premium line the plot is then too narrow to name.
+ * for a figure nobody wants to drag to. On a phone a key sits between the
+ * chart and the slider, naming the premium line the plot is then too narrow
+ * to name.
  */
 export const CostStep: React.FC<CostStepProps> = ({
   scenario,
@@ -57,11 +56,6 @@ export const CostStep: React.FC<CostStepProps> = ({
       <h2 className="step-heading" id="step-cost-heading">
         What you pay
       </h2>
-      <p className="step-deck">
-        Monthly cost of the benchmark plan after the subsidy, at every household income.
-        Tap or drag along the curve to move your marker; hover it for the subsidy at any
-        income.
-      </p>
 
       <figure className="chart-figure">
         <CostChart
@@ -97,7 +91,6 @@ export const CostStep: React.FC<CostStepProps> = ({
         onIncome={onIncome}
         axisMax={axisMax}
         step={incomeSliderStep}
-        readout={readoutParts(here)}
       />
     </section>
   );

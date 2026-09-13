@@ -69,11 +69,7 @@ export const Answer: React.FC<AnswerProps> = ({
       value={formatCurrency(totalIncome)}
       gloss={
         <>
-          Social security plus other income
-          {muniInterest > 0
-            ? `, plus ${formatCurrency(muniInterest)} of tax-exempt interest`
-            : ''}
-          .
+          Social security plus other income.
         </>
       }
     />
@@ -81,7 +77,7 @@ export const Answer: React.FC<AnswerProps> = ({
     <Figure
       label="Federal tax"
       value={formatCurrency(tax)}
-      gloss={<>What this {year} return owes. Federal only.</>}
+      gloss={<>What this {year} return owes.</>}
     />
 
     <Figure
