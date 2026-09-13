@@ -24,13 +24,7 @@ import type {
 } from './lib/tax';
 import { decodeScenario, scenarioUrl } from './lib/scenarioUrl';
 import { FURTHER_READING } from './lib/furtherReading';
-import { formatCurrency, formatPercent } from './lib/format';
-import {
-  FILING_STATUS_PROSE,
-  advancedInputs,
-  advancedProse,
-  ageProse as ageProseFor,
-} from './lib/returnProse';
+import { ageProse as ageProseFor } from './lib/returnProse';
 import { useScenarioAddress } from '../shared/hooks/useScenarioAddress';
 import { Page } from '../shared/components/Page';
 import { Answer } from './components/Answer';
@@ -76,11 +70,8 @@ import { TorpedoStep } from './components/TorpedoStep';
  * Nothing renders off a list of them any more. It carried a nav label, a
  * heading and a blurb per step until the nav and the next-step box went, and
  * the count a "Step 1 of 2" kicker numbered itself out of until the kickers
- * went too; the headings still shown are written where they are shown. What
- * is left is the one fact nothing else can supply — `StepId`, which the live
- * region is keyed to.
+ * went too; the headings still shown are written where they are shown.
  */
-type StepId = 'benefit' | 'torpedo';
 
 /**
  * The point on a swept curve at the reader's own value.
@@ -154,31 +145,6 @@ const App: React.FC = () => {
   const [spouseIsSenior, setSpouseIsSenior] = useState<boolean>(opening.spouseIsSenior);
   const [muniInterest, setMuniInterest] = useState<number>(opening.muniInterest);
 
-  /**
-   * Whose reading the live region is carrying, or null before the reader has
-   * moved anything.
-   *
-   * Every readout here is silent to a screen reader: moving a slider announces
-   * the slider's own value and nothing else, so the "you are here" sentence
-   * and the effective rate under it both change unheard. A live region fixes
-   * that, and the whole difficulty is how much to put in one — the closing
-   * figures read out on every notch of a drag would be worse than the silence
-   * they replaced. So the region carries exactly one step's reading: the step
-   * whose control was last touched.
-   *
-   * Keyed to the control the reader last touched rather than to whichever step
-   * is on screen, because every step is mounted at once and a reader can be
-   * working step 2's slider with step 1 still in view. And one rather than two
-   * regions, because step 1's benefit moves both readings — two regions would
-   * queue two announcements for one drag, which is the noise this is trying to
-   * avoid.
-   *
-   * Null at mount is what keeps things quiet on arrival: a region with nothing
-   * in it announces nothing, and the close is meant to be read on the way down
-   * rather than shouted on the way in.
-   */
-  const [announceFrom, announce] = useState<StepId | null>(null);
-
   /* Memoised because the address hook compares it by identity: a fresh
      object each render would rewrite the address on every render. */
   const pageScenario = useMemo(
@@ -203,11 +169,6 @@ const App: React.FC = () => {
     failed: 'This browser would not take the copy. Select the address bar and copy it — it is the same link.',
   };
 
-  const changeOrdinaryIncome = (next: number): void => {
-    setOrdinaryIncome(next);
-    announce('torpedo');
-  };
-
   /**
    * Line 6a on a joint return holds two benefits, so both ends of that slider
    * are the couple's: coming back from `mfj` can leave a figure standing past
@@ -227,7 +188,6 @@ const App: React.FC = () => {
         : Math.min(current, maxAnnualSSBenefit(year, next)),
     );
     setFilingStatus(next);
-    announce('benefit');
   };
 
   const changeIsSenior = (next: boolean): void => {
@@ -239,7 +199,6 @@ const App: React.FC = () => {
     // `seniors` below already ignored it; this is the control agreeing with
     // the arithmetic.
     if (!next) setSpouseIsSenior(false);
-    announce('benefit');
   };
 
   // Only a joint return can claim the addition twice, and the spouse's
@@ -418,54 +377,10 @@ const App: React.FC = () => {
   const ageProse = ageProseFor(seniors, filingStatus);
 
   /**
-   * What the live region will read out, once whatever changed it has settled.
-   *
-   * One step's reading each, written to be listened to rather than looked at:
-   * plain sentences with no markup to flatten, no em dashes, and the figures
-   * in the order the eye takes them off the screen. It says what that step's
-   * own readout says and stops there: the closing figures stay put, for a
-   * reader who goes and reads them.
-   *
-   * Not memoised: it is two string concatenations on a component that has
-   * already swept a curve, and holding it as a plain value is what lets the
-   * settle hook below compare readings by their text rather than by identity.
-   */
-  const reading = ((): string => {
-    switch (announceFrom) {
-      case 'benefit': {
-        /* The recap on screen, flattened: same words, same separators, so a
-           listener and a reader are never told about two different returns. It
-           used to tack the advanced inputs on as bare labels — "Muni interest
-           $10,000" — because the recap only pointed at them and a pointer is no
-           use to someone who has just moved one. The recap names them now, so
-           this names them the same way, in the same second sentence. */
-        const advanced = advancedInputs(muniInterest);
-        const collecting =
-          ssBenefit > 0
-            ? `collecting ${formatCurrency(ssBenefit)} of Social Security per year`
-            : 'collecting no Social Security at all';
-        const plus = advanced.length ? ` Plus ${advancedProse(advanced)}.` : '';
-        return `${year} brackets, ${FILING_STATUS_PROSE[filingStatus]}, ${ageProse}, ${collecting}.${plus}`;
-      }
-      case 'torpedo':
-        return herePoint
-          ? `At ${formatCurrency(ordinaryIncome)} of other income the next dollar is taxed at ${herePoint.marginalRate
-          }%. Federal tax ${formatCurrency(herePoint.totalTax)} on ${formatCurrency(
-            totalIncome,
-          )} of total income, an effective rate of ${formatPercent(
-            totalIncome > 0 ? herePoint.totalTax / totalIncome : 0,
-          )}.`
-          : '';
-      default:
-        return '';
-    }
-  })();
-
-  /**
    * The year's federal tax at the reader's point.
    *
    * Read off the curve rather than recomputed, so the close quotes the figure
-   * step 2's readout already quotes rather than a second rounding of it.
+   * the curve was drawn from rather than a second rounding of it.
    * `totalTax` stands in for a slider parked below the curve's first sample,
    * which would mean below $0, and is the same call the sweep makes at every
    * point it plots.
@@ -484,7 +399,6 @@ const App: React.FC = () => {
          whatever fragment the reader arrived on so a link can point at a
          step — and the chart is what the steps lead to. */
       skipTo="step-torpedo"
-      reading={reading}
       readings={FURTHER_READING}
       disclaimer="This tool is for educational purposes only and does not constitute tax or financial advice. Please consult a qualified tax professional regarding your specific situation."
     >
@@ -495,22 +409,13 @@ const App: React.FC = () => {
         isSenior={isSenior}
         onSenior={changeIsSenior}
         spouseIsSenior={spouseIsSenior}
-        onSpouseSenior={(next) => {
-          setSpouseIsSenior(next);
-          announce('benefit');
-        }}
+        onSpouseSenior={setSpouseIsSenior}
         seniors={seniors}
         ageProse={ageProse}
         ssBenefit={ssBenefit}
-        onSsBenefit={(next) => {
-          setSsBenefit(next);
-          announce('benefit');
-        }}
+        onSsBenefit={setSsBenefit}
         muniInterest={muniInterest}
-        onMuniInterest={(next) => {
-          setMuniInterest(next);
-          announce('benefit');
-        }}
+        onMuniInterest={setMuniInterest}
       />
 
       <div className="flow">
@@ -521,11 +426,10 @@ const App: React.FC = () => {
           muniInterest={muniInterest}
           beneficiaries={beneficiaries}
           ordinaryIncome={ordinaryIncome}
-          onOrdinaryIncome={changeOrdinaryIncome}
+          onOrdinaryIncome={setOrdinaryIncome}
           curve={curve}
           axisMax={axisMax}
           incomeSliderStep={Math.max(500, curveStep)}
-          herePoint={herePoint}
           totalIncome={totalIncome}
           totalIncomeAt={totalIncomeAt}
           cliffsOnChart={cliffsOnChart}

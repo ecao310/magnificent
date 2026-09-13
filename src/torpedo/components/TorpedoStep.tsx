@@ -5,7 +5,7 @@ import type {
   PtcCliff,
   TaxYear,
 } from '../lib/tax';
-import { formatCurrency, formatPercent } from '../lib/format';
+import { formatCurrency } from '../lib/format';
 import { BreakpointsMenu } from './BreakpointsMenu';
 import { TorpedoChart } from './TorpedoChart';
 import { useState } from 'react';
@@ -64,8 +64,6 @@ export interface TorpedoStepProps {
   curve: MarginalRatePoint[];
   axisMax: number;
   incomeSliderStep: number;
-  /** Where the reader is standing, read back off the curve. */
-  herePoint: MarginalRatePoint | undefined;
   totalIncome: number;
   totalIncomeAt: (otherIncome: number) => number;
   /** The IRMAA cliffs the axis reaches. */
@@ -80,11 +78,9 @@ export interface TorpedoStepProps {
  *
  * The chart, then the one control that says where on that chart the reader is
  * standing: a slider inset to the plot area, so the thumb stands under the
- * marker, and the sentence under it prices the point the marker is on. The
- * plot is a cursor too — a tap, a click or a finger drawn along it moves the
- * same marker — so on a phone the slider is the second way rather than the
- * only one. The
- * notes are a section of their own, under the figures. Which of the two
+ * marker. The plot is a cursor too — a tap, a click or a finger drawn along it
+ * moves the same marker — so on a phone the slider is the second way rather
+ * than the only one. The notes are a section of their own, under the figures. Which of the two
  * threshold lines are drawn is the one piece of state that belongs to this
  * step and nowhere else — neither is income tax. The Medicare cliffs start on, because every
  * reader meets them sooner or later; the 400% line starts off, because it
@@ -104,7 +100,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
   curve,
   axisMax,
   incomeSliderStep,
-  herePoint,
   totalIncome,
   totalIncomeAt,
   cliffsOnChart,
@@ -136,9 +131,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
   const drawnCliffs = showIrmaaLines ? cliffsOnChart : [];
   const drawnSubsidyCliff = showSubsidyLine ? subsidyCliffOnChart : null;
 
-  const effectiveRate = (tax: number): number =>
-    totalIncome > 0 ? tax / totalIncome : 0;
-
   return (
     <section
       className="step"
@@ -149,11 +141,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
       <h2 className="step-heading" id="step-torpedo-heading">
         The tax torpedo
       </h2>
-      <p className="step-deck">
-        The marginal rate on the next dollar of other income, plotted against
-        total income. Tap or drag along the curve to move your marker; hover it
-        for the figures at any income.
-      </p>
 
       <figure className="chart-figure">
         <BreakpointsMenu
@@ -190,8 +177,8 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
           <span className="slider-value amber">{formatCurrency(ordinaryIncome)}</span>
         </div>
         {/* The track and its end labels, in a box of their own so the phone
-            rules can keep them inset to the plot while the label above and
-            the sentence below take the whole measure. */}
+            rules can keep them inset to the plot while the label above
+            takes the whole measure. */}
         <div className="chart-slider-track">
           <input
             id="ordinary-income"
@@ -209,31 +196,6 @@ export const TorpedoStep: React.FC<TorpedoStepProps> = ({
             <span>{formatCurrency(axisMax)}</span>
           </div>
         </div>
-
-        {/* No "You are here." lead. Three things already say that this
-            sentence is about the reader's own point and not the chart's:
-            the dashed amber marker, the amber slider directly above, and
-            the amber figure beside its label — and the sentence names
-            the income the reader set in its first five words. The label
-            was a fourth telling, and it was set in the same bold as the
-            three figures below it, so the one phrase the paragraph
-            stressed hardest was the one carrying no figure at all. */}
-        <p className="slider-readout">
-          At {formatCurrency(ordinaryIncome)} of other income the next
-          dollar is taxed at{' '}
-          <strong>{herePoint ? `${herePoint.marginalRate}%` : '—'}</strong>.
-          {herePoint && totalIncome > 0 ? (
-            <>
-              {' '}
-              This return owes{' '}
-              <strong>{formatCurrency(herePoint.totalTax)}</strong> in federal
-              tax on {formatCurrency(totalIncome)} of total income &mdash; an
-              effective rate of{' '}
-              <strong>{formatPercent(effectiveRate(herePoint.totalTax))}</strong>
-              .
-            </>
-          ) : null}
-        </p>
       </div>
     </section>
   );

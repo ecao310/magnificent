@@ -763,47 +763,6 @@ describe('the shape every step shares', () => {
     expect(document.getElementById('step-torpedo')?.contains(slider)).toBe(true);
   });
 
-  /**
-   * The readout is what makes the slider more than an inert control: it reads
-   * the drawn curve back at the value the reader picked, which is the number
-   * the chart cannot show them without being pointed at.
-   */
-  it('reads the torpedo curve back at the reader’s own income', () => {
-    render(<App />);
-    const readout = (): HTMLElement =>
-      document.querySelector('#step-torpedo .slider-readout') as HTMLElement;
-    expect(readout()).toHaveTextContent('At $40,000 of other income');
-
-    fireEvent.change(
-      screen.getByRole('slider', { name: /other income \(excluding social security\)/i }),
-      { target: { value: '90000' } },
-    );
-    expect(readout()).toHaveTextContent('At $90,000 of other income');
-    expect(readout()).toHaveTextContent(/taxed at\s+\d+(\.\d+)?%/);
-  });
-
-  /**
-   * The readout opens on the figure, not on a label for it.
-   *
-   * "You are here." led this paragraph for as long as it existed, and it was
-   * the third thing on screen saying so: the dashed amber marker crosses the
-   * curve at this point, the amber slider sits directly above, and the amber
-   * figure beside the slider's label names the same income. Worse, it was
-   * bold — the same weight as the rate, the tax and the effective rate — so
-   * the phrase the paragraph stressed hardest was the only one with no figure
-   * in it.
-   *
-   * Anchored at the start rather than asserted absent from the document: the
-   * 400% explainer opens a paragraph the same way about a MAGI figure, and it
-   * is a section lead inside a disclosure rather than a label on the chart.
-   */
-  it('opens on the reader’s income rather than a label for it', () => {
-    render(<App />);
-    const readout =
-      document.querySelector('#step-torpedo .slider-readout') as HTMLElement;
-    expect(readout).toHaveTextContent(/^At \$40,000 of other income/);
-    expect(readout.querySelector('strong')).toHaveTextContent('22.2%');
-  });
 });
 
 /**
@@ -815,7 +774,7 @@ describe('the shape every step shares', () => {
  *
  * The band-by-band caption that sat under the figure until now — "0% up to
  * $14,750, 15% to $21,500, …" — is off the page. What states where the reader
- * is standing is the readout under the slider, which quotes their own dollar
+ * is standing is the close under the chart, which quotes their own dollar
  * rather than running through every band on the curve.
  *
  * Figures below are 2026, single, the $24,852 average benefit.

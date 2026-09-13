@@ -242,15 +242,6 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
       <details className="advanced-inputs">
         <summary>
           <span className="advanced-label">Advanced inputs</span>
-          {advanced.length > 0 ? (
-            <span className="advanced-state advanced-state-set">
-              {advanced
-                .map(({ label, value }) => `${label} ${formatCurrency(value)}`)
-                .join(' · ')}
-            </span>
-          ) : (
-            <span className="advanced-state">At $0</span>
-          )}
         </summary>
         <div className="input-group">
           <div className="slider-header">
@@ -273,10 +264,8 @@ export const BenefitStep: React.FC<BenefitStepProps> = ({
             <span>{formatCurrency(MAX_MUNI_INTEREST)}</span>
           </div>
           <p className="field-note">
-            Municipal bond interest never enters taxable income, but it counts
-            toward provisional income dollar for dollar — so it drags benefits
-            into the tax base exactly as fast as a paycheck would, and shifts the
-            whole curve to the left.
+            Municipal bond interest isn't taxable income, but it counts
+            toward provisional income.
           </p>
         </div>
       </details>

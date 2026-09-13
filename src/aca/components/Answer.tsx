@@ -77,8 +77,8 @@ export const Answer: React.FC<AnswerProps> = ({
             noSubsidy
               ? `${formatCurrency(annual)} a year — the full premium.`
               : `${formatCurrency(annual)} a year · ${formatPercent(
-                  here.applicablePercentage,
-                )} of income. A cheaper plan costs less; the subsidy is the same.`
+                here.applicablePercentage,
+              )} of income.`
           }
         />
       )}
@@ -107,10 +107,9 @@ export const Answer: React.FC<AnswerProps> = ({
           here.slope === 0
             ? 'No subsidy left to lose.'
             : `${formatCurrency(nextBlock)} more income → ${formatCurrency(
-                nextBlockCost,
-              )} less subsidy for the year${
-                nextBlockCrossesCliff ? ' — it crosses the 400% line' : ''
-              }.`
+              nextBlockCost,
+            )} less subsidy for the year${nextBlockCrossesCliff ? ' — it crosses the 400% line' : ''
+            }.`
         }
       />
 

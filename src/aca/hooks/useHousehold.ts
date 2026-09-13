@@ -13,14 +13,6 @@ import type { ScenarioAddress } from '../../shared/hooks/useScenarioAddress';
  */
 export const curveStepFor = (axisMax: number): number => (axisMax > 200_000 ? 500 : 250);
 
-/** Which control the reader last moved: the household in the rail, or the income under the chart. */
-export type Moved = 'household' | 'income';
-
-export interface HouseholdOptions {
-  /** Called after any change, with which of the two kinds it was. */
-  onMove?: (moved: Moved) => void;
-}
-
 /** The household as the page holds it, with everything both charts derive from it. */
 export interface Household {
   /** The year every figure on the page is priced for. See `PAGE_COVERAGE_YEAR`. */
@@ -64,10 +56,9 @@ export interface Household {
  * the axis they share, and the address bar kept in step.
  *
  * Apart from the composition root because what is here is the household
- * and what is there is the page. The setters report which kind of control
- * moved, so the live region can decide what to read out.
+ * and what is there is the page.
  */
-export function useHousehold({ onMove }: HouseholdOptions = {}): Household {
+export function useHousehold(): Household {
   /** The household this opened with, read out of the address bar once. */
   const [openedWith] = useState(() => decodeScenario(window.location.search));
   const opening = openedWith.scenario;
@@ -96,14 +87,6 @@ export function useHousehold({ onMove }: HouseholdOptions = {}): Household {
 
   const axisMax = useMemo(() => axisMaxFor(scenario), [scenario]);
 
-  /** A setter that says which kind of control moved once it has. */
-  const moving =
-    <T,>(set: (next: T) => void, moved: Moved) =>
-    (next: T): void => {
-      set(next);
-      onMove?.(moved);
-    };
-
   return {
     year,
     linkNotes,
@@ -115,13 +98,13 @@ export function useHousehold({ onMove }: HouseholdOptions = {}): Household {
     dependents,
     state,
     benchmarkPremium,
-    setAdults: moving(setAdults, 'household'),
-    setAge: moving(setAge, 'household'),
-    setSpouseAge: moving(setSpouseAge, 'household'),
-    setIncome: moving(setIncome, 'income'),
-    setDependents: moving(setDependents, 'household'),
-    setState: moving(setState, 'household'),
-    setBenchmarkPremium: moving(setBenchmarkPremium, 'household'),
+    setAdults,
+    setAge,
+    setSpouseAge,
+    setIncome,
+    setDependents,
+    setState,
+    setBenchmarkPremium,
     ages: adults === 2 ? [age, spouseAge] : [age],
     pageScenario,
     scenario,

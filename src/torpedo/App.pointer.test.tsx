@@ -91,10 +91,6 @@ describe('the plot as a cursor', () => {
     expect(expected).not.toBeNull();
     expect(String(expected)).not.toBe(before);
     expect(slider()).toHaveValue(String(expected));
-    // The sentence under the slider follows the marker.
-    expect(document.querySelector('#step-torpedo .slider-readout')).toHaveTextContent(
-      `At $${Number(expected).toLocaleString('en-US')} of other income`,
-    );
   });
 
   it('drags the marker under a finger drawn along the plot, and leaves it where the finger lifts', () => {

@@ -2,100 +2,19 @@ import { render, screen, fireEvent, within, act, cleanup } from '@testing-librar
 import { vi } from 'vitest';
 import App from './App';
 import { ADDRESS_SETTLE_MS } from '../shared/hooks/useScenarioAddress';
-import { READING_SETTLE_MS } from '../shared/hooks/useSettledReading';
 import { PAGE_TAX_YEAR } from './lib/tax';
 import { pinPageYear, chooseFilingStatus, slide } from './test/pageFixtures';
 
 /**
- * What the two steps add up to: the close, the link that carries the return,
- * and the reading a screen reader hears when a control moves.
+ * What the two steps add up to: the close, and the link that carries the
+ * return.
  *
- * The three belong together because all three are the same claim from
- * different sides — that what is on screen, what is in the address bar and
- * what is said aloud are all describing one return.
+ * The two belong together because both are the same claim from different
+ * sides — that what is on screen and what is in the address bar are
+ * describing one return.
  */
 
 pinPageYear();
-
-/* ------------------------------------------------------------------ */
-/*  What the return actually owes                                      */
-/* ------------------------------------------------------------------ */
-
-/**
- * Every rate this page quoted was the price of the *next* dollar. The total
- * bill existed only inside the tooltip, which means a reader who never
- * hovered — and every reader on a touch screen — walked both steps without
- * once being told what the return costs.
- *
- * The effective rate beside it is the average the marginal rate is so often
- * mistaken for.
- */
-describe('the total the return owes', () => {
-  const readout = (step: string): HTMLElement =>
-    document.querySelector(`#step-${step} .slider-readout`) as HTMLElement;
-
-  it('states the bill and the effective rate under the torpedo slider', () => {
-    render(<App />);
-    // $40,000 of other income and the $24,852 average benefit, for a filer at
-    // 65: the base deduction, the age-65 addition and the senior deduction.
-    expect(readout('torpedo')).toHaveTextContent(
-      'owes $4,073 in federal tax on $64,852 of total income — an effective rate of 6.28%',
-    );
-  });
-
-  /**
-   * The two rates are left to stand as figures.
-   *
-   * The paragraph used to gloss both of them. After the marginal rate came
-   * “where the dashed amber line crosses the curve above — that point on the
-   * curve, not the curve itself, is what the slider moves”, which described
-   * the chart's mechanics to a reader who had just moved the slider and
-   * watched it happen. After the effective rate came “that is the average
-   * across every dollar of it; the figure before it is the price of the next
-   * one”, which drew a distinction the sentence around it already draws by
-   * saying “the next dollar” of one and “on $54,852 of total income” of the
-   * other.
-   *
-   * Asserted absent rather than merely untested: this paragraph has grown a
-   * gloss back twice, and a passing test on the figures alone would not
-   * notice a third.
-   */
-  it('leaves the two rates as figures rather than glossing them', () => {
-    render(<App />);
-    expect(readout('torpedo')).toHaveTextContent('taxed at 22.2%');
-    expect(readout('torpedo')).not.toHaveTextContent(/what the slider moves/);
-    expect(readout('torpedo')).not.toHaveTextContent(/price of the next one/);
-  });
-
-  it('moves all three figures when the income does', () => {
-    render(<App />);
-    slide(/other income \(excluding social security\)/i, 90_000);
-    expect(readout('torpedo')).toHaveTextContent(
-      'owes $14,323 in federal tax on $114,852 of total income — an effective rate of 12.47%',
-    );
-  });
-
-  /**
-   * The denominator is the total income the axis label under step 2's chart
-   * already defines, and for the same reason: tax-exempt interest is money
-   * received.
-   */
-  it('counts tax-exempt interest as income received', () => {
-    render(<App />);
-    slide(/tax-exempt \(municipal\) interest/i, 10_000);
-    expect(readout('torpedo')).toHaveTextContent(
-      'owes $4,189 in federal tax on $74,852 of total income',
-    );
-  });
-
-  it('says nothing at all when nothing comes in', () => {
-    render(<App />);
-    slide(/social security benefit/i, 0);
-    slide(/other income \(excluding social security\)/i, 0);
-    expect(readout('torpedo')).not.toHaveTextContent('of total income');
-    expect(readout('torpedo')).not.toHaveTextContent('effective rate');
-  });
-});
 
 /**
  * The close.
@@ -189,21 +108,15 @@ describe('the closing answer', () => {
   });
 
   /**
-   * The tax and the two rates are already on the page once — step 2's readout
-   * quotes both. The close is a second rendering of one figure, not a second
-   * calculation of it.
+   * The denominator of the effective rate is the total income the axis label
+   * under step 2's chart already defines, and for the same reason: tax-exempt
+   * interest is money received.
    */
-  it('quotes the same tax and rates the step above it does', () => {
+  it('counts tax-exempt interest as income received', () => {
     render(<App />);
-    const torpedoReadout = document.querySelector(
-      '#step-torpedo .slider-readout',
-    ) as HTMLElement;
-    expect(torpedoReadout).toHaveTextContent('owes $4,073 in federal tax');
-    expect(torpedoReadout).toHaveTextContent('an effective rate of 6.28%');
-
-    expect(figure('Federal tax')).toHaveTextContent('$4,073');
-    expect(figure('Effective rate')).toHaveTextContent('6.28%');
-    expect(figure('Marginal rate')).toHaveTextContent('22.2%');
+    slide(/tax-exempt \(municipal\) interest/i, 10_000);
+    expect(figure('Total income')).toHaveTextContent('$74,852');
+    expect(figure('Federal tax')).toHaveTextContent('$4,189');
   });
 
   it('re-prices every figure when step 2 moves the income', () => {
@@ -525,9 +438,6 @@ describe('the return in the address bar', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(incomeSlider()).toHaveValue('120000');
     expect(window.location.search).toBe('?income=120000');
-    expect(
-      document.querySelector('#step-torpedo .slider-readout'),
-    ).toHaveTextContent('At $120,000 of other income');
   });
 
   /**
@@ -770,133 +680,3 @@ describe('the return in the address bar', () => {
   });
 });
 
-/**
- * The one thing on this page that is heard rather than read.
- *
- * Every readout here was silent: a range input announces its own new value and
- * nothing else, so the "you are here" sentence, the effective rate under it
- * and the six closing figures all changed under a screen
- * reader without a word. What is asserted below is as much about what the
- * region does *not* say — nothing on arrival, nothing mid-drag, and never two
- * steps' readings for one control — as about what it does.
- */
-describe('the live reading under the controls', () => {
-  /**
-   * Full fake timers here, where the rest of the file fakes only the clock:
-   * the settle delay is the subject, so it has to be advanced rather than
-   * waited out. The system time still has to be set, because the app opens on
-   * whatever year the calendar says.
-   */
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(`${PAGE_TAX_YEAR}-07-01T00:00:00Z`));
-  });
-
-  const region = (): HTMLElement =>
-    document.querySelector('.live-reading') as HTMLElement;
-
-  /** Let whatever was last moved come to rest. */
-  const settle = (): void => {
-    act(() => {
-      vi.advanceTimersByTime(READING_SETTLE_MS);
-    });
-  };
-
-  /** A notch of a drag: not enough stillness to be read out. */
-  const nudge = (): void => {
-    act(() => {
-      vi.advanceTimersByTime(READING_SETTLE_MS - 100);
-    });
-  };
-
-  const income = /other income \(excluding social security\)/i;
-  const benefit = /social security benefit/i;
-
-  it('is on the page before it has anything to say', () => {
-    render(<App />);
-    expect(region()).toBeInTheDocument();
-    expect(region()).toHaveAttribute('aria-live', 'polite');
-    expect(region()).toHaveAttribute('aria-atomic', 'true');
-    expect(region().textContent).toBe('');
-  });
-
-  /**
-   * A page that announces itself on arrival talks over the reader's own walk
-   * down it. The close is meant to be read on the way past, not shouted on
-   * the way in.
-   */
-  it('says nothing on arrival', () => {
-    render(<App />);
-    settle();
-    expect(region().textContent).toBe('');
-  });
-
-  it('reads step 2 back once the income slider has settled', () => {
-    render(<App />);
-    slide(income, 10_000);
-    expect(region().textContent).toBe('');
-    settle();
-    expect(region()).toHaveTextContent(
-      'At $10,000 of other income the next dollar is taxed at 0%',
-    );
-    expect(region()).toHaveTextContent('an effective rate of');
-  });
-
-  /**
-   * The reason for the delay: a range input fires a change per notch, and a
-   * polite region reads each one out in full before it looks at the next. A
-   * drag across the axis has to be one sentence, and it has to be the sentence
-   * about where the reader stopped.
-   */
-  it('reads the end of a drag rather than every notch of it', () => {
-    render(<App />);
-    slide(income, 10_000);
-    nudge();
-    slide(income, 20_000);
-    nudge();
-    slide(income, 30_000);
-    expect(region().textContent).toBe('');
-    settle();
-    expect(region()).toHaveTextContent('At $30,000 of other income');
-    expect(region()).not.toHaveTextContent('$10,000 of other income');
-    expect(region()).not.toHaveTextContent('$20,000 of other income');
-  });
-
-  /**
-   * One region, carrying the step whose control moved. Step 1's benefit moves
-   * every reading on the page, so a region per step would queue four
-   * announcements for one drag — the noise this is built to avoid.
-   */
-  it('carries the reading of the step whose control moved, and only that one', () => {
-    render(<App />);
-    slide(benefit, 30_000);
-    settle();
-    expect(region()).toHaveTextContent(
-      '2026 brackets, a single filer, 65 or older, collecting $30,000 of Social Security per year.',
-    );
-    expect(region()).not.toHaveTextContent('the next dollar is taxed at');
-
-    slide(income, 50_000);
-    settle();
-    expect(region()).toHaveTextContent('At $50,000 of other income');
-    expect(region()).not.toHaveTextContent('brackets, a single filer');
-  });
-
-  /**
-   * The reading and the recap on screen describe the same return, in the same
-   * words: the reading used to tack the advanced inputs on as bare labels
-   * ("Muni interest $10,000") because the recap only pointed at them.
-   */
-  it('names the advanced inputs the way the recap on screen does', () => {
-    render(<App />);
-    fireEvent.click(screen.getByText('Advanced inputs'));
-    slide(/tax-exempt \(municipal\) interest/i, 10_000);
-    settle();
-    expect(region()).toHaveTextContent(
-      'collecting $24,852 of Social Security per year. Plus $10,000 in ' +
-        'municipal interest.',
-    );
-    expect(region()).not.toHaveTextContent('Muni interest');
-  });
-
-});

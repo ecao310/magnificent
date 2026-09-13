@@ -258,9 +258,9 @@ const rings = (css: string): { selectors: string[]; property: string; value: str
  *
  * `min-width` is left out: `body` sets a 320px floor, which is a statement
  * about the smallest window the page will try to draw in and not a measure
- * of a column. So is anything in a rule that clips — `.live-reading` is a box
- * shrunk to a pixel and clipped to nothing so that a live region stays in the
- * accessibility tree while being off the screen.
+ * of a column. So is anything in a rule that clips — `.skip-link` is a box
+ * shrunk to a pixel and clipped to nothing so that the link stays in the tab
+ * order while being off the screen.
  */
 const widths = (css: string): { selectors: string[]; property: string; value: string }[] =>
   leafRules(css)
@@ -807,20 +807,20 @@ describe.each(GUARDED_PAGES)('$name’s stylesheet', (page) => {
   });
 
   /**
-   * Two regions wait empty for a message: the reading, and the line under the
-   * copy button. Neither may be `display: none` while it waits — that takes a
-   * region out of the accessibility tree, and a message that lands as it comes
-   * back in is not read out reliably — and neither may be `visibility:
-   * hidden`, which does the same. Clipped to a pixel, or collapsed to no
-   * width, is how a region stays in the tree and off the page.
+   * One region waits empty for a message: the line under the copy button. It
+   * may not be `display: none` while it waits — that takes a region out of
+   * the accessibility tree, and a message that lands as it comes back in is
+   * not read out reliably — and it may not be `visibility: hidden`, which
+   * does the same. Collapsed to no width is how a region stays in the tree
+   * and off the page.
    */
-  describe('the live regions', () => {
-    it('are never hidden outright while they wait empty', () => {
+  describe('the live region', () => {
+    it('is never hidden outright while it waits empty', () => {
       const waiting = leafRules(sheet.screen).filter((rule) =>
-        rule.selectors.some((selector) => /live-reading|answer-share-status/.test(selector)),
+        rule.selectors.some((selector) => /answer-share-status/.test(selector)),
       );
       // Guards the extractor itself: an empty list would pass vacuously.
-      expect(waiting.length).toBeGreaterThan(1);
+      expect(waiting.length).toBeGreaterThan(0);
 
       const hidden = waiting
         .filter((rule) => /display:\s*none|visibility:\s*hidden/.test(rule.body))
