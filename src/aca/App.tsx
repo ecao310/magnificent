@@ -3,7 +3,6 @@ import {
   cliffCost as cliffCostFor,
   costCurve,
   creditLostBetween,
-  creditRunsOutMagi,
   ptcCliffMagi,
   ptcFor,
   subsidyLines,
@@ -69,7 +68,6 @@ const App: React.FC = () => {
   const rate = useMemo(() => allInFor(income, scenario), [income, scenario]);
   const lines = useMemo(() => subsidyLines(scenario), [scenario]);
   const cliffCost = useMemo(() => cliffCostFor(scenario), [scenario]);
-  const runsOutMagi = useMemo(() => creditRunsOutMagi(scenario), [scenario]);
   const rateAxis = useMemo(() => rateAxisFor(rates, rate.allInShare), [rates, rate.allInShare]);
 
   /** What the next $10,000 of income would cost in subsidy, cliff included if it is crossed. */
@@ -174,15 +172,7 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <Notes
-        chart={chart}
-        year={year}
-        scenario={scenario}
-        here={here}
-        cliffCost={cliffCost}
-        runsOutMagi={runsOutMagi}
-        rate={rate}
-      />
+      <Notes scenario={scenario} here={here} cliffCost={cliffCost} />
     </Page>
   );
 };

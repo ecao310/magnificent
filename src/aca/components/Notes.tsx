@@ -1,63 +1,30 @@
-import type { CoverageYear, PtcAssessment, Scenario } from '../lib/aca';
-import type { ChartId } from '../lib/charts';
-import type { AllInAssessment } from '../lib/tax';
+import type { PtcAssessment, Scenario } from '../lib/aca';
 import { NotesSection } from '../../shared/components/NotesSection';
 import { CliffExplainer } from './explainers/CliffExplainer';
 import { CreditExplainer } from './explainers/CreditExplainer';
 import { FloorExplainer } from './explainers/FloorExplainer';
 import { LeftOutExplainer } from './explainers/LeftOutExplainer';
 import { SlopeExplainer } from './explainers/SlopeExplainer';
-import { PremiumAsTaxExplainer } from './rate/explainers/PremiumAsTaxExplainer';
-import { RateExplainer } from './rate/explainers/RateExplainer';
 
 export interface NotesProps {
-  /** Which chart is showing, and so which notes are its working. */
-  chart: ChartId;
-  year: CoverageYear;
   scenario: Scenario;
   /** Where the household stands against the subsidy, so every note is priced at the reader's own income. */
   here: PtcAssessment;
   cliffCost: number | null;
-  /** Where the share reaches the full premium under the line, or null where the line ends the credit. */
-  runsOutMagi: number | null;
-  /** The same standing with the tax added, for the rate chart's notes. */
-  rate: AllInAssessment;
 }
 
 /**
- * The notes behind whichever chart is showing, in the order a reader meets
- * what they describe. Under the cost chart: how the subsidy is figured, what
- * the next dollar costs, the line the whole thing ends at, the line it
- * starts at, and what is not priced. Under the rate chart: how the tax is
- * added, why the premium is on that side of the ledger, and what is not
- * priced on either side.
+ * The notes behind the figures, in the order a reader meets what they
+ * describe: how the subsidy is figured, what the next dollar costs, the line
+ * the whole thing ends at, the line it starts at, and what is not priced.
+ * Both charts price the same subsidy, so both carry the same notes.
  */
-export const Notes: React.FC<NotesProps> = ({
-  chart,
-  year,
-  scenario,
-  here,
-  cliffCost,
-  runsOutMagi,
-  rate,
-}) => (
+export const Notes: React.FC<NotesProps> = ({ scenario, here, cliffCost }) => (
   <NotesSection>
-    {chart === 'cost' ? (
-      <>
-        <CreditExplainer here={here} year={year} />
-        <SlopeExplainer here={here} year={year} />
-        {here.cliffApplies && (
-          <CliffExplainer here={here} cliffCost={cliffCost} runsOutMagi={runsOutMagi} year={year} />
-        )}
-        <FloorExplainer here={here} expansionState={scenario.expansionState !== false} />
-        <LeftOutExplainer />
-      </>
-    ) : (
-      <>
-        <RateExplainer here={rate} year={year} />
-        <PremiumAsTaxExplainer here={rate} />
-        <LeftOutExplainer tax />
-      </>
-    )}
+    <CreditExplainer here={here} />
+    <SlopeExplainer here={here} />
+    {here.cliffApplies && <CliffExplainer here={here} cliffCost={cliffCost} />}
+    <FloorExplainer here={here} expansionState={scenario.expansionState !== false} />
+    <LeftOutExplainer />
   </NotesSection>
 );

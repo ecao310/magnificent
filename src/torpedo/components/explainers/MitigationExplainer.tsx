@@ -1,6 +1,6 @@
 import { Explainer } from '../../../shared/components/Explainer';
 /**
- * What to do about it, in three bullets and a caveat.
+ * What to do about it, in three bullets.
  *
  * The only disclosure here that takes no figures from the return: every claim
  * in it is about the shape of the curve rather than about where on the curve
@@ -27,10 +27,5 @@ export const MitigationExplainer: React.FC = () => (
           spike year after year.
         </li>
       </ul>
-      <p>
-        The right mix depends on account balances, Medicare premium
-        surcharges, and more. The goal itself is concrete: keep
-        provisional income out of the spike, or jump clean over it.
-      </p>
     </Explainer>
 );

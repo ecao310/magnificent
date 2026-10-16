@@ -48,7 +48,7 @@ export const RateAnswer: React.FC<RateAnswerProps> = ({
           ? `${formatCurrency(monthly)}/mo: your share already covers the full premium.`
           : `${formatCurrency(monthly)}/mo, ${formatCurrency(
             Math.round(here.premium ?? 0),
-          )} a year, after a subsidy of ${formatCurrency(Math.round(ptc.credit / 12))}/mo.`;
+          )} per year, after a subsidy of ${formatCurrency(Math.round(ptc.credit / 12))}/mo.`;
 
   return (
     <Figures

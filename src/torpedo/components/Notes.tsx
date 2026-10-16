@@ -5,13 +5,11 @@ import {
 } from '../lib/tax';
 import type {
   FilingStatus,
-  IrmaaCliff,
   PtcAssessment,
   PtcCliff,
   TaxYear,
 } from '../lib/tax';
 import { NotesSection } from '../../shared/components/NotesSection';
-import { IrmaaExplainer } from './explainers/IrmaaExplainer';
 import { MitigationExplainer } from './explainers/MitigationExplainer';
 import { SeniorDeductionExplainer } from './explainers/SeniorDeductionExplainer';
 import { SubsidyCliffExplainer } from './explainers/SubsidyCliffExplainer';
@@ -21,12 +19,8 @@ export interface NotesProps {
   year: TaxYear;
   filingStatus: FilingStatus;
   ssBenefit: number;
-  muniInterest: number;
   /** How many people on the return have reached 65: 0, 1 or 2. */
   seniors: number;
-  beneficiaries: number;
-  /** Every IRMAA cliff this return has, in ascending order. */
-  cliffs: IrmaaCliff[];
   /** The 400% line when it is this return's to meet, and null when it is not. */
   subsidyCliff: PtcCliff | null;
   hereSubsidy: PtcAssessment;
@@ -34,17 +28,14 @@ export interface NotesProps {
 
 /**
  * The notes, in the order a reader meets what they describe: the torpedo
- * itself, what can be done about it, the Medicare cliffs, the 400% line, and
- * the senior deduction's phaseout.
+ * itself, what can be done about it, the 400% line, and the senior deduction's
+ * phaseout.
  */
 export const Notes: React.FC<NotesProps> = ({
   year,
   filingStatus,
   ssBenefit,
-  muniInterest,
   seniors,
-  beneficiaries,
-  cliffs,
   subsidyCliff,
   hereSubsidy,
 }) => {
@@ -58,12 +49,6 @@ export const Notes: React.FC<NotesProps> = ({
     <NotesSection>
       <TorpedoExplainer filingStatus={filingStatus} />
       <MitigationExplainer />
-      <IrmaaExplainer
-        firstCliffStep={cliffs[0].step}
-        beneficiaries={beneficiaries}
-        muniInterest={muniInterest}
-        year={year}
-      />
       {/* Both halves of the condition, the same pair the Breakpoints panel
           uses. Whether anyone on the return is still buying their own coverage
           is the reader: nobody enrolled in Medicare can claim the credit. The

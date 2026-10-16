@@ -1,10 +1,10 @@
 /**
  * What both link-preview cards are drawn on: the arithmetic bundled out of
  * `src`, the browser that rasterises, the site's faces and tokens, and the
- * card's frame — the kicker and the rule, the headline and the deck, the
- * two-line hook at the right, the address at the foot. Each page's script,
- * `og-cover.mjs` and `og-cover-aca.mjs`, samples its own curve, draws its
- * own plot inside the frame, and hands the result to `publish`.
+ * card's frame — the rule across the top, the headline under it, the address
+ * at the foot. Each page's script, `og-cover.mjs` and `og-cover-aca.mjs`,
+ * samples its own curve, draws its own plot inside the frame, and hands the
+ * result to `publish`.
  *
  * These are the assets in the repo that are generated rather than written,
  * and the ones no deploy workflow can generate: rasterising needs a browser,
@@ -144,12 +144,13 @@ export const MONO = "'IBM Plex Mono', Menlo, Consolas, monospace";
 export const WIDTH = 1200;
 export const HEIGHT = 630;
 
-/** An axis figure, short enough for a tick: $150,000 as `$150K`. */
+/** A figure rounded to the thousand, for a log line: $150,000 as `$150K`. */
 export const money = (n) => `$${Math.round(n / 1000)}K`;
 
 /**
  * The horizontal rules of the plot, each labelled at the left, the one at
- * zero drawn in ink. `y` places a value on the card; `label` names it.
+ * zero drawn in ink. `y` places a value on the card; `label` names it. With
+ * no axis under the plot, these are the only numbers on the card.
  */
 export const gridLines = (plot, values, y, label) =>
   values
@@ -160,33 +161,17 @@ export const gridLines = (plot, values, y, label) =>
     )
     .join('\n  ');
 
-/** The income axis's ticks, under the plot, in `money`. */
-export const axisTicks = (plot, values, x) =>
-  values
-    .map(
-      (value) =>
-        `<line x1="${x(value).toFixed(1)}" y1="${plot.bottom}" x2="${x(value).toFixed(1)}" y2="${plot.bottom + 8}" stroke="${INK}" stroke-width="1"/>` +
-        `<text x="${x(value).toFixed(1)}" y="${plot.bottom + 30}" fill="${INK_MUTED}" font-family="${MONO}" font-size="15" text-anchor="middle">${money(value)}</text>`,
-    )
-    .join('\n  ');
-
 /**
  * The card: the frame both pages share, around the plot each draws.
  *
- * `kicker` and `tag` sit either end of the top rule; `title` and `deck` are
- * two lines each under it. The hook at the right is two labelled figures,
- * the second in amber — the one the card exists to quote; `struck` draws
- * the first with a line through it, in the colour given. `plot` is the
- * page's own SVG, drawn between the hook and the address at the foot, and
- * `axis` names the axis it runs along.
+ * The paper, the rule across the top, a kicker and one headline under it, the
+ * page's own plot, and the address at the foot — `kicker` is the small label
+ * over the rule, `title` the headline, `plot` the page's SVG. The address and
+ * the kicker are the only words on it besides the headline; the plot carries
+ * no callout, so nothing on the card quotes a figure at a reader whose own
+ * return the page will price.
  */
-export function card({ kicker, tag, title, deck, hook, plot, path, axis }) {
-  const [title1, title2] = title;
-  const [deck1, deck2] = deck;
-  const struck = hook.struck
-    ? `; text-decoration: line-through; text-decoration-color: ${hook.struck}; text-decoration-thickness: 2.5px`
-    : '';
-
+export function card({ kicker, title, plot, path }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" font-family="${SERIF}">
   <defs>
     <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -198,23 +183,13 @@ export function card({ kicker, tag, title, deck, hook, plot, path, axis }) {
   <rect width="${WIDTH}" height="8" fill="${INK}"/>
 
   <text x="72" y="52" fill="${INK}" font-family="${MONO}" font-size="15" letter-spacing="3">${kicker}</text>
-  <text x="1128" y="52" fill="${INK_MUTED}" font-family="${MONO}" font-size="15" letter-spacing="3" text-anchor="end">${tag}</text>
   <line x1="72" y1="64" x2="1128" y2="64" stroke="${INK}" stroke-width="1"/>
 
-  <text x="72" y="140" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">${title1}</text>
-  <text x="72" y="204" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">${title2}</text>
-  <text x="72" y="250" fill="${INK_SOFT}" font-size="21">${deck1}</text>
-  <text x="72" y="279" fill="${INK_SOFT}" font-size="21">${deck2}</text>
-
-  <text x="1128" y="112" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">${hook.label}</text>
-  <text x="1128" y="172" fill="${INK_MUTED}" font-size="62" text-anchor="end" style="font-variation-settings: 'opsz' 72${struck}">${hook.value}</text>
-  <text x="1128" y="204" fill="${INK_MUTED}" font-family="${MONO}" font-size="13" letter-spacing="2.6" text-anchor="end">${hook.thenLabel}</text>
-  <text x="1128" y="284" fill="${AMBER}" font-size="88" font-weight="500" letter-spacing="-2.6" text-anchor="end" style="font-variation-settings: 'opsz' 72">${hook.thenValue}</text>
+  <text x="72" y="140" fill="${INK_BRIGHT}" font-size="66" font-weight="500" letter-spacing="-1.4" style="font-variation-settings: 'opsz' 72">${title}</text>
 
   ${plot}
 
   <text x="72" y="608" fill="${INK_MUTED}" font-family="${MONO}" font-size="15">magnificent-fi.netlify.app${path}</text>
-  <text x="1128" y="608" fill="${INK_MUTED}" font-size="17" font-style="italic" text-anchor="end">${axis} →</text>
 </svg>`;
 }
 

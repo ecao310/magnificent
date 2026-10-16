@@ -463,10 +463,7 @@ const App: React.FC = () => {
         year={year}
         filingStatus={filingStatus}
         ssBenefit={ssBenefit}
-        muniInterest={muniInterest}
         seniors={seniors}
-        beneficiaries={beneficiaries}
-        cliffs={cliffs}
         subsidyCliff={subsidyCliff}
         hereSubsidy={ptcFor(acaMagi(hereScenario), hereScenario)}
       />
