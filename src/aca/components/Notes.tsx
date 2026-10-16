@@ -18,8 +18,6 @@ export interface NotesProps {
   /** Where the household stands against the subsidy, so every note is priced at the reader's own income. */
   here: PtcAssessment;
   cliffCost: number | null;
-  /** Where the share reaches the full premium under the line, or null where the line ends the credit. */
-  runsOutMagi: number | null;
   /** The same standing with the tax added, for the rate chart's notes. */
   rate: AllInAssessment;
 }
@@ -32,23 +30,13 @@ export interface NotesProps {
  * added, why the premium is on that side of the ledger, and what is not
  * priced on either side.
  */
-export const Notes: React.FC<NotesProps> = ({
-  chart,
-  year,
-  scenario,
-  here,
-  cliffCost,
-  runsOutMagi,
-  rate,
-}) => (
+export const Notes: React.FC<NotesProps> = ({ chart, year, scenario, here, cliffCost, rate }) => (
   <NotesSection>
     {chart === 'cost' ? (
       <>
-        <CreditExplainer here={here} year={year} />
-        <SlopeExplainer here={here} year={year} />
-        {here.cliffApplies && (
-          <CliffExplainer here={here} cliffCost={cliffCost} runsOutMagi={runsOutMagi} year={year} />
-        )}
+        <CreditExplainer here={here} />
+        <SlopeExplainer here={here} />
+        {here.cliffApplies && <CliffExplainer here={here} cliffCost={cliffCost} />}
         <FloorExplainer here={here} expansionState={scenario.expansionState !== false} />
         <LeftOutExplainer />
       </>

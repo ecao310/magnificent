@@ -87,25 +87,25 @@ describe('the rate section', () => {
     expect(figure('The plan’s share of income')).toHaveTextContent('full premium would be');
   });
 
-  it('brings its own notes: how the rate is figured, the effective rate, and what is left out on both sides', () => {
+  it('brings its own notes: how the rate is figured, the effective rate, and what is out of scope on both sides', () => {
     renderRate();
     const headings = (): string[] =>
       Array.from(document.querySelectorAll('.notes-section .explainer h3')).map((h) => h.textContent ?? '');
     expect(headings()).toEqual([
       'How the rate is figured',
       'Effective Rate',
-      'What is left out',
+      'Out of Scope',
     ]);
     fireEvent.click(screen.getByText('How the rate is figured'));
     expect(document.querySelectorAll('.notes-section .explainer')[0]).toHaveTextContent('$17,800');
-    fireEvent.click(screen.getByText('What is left out'));
+    fireEvent.click(screen.getByText('Out of Scope'));
     const leftOut = document.querySelectorAll('.notes-section .explainer')[2];
     expect(leftOut).toHaveTextContent('Payroll and self-employment tax');
     expect(leftOut).toHaveTextContent('Twelve identical months');
     // Back on the cost chart, the same note keeps to the subsidy's side.
     chooseChart('What you pay');
     expect(headings()).toHaveLength(5);
-    fireEvent.click(screen.getByText('What is left out'));
+    fireEvent.click(screen.getByText('Out of Scope'));
     const costLeftOut = document.querySelectorAll('.notes-section .explainer')[4];
     expect(costLeftOut).toHaveTextContent('Twelve identical months');
     expect(costLeftOut).not.toHaveTextContent('Payroll');
