@@ -17,8 +17,8 @@ export interface SeniorDeductionExplainerProps {
 }
 
 /**
- * The second hump on the same axis, and the one that appears on no rate
- * schedule: inside the phaseout every dollar earned also destroys deduction.
+ * The extra deduction and the phaseout that erases it: inside that range every
+ * dollar earned also destroys deduction, a surtax on top of the bracket.
  */
 export const SeniorDeductionExplainer: React.FC<SeniorDeductionExplainerProps> = ({
   phaseoutStart,
@@ -31,45 +31,22 @@ export const SeniorDeductionExplainer: React.FC<SeniorDeductionExplainerProps> =
         <p>
           For tax years {SENIOR_DEDUCTION_FIRST_YEAR} through{' '}
           {SENIOR_DEDUCTION_LAST_YEAR} only, anyone who reaches age 65 gets an
-          extra <strong>{formatCurrency(SENIOR_DEDUCTION)}</strong> deduction —
-          on top of the standard deduction, on top of the age-65 addition to
-          it, and whether or not they itemize. A couple filing jointly with
-          both spouses over 65 gets {formatCurrency(2 * SENIOR_DEDUCTION)}.
+          extra <strong>{formatCurrency(SENIOR_DEDUCTION)}</strong> deduction on
+          top of the standard deduction and the age-65 addition. A couple filing
+          jointly with both spouses over 65 gets{' '}
+          {formatCurrency(2 * SENIOR_DEDUCTION)}.
         </p>
         <p>
-          The catch is the phaseout. Each qualifying person&apos;s{' '}
-          {formatCurrency(SENIOR_DEDUCTION)} shrinks by{' '}
-          {formatCents(SENIOR_DEDUCTION_PHASEOUT_RATE)} for every dollar of
-          MAGI above {formatCurrency(phaseoutStart)}, so it is gone at{' '}
+          Each qualifying person&apos;s {formatCurrency(SENIOR_DEDUCTION)}{' '}
+          shrinks by {formatCents(SENIOR_DEDUCTION_PHASEOUT_RATE)} for every
+          dollar of MAGI above {formatCurrency(phaseoutStart)}, so it is gone at{' '}
           {formatCurrency(phaseoutEnd)}.
         </p>
         <p>
-          Inside that range every extra dollar of income does double duty: it
-          is taxed, and it destroys {formatCents(phaseoutRate)} of deduction.
-          Taxable income therefore rises by{' '}
+          Inside that range, that means taxable income rises by{' '}
           <strong>${taxableIncomePerDollar.toFixed(2)}</strong> per dollar
-          earned, and the 22% bracket bites at{' '}
-          <strong>{formatPercent(0.22 * taxableIncomePerDollar)}</strong>. That
-          is a surtax that appears nowhere on the rate schedule.
-        </p>
-        <p>
-          Worse, the two humps multiply. MAGI is AGI, which already includes
-          whatever share of your benefits the torpedo has dragged into taxable
-          income — so where the torpedo and the phaseout overlap, one extra
-          dollar raises taxable income by 1.85 &times;{' '}
-          {taxableIncomePerDollar.toFixed(2)} ={' '}
-          <strong>${(1.85 * taxableIncomePerDollar).toFixed(2)}</strong>, and
-          22% becomes{' '}
-          <strong>{formatPercent(0.22 * 1.85 * taxableIncomePerDollar)}</strong>
-          .
-        </p>
-        <p>
-          On the chart above, the second hump starts where MAGI clears{' '}
-          {formatCurrency(phaseoutStart)}.
-          The rate falls back once the deduction is fully gone at{' '}
-          {formatCurrency(phaseoutEnd)} of MAGI. Note that tax-exempt interest
-          is <em>not</em> added back for this
-          phaseout, unlike the MAGI Medicare uses for IRMAA.
+          earned, and the 22% bracket becomes{' '}
+          <strong>{formatPercent(0.22 * taxableIncomePerDollar)}</strong>.
         </p>
       </Explainer>
   );

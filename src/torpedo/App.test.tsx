@@ -221,45 +221,16 @@ describe('App', () => {
     expect(details).not.toHaveAttribute('open');
 
     /**
-     * Scoped to the paragraph that quotes this return's own thresholds. The
-     * last paragraph of the same explainer names all four bases as 86(c) wrote
-     * them, which is the statute's history and does not follow the filing
-     * status — so a page-wide "$25,000 is gone" would be asserting something
-     * else, and would fail on prose that is correct.
+     * Scoped to the paragraph that quotes this return's own thresholds.
      */
     const live = (): HTMLElement =>
       details.querySelector('.explainer-content p') as HTMLElement;
 
-    expect(live()).toHaveTextContent(/provisional income passes \$25,000/);
-    expect(live()).toHaveTextContent(/past \$34,000/);
+    expect(live()).toHaveTextContent(/PI passes \$25,000 and \$34,000/);
 
     fireEvent.click(screen.getByRole('radio', { name: 'Married Filing Jointly' }));
-    expect(live()).toHaveTextContent(/provisional income passes \$32,000/);
-    expect(live()).toHaveTextContent(/past \$44,000/);
+    expect(live()).toHaveTextContent(/PI passes \$32,000 and \$44,000/);
     expect(live()).not.toHaveTextContent('$25,000');
-  });
-
-  /**
-   * The page used to open with a 2025/2026 picker, and clicking it was the only
-   * way to watch the COLA raise the benefit while 86(c)'s bases sat still. That
-   * is the app's own subject, so it is stated where a reader meets it rather
-   * than left to whoever thinks to click twice and compare.
-   */
-  it('says the thresholds are frozen where the picker used to show it', () => {
-    render(<App />);
-    const frozen = screen.getByText(/The thresholds have not moved/).closest('p');
-    expect(frozen).toHaveTextContent('IRC 86(c) set $25,000 and $32,000 in 1983');
-    expect(frozen).toHaveTextContent('$34,000 and $44,000 in 1993');
-    expect(frozen).toHaveTextContent('Neither has ever been indexed');
-    // The point the frozen bases make: everything around them moves, so the
-    // same real retirement drifts further over the line every year.
-    expect(frozen).toHaveTextContent(
-      'sits further past the same line every year',
-    );
-    // It is the same explainer the live thresholds are in, not a fifth block.
-    expect(frozen?.closest('details')).toBe(
-      screen.getByRole('heading', { name: /what is the tax torpedo/i }).closest('details'),
-    );
   });
 
   it('lists strategies to mitigate the tax torpedo and defaults to collapsed', () => {
@@ -420,17 +391,14 @@ describe('App', () => {
     expect(explainer()).toBeInTheDocument();
     expect(explainer()).not.toHaveAttribute('open');
 
-    // 22% amplified by the 6% phaseout, and again by the torpedo's 1.85x.
+    // 22% amplified by the 6% phaseout.
     expect(explainer()).toHaveTextContent('$1.06');
     expect(explainer()).toHaveTextContent('23.32%');
-    expect(explainer()).toHaveTextContent('$1.96');
-    expect(explainer()).toHaveTextContent('43.14%');
     expect(explainer()).toHaveTextContent('gone at $175,000');
 
     fireEvent.click(screen.getByRole('radio', { name: 'Married Filing Jointly' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Both spouses are 65 or older' }));
     expect(explainer()).toHaveTextContent('24.64%');
-    expect(explainer()).toHaveTextContent('45.58%');
     expect(explainer()).toHaveTextContent('gone at $250,000');
   });
 

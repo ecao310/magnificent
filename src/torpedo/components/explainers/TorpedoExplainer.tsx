@@ -1,13 +1,9 @@
-import {
-  SS_BASE50_ENACTED,
-  SS_BASE85_ENACTED,
-  SS_BASES,
-} from '../../lib/tax';
+import { SS_BASES } from '../../lib/tax';
 import type { FilingStatus } from '../../lib/tax';
 import { formatCurrency } from '../../lib/format';
 import { Explainer } from '../../../shared/components/Explainer';
 
-/** What the torpedo is, and why the thresholds that make it never move. */
+/** What the torpedo is. */
 export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
   filingStatus,
 }) => {
@@ -16,45 +12,27 @@ export const TorpedoExplainer: React.FC<{ filingStatus: FilingStatus }> = ({
   return (
     <Explainer id="tax-torpedo-heading" title="What is the tax torpedo?">
         <p>
-          Social Security benefits are not taxed dollar-for-dollar. The taxable
-          share depends on <strong>provisional income</strong> (100% of other income
-          plus 50% of your social security benefit). Once provisional income passes{' '}
-          {formatCurrency(ssBase50)}, each extra dollar of other income also
-          drags up to 50&cent; of benefits into taxable income; past{' '}
-          {formatCurrency(ssBase85)}, it drags in up to 85&cent;.
+          Only a percentage of Social Security benefits are subject to income
+          tax. The taxable share depends on{' '}
+          <strong>provisional income</strong> (100% of other income plus 50% of
+          your social security benefit). Once PI passes{' '}
+          {formatCurrency(ssBase50)} and {formatCurrency(ssBase85)}, it also
+          starts dragging in up to 50&cent; and 85&cent; of benefits into
+          taxable income.
         </p>
         <p>
-          So one more dollar earned can raise taxable income by as much as
-          $1.85, and the marginal rate jumps to up to 1.85&times; the statutory
-          bracket: income in the 12% bracket is effectively taxed at{' '}
+          Therefore, one more dollar earned can raise taxable income by as much
+          as $1.85, and the marginal rate jumps to up to 1.85&times; the
+          statutory bracket: income in the 12% bracket is effectively taxed at{' '}
           <strong>22.2%</strong>, and income in the 22% bracket at{' '}
           <strong>40.7%</strong>. That spike above the ordinary bracket rates is
           the <strong>tax torpedo</strong>.
         </p>
         <p>
-          The torpedo ends as abruptly as it begins. At most 85% of benefits
-          can ever be taxable, and once that cap is reached, additional income
-          stops pulling in benefits — the marginal rate falls straight back to
-          the ordinary bracket, creating the cliff on the right side of the
+          Since at most 85% of benefits can ever be taxable, the marginal rate
+          falls straight back to the ordinary bracket on the right side of the
           spike. Larger benefits stretch the torpedo across a wider income
           range.
-        </p>
-        <p>
-          {/* What the two-button year selector used to demonstrate, said
-              once instead of shown to whoever thought to click twice and
-              compare. It is the reason any of this is worth drawing, so it
-              does not belong behind a control. */}
-          <strong>The thresholds have not moved since they were
-            written.</strong> IRC 86(c) set{' '}
-          {formatCurrency(SS_BASES.single.ssBase50)} and{' '}
-          {formatCurrency(SS_BASES.mfj.ssBase50)} in {SS_BASE50_ENACTED},
-          and {formatCurrency(SS_BASES.single.ssBase85)} and{' '}
-          {formatCurrency(SS_BASES.mfj.ssBase85)} in {SS_BASE85_ENACTED}.
-          Neither has ever been indexed. Everything around them is: the
-          brackets, the standard deduction, the capital-gain bands, and the
-          benefit itself, which takes a cost-of-living raise every January.
-          So a retirement that has not changed at all in real terms sits
-          further past the same line every year.
         </p>
       </Explainer>
   );
