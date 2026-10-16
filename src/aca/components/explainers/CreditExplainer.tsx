@@ -18,7 +18,7 @@ export const CreditExplainer: React.FC<CreditExplainerProps> = ({ here }) => {
   const share = here.applicablePercentage * here.magi;
   const fullBenchmark = (
     <>
-      <strong>{formatCurrency(here.benchmarkAnnual)}</strong> a year (
+      <strong>{formatCurrency(here.benchmarkAnnual)}</strong> per year (
       {formatCurrency(here.benchmarkMonthly)} per month)
     </>
   );

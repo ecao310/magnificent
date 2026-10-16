@@ -30,8 +30,14 @@ export const SlopeExplainer: React.FC<SlopeExplainerProps> = ({ here }) => {
       {effectiveRate !== null ? (
         <p>
           At <strong>{formatFpl(here.fplMultiple)}</strong> of FPL, this household&rsquo;s effective
-          rate is <strong>{formatPercent(effectiveRate)}</strong> and marginal rate is{' '}
-          <strong>{formatPercent(here.slope)}</strong>.
+          rate is <strong>{formatPercent(effectiveRate)}</strong>
+          {!here.overCliff && (
+            <>
+              {' '}
+              and marginal rate is <strong>{formatPercent(here.slope)}</strong>
+            </>
+          )}
+          .
         </p>
       ) : here.floorMultiple > 1 ? (
         <p>

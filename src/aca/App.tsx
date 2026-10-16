@@ -172,14 +172,7 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <Notes
-        chart={chart}
-        year={year}
-        scenario={scenario}
-        here={here}
-        cliffCost={cliffCost}
-        rate={rate}
-      />
+      <Notes scenario={scenario} here={here} cliffCost={cliffCost} />
     </Page>
   );
 };

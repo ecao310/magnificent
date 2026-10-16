@@ -75,8 +75,8 @@ export const Answer: React.FC<AnswerProps> = ({
           of="/mo"
           gloss={
             noSubsidy
-              ? `${formatCurrency(annual)} a year — the full premium.`
-              : `${formatCurrency(annual)} a year · ${formatPercent(
+              ? `${formatCurrency(annual)} per year — the full premium.`
+              : `${formatCurrency(annual)} per year · ${formatPercent(
                 here.applicablePercentage,
               )} of income.`
           }
@@ -90,7 +90,7 @@ export const Answer: React.FC<AnswerProps> = ({
           of="/mo"
           gloss={
             <>
-              {formatCurrency(here.credit)} a year, off a full premium of{' '}
+              {formatCurrency(here.credit)} per year, off a full premium of{' '}
               {formatCurrency(here.benchmarkMonthly)}/mo.
             </>
           }

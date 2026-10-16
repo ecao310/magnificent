@@ -18,9 +18,10 @@ describe('the rate note', () => {
     expect(noteText(50_000)).toContain('effective rate is 7.9% and marginal rate is 16.6%.');
   });
 
-  it('rates the whole premium, not the table’s cap, past the 400% line', () => {
+  it('rates the whole premium past the 400% line, dropping the marginal rate', () => {
     const text = noteText(120_000);
-    expect(text).toContain('effective rate is 17.5% and marginal rate is 0.0%.');
+    expect(text).toContain('effective rate is 17.5%.');
+    expect(text).not.toContain('and marginal rate is');
     expect(text).not.toContain('10.0%');
   });
 });
