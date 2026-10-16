@@ -24,16 +24,15 @@ export const CliffExplainer: React.FC<CliffExplainerProps> = ({ here, cliffCost 
     </p>
     {cliffCost !== null && cliffCost > 0 && (
       <p>
-        Just under the line, you pay 10% of income and the subsidy pays the other{' '}
-        {formatCurrency(cliffCost)}. One dollar over, you pay the full{' '}
+        Under this value, you pay at most 10% of your income as your premium. One dollar over, you pay the full{' '}
         <strong>{formatCurrency(here.benchmarkAnnual)}</strong>. Earning an extra $1 actually loses
         you {formatCurrency(cliffCost - 1)}.
       </p>
     )}
     <p>
       The cliff came back in 2026. Between 2021 and 2025, there was no 400% ceiling, and your share
-      was capped at 8.5% of income. A vote to extend the subsidy passed in the House but failed in
-      the Senate largely along party lines, with Democrats for and Republicans against.
+      was capped at 8.5% of income. A vote to extend the subsidy failed in
+      the Senate largely along party lines, with Republicans against an extension.
     </p>
   </Explainer>
 );
