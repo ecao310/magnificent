@@ -56,9 +56,9 @@ itself stands where the chart stands beside it.
 
 Six figures follow the chart: total income, federal tax, effective rate, the
 rate on the next dollar, the taxable share of the benefit, and the Medicare
-surcharge that MAGI buys. Below them, the notes: four or five collapsed
-explainers, numbered — the torpedo, how to mitigate it, the IRMAA cliffs, the
-400% line when the return has one, and the senior deduction's phaseout.
+surcharge that MAGI buys. Below them, the notes: three or four collapsed
+explainers, numbered — the torpedo, how to mitigate it, the 400% line when
+the return has one, and the senior deduction's phaseout.
 
 ### What is priced
 
@@ -127,17 +127,17 @@ it is where the reader is standing, not what the return holds.
      between the cost curve and a dashed full-premium line; ink-dashed lines
      mark where it starts, at 138% or 100% of the poverty line, and ends, at
      400%. Four figures follow: You pay, Subsidy, Each extra $1 of income
-     costs, and Room before the cliff. Five notes: How the subsidy is
-     figured, The slope, The 400% cliff, The Medicaid line, and What is left
-     out.
+     costs, and Room before the cliff. Five notes: The ACA Subsidy,
+     Effective and Marginal Rates, The 400% Cliff, back since 2026, Medicaid,
+     and Out of Scope.
    - **Your effective rate** — the same premium, counted as the tax it works
      like, stacked on federal income tax: both as shares of household
      income, against the same axis. A grey wash for the tax, the cost
      chart's blue hatch for the premium, and an ink line along the top for
      the whole; the jump in that line at 400% is the chart. Four figures:
      All in, Federal income tax, Each extra $1 of income costs, and The
-     plan's share of income. Three notes: How the rate is figured, Why the
-     premium counts as a tax, and What is left out, on both sides.
+     plan's share of income. The same five notes as the cost chart, since
+     both charts price the same subsidy.
 
    Either way a "You" marker sits at your income — click or tap the chart,
    drag a finger along it, drag the slider under it, or type a number to
@@ -155,8 +155,7 @@ rate schedule and the child tax credit, for 2025 and 2026, by filing status.
 The status is read off the household — two adults file jointly, one adult
 with children is a head of household, one adult alone is single — and the
 income is the subsidy's own, taken as all ordinary. Payroll tax, state tax,
-refundable credits and every deduction but the standard one are left out,
-and the last note says so.
+refundable credits and every deduction but the standard one are left out.
 
 ### What is priced
 
@@ -221,14 +220,17 @@ Graph and Twitter card block, pointing at `public/og-cover.png` for the
 torpedo and `public/aca/og-cover.png` for the Subsidy Slope. A card is not
 the reader's own scenario and cannot be — this is static files, so no server
 ever sees the query string. It says what the page is; the figures stay on
-the page.
+the page, and the card quotes none of them — it is a kicker, a headline,
+that page's curve with the one axis it is read against, and the address.
 
-The curve on each card is the real one. `scripts/og-cover.mjs` bundles
-`marginalRateCurve` out of `src/torpedo/lib`, and `scripts/og-cover-aca.mjs`
-bundles `costCurve` out of `src/aca/lib`; each samples it for the scenario
-its page opens on, draws its plot inside the frame `scripts/card.mjs` holds
-— the kicker and the rule, the headline, the hook at the right, the site's
-faces and tokens — and rasterises the result:
+The curve on each card is the real one, and it is drawn with no callout: the
+curve, the grid, and the rates or costs down its left. `scripts/og-cover.mjs`
+bundles `marginalRateCurve` out of `src/torpedo/lib`, and
+`scripts/og-cover-aca.mjs` bundles `costCurve` out of `src/aca/lib`; each
+samples it for the scenario its page opens on, draws its plot inside the
+frame `scripts/card.mjs` holds — the paper, the rule across the top, the
+kicker and headline under it, and the address at the foot — and rasterises
+the result:
 
 ```bash
 node scripts/og-cover.mjs       # rewrites public/og-cover.png and public/apple-touch-icon.png

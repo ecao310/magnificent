@@ -10,16 +10,15 @@
  *
  * The curve on the card is the real one: `costCurve` is bundled out of
  * `src/aca/lib` and sampled for the household the page opens on, so the shape
- * a reader sees in the preview is the shape they land on.
+ * a reader sees in the preview is the shape they land on. The plot is drawn
+ * with no callout: the band, the curve, the reference lines, and the costs
+ * down its left.
  */
 import {
   ACCENT,
   AMBER,
   INK_MUTED,
-  INK_SOFT,
-  MONO,
   SURFACE,
-  axisTicks,
   card,
   gridLines,
   loadModule,
@@ -31,8 +30,8 @@ import {
 /** The one hue of this page's the card spends: what the subsidy pays. */
 const EMERALD = '#1d7d3e';
 
-/** The plot, in card coordinates. */
-const PLOT = { left: 84, right: 1128, top: 300, bottom: 540 };
+/** The plot, in card coordinates: the whole band between the headline and the address. */
+const PLOT = { left: 84, right: 1128, top: 200, bottom: 570 };
 
 function plot(curve, hook) {
   const minX = curve[0].magi;
@@ -83,7 +82,6 @@ function plot(curve, hook) {
 
   const gridCosts = [];
   for (let c = 0; c <= maxY; c += 500) gridCosts.push(c);
-  const ticks = [50_000, 100_000].filter((v) => v > minX && v < maxX);
 
   return `${gridLines(PLOT, gridCosts, y, (cost) => `$${cost.toLocaleString('en-US')}`)}
 
@@ -91,40 +89,20 @@ function plot(curve, hook) {
   <path d="${areaPath}" fill="url(#hatch)"/>
 
   <line x1="${PLOT.left}" y1="${y(hook.benchmark).toFixed(1)}" x2="${PLOT.right}" y2="${y(hook.benchmark).toFixed(1)}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 4"/>
-  <text x="${PLOT.left + 6}" y="${(y(hook.benchmark) - 8).toFixed(1)}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13">Full premium $${hook.benchmark.toLocaleString('en-US')}/mo</text>
-
   <line x1="${x(hook.floor).toFixed(1)}" y1="${PLOT.top}" x2="${x(hook.floor).toFixed(1)}" y2="${PLOT.bottom}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 3"/>
-  <text x="${(x(hook.floor) + 6).toFixed(1)}" y="${PLOT.top + 20}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13">${hook.floorLabel}</text>
-
   <line x1="${x(hook.cliff).toFixed(1)}" y1="${PLOT.top}" x2="${x(hook.cliff).toFixed(1)}" y2="${PLOT.bottom}" stroke="${INK_MUTED}" stroke-width="1" stroke-dasharray="2 3"/>
-  <text x="${(x(hook.cliff) - 6).toFixed(1)}" y="${PLOT.top + 20}" fill="${INK_SOFT}" font-family="${MONO}" font-size="13" text-anchor="end">${hook.cliffLabel}</text>
 
   <path d="${linePath}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
   <line x1="${x(hook.income).toFixed(1)}" y1="${PLOT.top + 40}" x2="${x(hook.income).toFixed(1)}" y2="${PLOT.bottom}" stroke="${AMBER}" stroke-width="2.5" stroke-dasharray="8 5"/>
-  <circle cx="${x(hook.income).toFixed(1)}" cy="${y(hook.monthly).toFixed(1)}" r="8" fill="${AMBER}" stroke="${SURFACE}" stroke-width="2.5"/>
-  <text x="${(x(hook.income) + 16).toFixed(1)}" y="${(y(hook.monthly) - 14).toFixed(1)}" fill="${AMBER}" font-size="28" font-weight="500" style="font-variation-settings: 'opsz' 72">$${hook.monthly}/mo</text>
-
-  ${axisTicks(PLOT, ticks, x)}`;
+  <circle cx="${x(hook.income).toFixed(1)}" cy="${y(hook.monthly).toFixed(1)}" r="8" fill="${AMBER}" stroke="${SURFACE}" stroke-width="2.5"/>`;
 }
 
 const cover = (curve, hook) =>
   card({
     kicker: 'SUBSIDY SLOPE',
-    tag: `COVERAGE YEAR ${hook.year} · MARKETPLACE`,
-    title: ['How much subsidy does', 'the next dollar cost?'],
-    deck: [
-      'What you pay for a Marketplace plan at every household income,',
-      'and what each extra dollar costs you in subsidy — priced for your household.',
-    ],
-    hook: {
-      label: `YOU PAY AT ${money(hook.income)}`,
-      value: `$${hook.monthly}/mo`,
-      thenLabel: 'EACH EXTRA DOLLAR COSTS',
-      thenValue: hook.slope,
-    },
+    title: 'ACA Subsidy Slope',
     plot: plot(curve, hook),
     path: '/aca',
-    axis: 'Household income',
   });
 
 /* ── The run ─────────────────────────────────────────────────────────────── */
@@ -137,7 +115,6 @@ const {
   defaultScenario,
   engineScenario,
   PAGE_COVERAGE_YEAR,
-  creditSlopeAt,
   subsidyLines,
 } = await loadModule(['src/aca/lib/aca/index', 'src/aca/lib/scenarioUrl']);
 
@@ -146,19 +123,14 @@ const curve = costCurve(scenario, { maxMagi: axisMax(scenario), step: 250 });
 const here = ptcFor(scenario.income, scenario);
 const lines = subsidyLines(scenario);
 const floorLine = lines.find((line) => line.id === 'floor');
-const cliffLine = lines.find((line) => line.id === 'cliff');
 const hook = {
-  year: PAGE_COVERAGE_YEAR,
   income: scenario.income,
   cliff: ptcCliffMagi(scenario),
   floor: floorLine.magi,
-  floorLabel: floorLine.label,
-  cliffLabel: cliffLine?.label ?? 'No cliff this year',
   benchmark: here.benchmarkMonthly,
   monthly: Math.round((here.netPremiumAnnual ?? 0) / 12),
-  slope: `${Math.round(creditSlopeAt(scenario.income, scenario) * 1000) / 10}¢`,
 };
-console.log(`curve: ${curve.length} points to ${money(curve.at(-1).magi)}; at ${money(hook.income)} pays $${hook.monthly}/mo, next dollar ${hook.slope}`);
+console.log(`curve: ${curve.length} points to ${money(curve.at(-1).magi)}; at ${money(hook.income)} pays $${hook.monthly}/mo`);
 
 publish('public/aca', {
   cover: cover(curve, hook),
