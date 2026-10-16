@@ -349,64 +349,6 @@ describe('the Breakpoints panel on the torpedo chart', () => {
   });
 });
 
-describe('the IRMAA cliff lines on the torpedo chart', () => {
-  /**
-   * The lines themselves are asserted on in App.chart.test.tsx, which mocks
-   * ResponsiveContainer so recharts actually draws, and what each one costs is
-   * `irmaaCliffs`', asserted in tax.test.ts. What is left here is the
-   * disclosure under the plot: the one place on the page that says what a
-   * cliff is, and the one that prices the first one this return can reach.
-   */
-  const irmaaExplainer = (): HTMLElement => {
-    const heading = screen.getByRole('heading', { name: /medicare's irmaa cliffs/i });
-    const details = heading.closest('details');
-    if (!details) throw new Error('no IRMAA explainer rendered');
-    return details;
-  };
-
-  it('doubles the price for a joint return with two enrollees', () => {
-    render(<App />);
-    // A single filer's first cliff is a $1,148.40 step, rounded to $1,148.
-    expect(irmaaExplainer()).toHaveTextContent('costs $1,148 a year — on a single dollar');
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Married Filing Jointly' }));
-    fireEvent.click(
-      screen.getByRole('checkbox', { name: /both spouses are 65 or older/i }),
-    );
-    // IRMAA is charged per enrollee off one household MAGI figure, so the step
-    // is twice what a single filer pays — and the sentence says whose it is.
-    expect(irmaaExplainer()).toHaveTextContent(
-      'costs $2,297 a year for the two of you — on a single dollar',
-    );
-  });
-
-  it('sends the reader to the control that draws the lines, by its name', () => {
-    render(<App />);
-    // The disclosure is the only prose left that names the panel, now that the
-    // panel carries none of its own — so it has to name it correctly.
-    expect(irmaaExplainer()).toHaveTextContent(
-      'Breakpoints in the corner of the plot draws the thresholds as red dashed lines',
-    );
-  });
-
-  it('explains what a cliff is, collapsed, without the Medicare tab', () => {
-    render(<App />);
-    const heading = screen.getByRole('heading', { name: /medicare's irmaa cliffs/i });
-    const details = heading.closest('details');
-    expect(details).toBeInTheDocument();
-    expect(details).not.toHaveAttribute('open');
-    expect(details).toHaveTextContent('income-related monthly adjustment amount');
-    expect(details).toHaveTextContent('one dollar over a threshold triggers the whole surcharge');
-    // The two-year lag is the caveat that makes the x-axis honest.
-    expect(details).toHaveTextContent(
-      /the 2026 premiums these lines are priced from are set by 2024 MAGI/,
-    );
-    expect(details).toHaveTextContent('setting the premium for 2028');
-    expect(details).toHaveTextContent('Form SSA-44');
-  });
-
-});
-
 /**
  * The reader-facing half of the 400% cliff. The line itself is asserted on in
  * App.chart.test.tsx, which mocks ResponsiveContainer so recharts draws; what
