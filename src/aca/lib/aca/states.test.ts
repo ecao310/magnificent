@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BENCHMARK_AT_40,
   BENCHMARK_YEAR_PARAMS,
   COVERAGE_YEARS,
   STATES,
@@ -18,7 +19,7 @@ describe('the states', () => {
     for (const code of STATE_CODES) {
       expect(STATES[code].code).toBe(code);
       for (const year of COVERAGE_YEARS) {
-        expect(STATES[code].benchmarkAt40[year], `${code} ${year}`).toBeGreaterThan(0);
+        expect(BENCHMARK_AT_40[year][code], `${code} ${year}`).toBeGreaterThan(0);
       }
     }
   });
@@ -31,17 +32,18 @@ describe('the states', () => {
   });
 
   it('read KFF’s table at its corners', () => {
-    expect(STATES.TX.benchmarkAt40).toEqual({ 2025: 489, 2026: 661 });
-    expect(STATES.VT.benchmarkAt40[2026]).toBe(1_299);
-    expect(STATES.NH.benchmarkAt40[2026]).toBe(401);
+    expect(BENCHMARK_AT_40[2025].TX).toBe(489);
+    expect(BENCHMARK_AT_40[2026].TX).toBe(661);
+    expect(BENCHMARK_AT_40[2026].VT).toBe(1_299);
+    expect(BENCHMARK_AT_40[2026].NH).toBe(401);
     // Two figures that look wrong and are not: Alaska fell, Arkansas rose 69%.
-    expect(STATES.AK.benchmarkAt40[2026]).toBeLessThan(STATES.AK.benchmarkAt40[2025]);
-    expect(STATES.AR.benchmarkAt40[2026] / STATES.AR.benchmarkAt40[2025]).toBeCloseTo(1.69, 2);
+    expect(BENCHMARK_AT_40[2026].AK).toBeLessThan(BENCHMARK_AT_40[2025].AK);
+    expect(BENCHMARK_AT_40[2026].AR / BENCHMARK_AT_40[2025].AR).toBeCloseTo(1.69, 2);
   });
 
   it('sit around the national average', () => {
     for (const year of COVERAGE_YEARS) {
-      const figures = STATE_CODES.map((code) => STATES[code].benchmarkAt40[year]);
+      const figures = STATE_CODES.map((code) => BENCHMARK_AT_40[year][code]);
       const national = BENCHMARK_YEAR_PARAMS[year].monthlyAt40;
       expect(Math.min(...figures)).toBeLessThan(national);
       expect(Math.max(...figures)).toBeGreaterThan(national);

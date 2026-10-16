@@ -8,6 +8,7 @@
  * agencies on other schedules — see `irmaa.ts` and `ptc.ts` for why they are
  * separate tables rather than fields on this one.
  */
+import { TAX_YEARS } from './types';
 import type { FilingStatus, TaxYear } from './types';
 
 /** One rate band. `upTo` is the top of the band; the last band is Infinity. */
@@ -177,8 +178,12 @@ export const TAX_YEAR_PARAMS: Record<TaxYear, TaxYearParams> = {
   },
 };
 
-/** Every year this app has figures for, ascending. */
-export const TAX_YEARS: TaxYear[] = [2025, 2026];
+/**
+ * Every year this app has figures for, ascending — declared beside the type in
+ * `types.ts` so the list and the type are one fact. Re-exported here, where the
+ * rest of the year machinery reads it.
+ */
+export { TAX_YEARS };
 
 /**
  * Every filing status this app prices, in the order they are offered.

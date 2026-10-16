@@ -1,10 +1,15 @@
 /**
  * Which years are on file, and which one the page prices.
  */
+import { COVERAGE_YEARS } from './types';
 import type { CoverageYear } from './types';
 
-/** Every coverage year this app has figures for, ascending. */
-export const COVERAGE_YEARS: CoverageYear[] = [2025, 2026];
+/**
+ * Every coverage year this app has figures for, ascending — declared beside
+ * the type in `types.ts` so the list and the type are one fact. Re-exported
+ * here, where the rest of the year machinery reads it.
+ */
+export { COVERAGE_YEARS };
 
 /**
  * The one year the page prices.

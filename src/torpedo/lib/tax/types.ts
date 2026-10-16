@@ -28,5 +28,16 @@
  */
 export type FilingStatus = 'single' | 'mfj';
 
+/**
+ * Every tax year this app has published figures for, ascending.
+ *
+ * The list and the type are declared together and the type is read off the
+ * list, so the two cannot disagree. Adding a year is one entry here, and in
+ * the same edit every `Record<TaxYear, …>` table the compiler reports is a
+ * table that now has to carry a row for it — `TAX_YEAR_PARAMS`,
+ * `IRMAA_YEAR_PARAMS` and `FPL_YEAR_PARAMS`.
+ */
+export const TAX_YEARS = [2025, 2026] as const;
+
 /** A tax year this app has published figures for. See `TAX_YEAR_PARAMS`. */
-export type TaxYear = 2025 | 2026;
+export type TaxYear = (typeof TAX_YEARS)[number];

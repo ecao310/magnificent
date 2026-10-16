@@ -7,5 +7,16 @@
  * it depends on nothing.
  */
 
+/**
+ * Every coverage year this app has published figures for, ascending.
+ *
+ * The list and the type are declared together and the type is read off the
+ * list, so the two cannot disagree. Adding a year is one entry here, and in
+ * the same edit every `Record<CoverageYear, …>` table the compiler reports is
+ * a table that now has to carry a row for it — see `FPL_YEAR_PARAMS`,
+ * `BENCHMARK_YEAR_PARAMS` and `BENCHMARK_AT_40`.
+ */
+export const COVERAGE_YEARS = [2025, 2026] as const;
+
 /** A coverage year this app has published figures for. See `FPL_YEAR_PARAMS`. */
-export type CoverageYear = 2025 | 2026;
+export type CoverageYear = (typeof COVERAGE_YEARS)[number];

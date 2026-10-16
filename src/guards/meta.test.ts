@@ -405,11 +405,20 @@ describe('the front door', () => {
     expect(card).not.toContain('github.io');
   });
 
-  /** Every file under `pages/`, which is the tree Pages serves. */
+  /**
+   * Every file under `pages/`, which is the tree the forwarders publish.
+   *
+   * Dotfiles are not part of that tree. A `.DS_Store` Finder leaves behind is
+   * never uploaded and is not a forwarder, but it *is* under `pages/`, so
+   * walking it would fail this describe on a developer's machine while CI,
+   * which checks out no such file, stayed green.
+   */
   const forwarders = (dir = 'pages'): string[] =>
-    readdirSync(root(dir), { withFileTypes: true }).flatMap((entry) =>
-      entry.isDirectory() ? forwarders(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
-    );
+    readdirSync(root(dir), { withFileTypes: true })
+      .filter((entry) => !entry.name.startsWith('.'))
+      .flatMap((entry) =>
+        entry.isDirectory() ? forwarders(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
+      );
 
   /* One forwarder per Pages address the README names, at that address's
      path, and nothing under `pages/` the README does not name. */

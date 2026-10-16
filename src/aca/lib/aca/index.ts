@@ -7,7 +7,7 @@ export type { CoverageYear } from './types';
 export { COVERAGE_YEARS, PAGE_COVERAGE_YEAR, defaultCoverageYear } from './years';
 
 export type { StateCode, StateParams, GuidelineRegion, AgeRating } from './states';
-export { STATES, STATE_CODES, isStateCode } from './states';
+export { STATES, STATE_CODES, BENCHMARK_AT_40, isStateCode } from './states';
 
 export type { Adults, Scenario, ResolvedScenario } from './scenario';
 export { DEFAULT_AGE, resolveScenario, expansionFor, adultAges, householdSizeFor } from './scenario';

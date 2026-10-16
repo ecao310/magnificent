@@ -12,7 +12,7 @@ import type { CoverageYear } from './types';
 import { defaultCoverageYear } from './years';
 import { resolveScenario } from './scenario';
 import type { Scenario } from './scenario';
-import { STATES } from './states';
+import { BENCHMARK_AT_40, STATES } from './states';
 import type { StateCode } from './states';
 import { ageCurveFor, ageFactor } from './ageCurves';
 
@@ -68,7 +68,7 @@ export const BENCHMARK_REFERENCE_AGE = 40;
 export function benchmarkAt40(year: CoverageYear, state: StateCode | null = null): number {
   return state === null
     ? BENCHMARK_YEAR_PARAMS[year].monthlyAt40
-    : STATES[state].benchmarkAt40[year];
+    : BENCHMARK_AT_40[year][state];
 }
 
 /**

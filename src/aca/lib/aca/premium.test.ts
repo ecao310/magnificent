@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AGE_CURVE,
+  BENCHMARK_AT_40,
   BENCHMARK_YEAR_PARAMS,
   CHILD_AGE_FACTOR,
   DEFAULT_AGE_CURVE,
@@ -121,7 +122,7 @@ describe('the state curves', () => {
     expect(averageBenchmarkMonthly([40], 1, 2026, 'AL')).toBe(Math.round((645 / 1.278) * (1.278 + 0.635)));
     // A 40-year-old is KFF's figure exactly, on any curve.
     for (const state of own) {
-      expect(averageBenchmarkMonthly([40], 0, 2026, state)).toBe(STATES[state].benchmarkAt40[2026]);
+      expect(averageBenchmarkMonthly([40], 0, 2026, state)).toBe(BENCHMARK_AT_40[2026][state]);
     }
   });
 });
