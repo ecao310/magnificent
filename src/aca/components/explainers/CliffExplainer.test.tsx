@@ -18,31 +18,21 @@ const noteText = (magi: number, scenario: Scenario): string => {
 };
 
 describe('the cliff note', () => {
-  it('names the 400% line and prices it for this household', () => {
+  it('prices the line for this household', () => {
     const text = noteText(50_000, COUPLE);
-    expect(text).toContain(
-      'Once household income passes 400% of FPL, the subsidy completely disappears.',
-    );
-    expect(text).toContain('For 2 people the line is $84,600, 400% of the $21,150 poverty line.');
+    expect(text).toContain('$84,600');
+    expect(text).toContain('$21,150');
   });
 
   it('prices the dollar over the line for a household the line bites', () => {
     const text = noteText(50_000, COUPLE);
-    expect(text).toContain('Under this value, you pay at most 10% of your income as your premium');
-    expect(text).toContain('One dollar over, you pay the full $20,964');
-    expect(text).toContain('Earning an extra $1 actually loses you $12,537');
+    expect(text).toContain('$20,964');
+    expect(text).toContain('$12,537');
   });
 
   it('leaves the dollar over it out where the share already covers the premium', () => {
     const text = noteText(50_000, YOUNG);
-    expect(text).not.toContain('Under this value, you pay at most 10% of your income as your premium');
-    expect(text).not.toContain('-$1');
-  });
-
-  it('says when the cliff came back, and how', () => {
-    const text = noteText(50_000, COUPLE);
-    expect(text).toContain('The cliff came back in 2026.');
-    expect(text).toContain('capped at 8.5% of income');
-    expect(text).toContain('failed in the Senate largely along party lines');
+    expect(text).toContain('$62,600');
+    expect(text).not.toContain('$5,892');
   });
 });

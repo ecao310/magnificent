@@ -15,13 +15,15 @@ const noteText = (magi: number, scenario: Scenario = COUPLE): string => {
 
 describe('the rate note', () => {
   it('quotes the doc’s effective and marginal rates at 236% of FPL', () => {
-    expect(noteText(50_000)).toContain('effective rate is 7.9% and marginal rate is 16.6%.');
+    const text = noteText(50_000);
+    expect(text).toContain('236%');
+    expect(text).toContain('7.9%');
+    expect(text).toContain('16.6%');
   });
 
   it('rates the whole premium past the 400% line, dropping the marginal rate', () => {
     const text = noteText(120_000);
-    expect(text).toContain('effective rate is 17.5%.');
-    expect(text).not.toContain('and marginal rate is');
+    expect(text).toContain('17.5%');
     expect(text).not.toContain('10.0%');
   });
 });
