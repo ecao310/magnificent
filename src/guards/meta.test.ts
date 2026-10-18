@@ -457,13 +457,14 @@ describe('the front door', () => {
   });
 
   /**
-   * The workflow, as the branches it fires on and the tree it uploads. It is
-   * the only one, it fires on the production branch alone — the forwarders
-   * are the site's, not a branch's — and it runs no build: what is committed
-   * is what is served.
+   * The forwarder workflow, as the branches it fires on and the tree it
+   * uploads. It fires on the production branch alone — the forwarders are the
+   * site's, not a branch's — and it runs no build: what is committed is what
+   * is served. `ci.yml` is the other workflow, and does none of this: it
+   * lints, tests and builds, and publishes nothing.
    */
   it('publishes the forwarders from the production branch, and builds nothing', () => {
-    expect(readdirSync(root('.github/workflows'))).toEqual(['deploy.yml']);
+    expect(readdirSync(root('.github/workflows')).sort()).toEqual(['ci.yml', 'deploy.yml']);
     const yaml = readFileSync(root('.github/workflows/deploy.yml'), 'utf8');
     const triggers = (/branches:\s*\[([^\]]*)\]/.exec(yaml)?.[1] ?? '')
       .split(',')

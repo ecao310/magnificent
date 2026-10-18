@@ -1,0 +1,47 @@
+name: CI
+
+# Lint, type-check, test and build every change, on every branch and every
+# pull request. Netlify (netlify.toml) already runs `npm run test` before it
+# builds a deploy, and `npm run build` type-checks with `tsc -b` — but it
+# never runs `npm run lint`, so a lint regression could reach main unnoticed.
+# This is the gate that catches one, and the one place a pull request is
+# checked at all.
+#
+# Node 24 to match `NODE_VERSION` in netlify.toml, so a green run here means
+# the deploy image runs the same runtime.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
