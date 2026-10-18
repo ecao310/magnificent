@@ -92,7 +92,7 @@ const App: React.FC = () => {
     <Page
       page="aca"
       title="The ACA Subsidy Slope"
-      subtitle="On an ACA plan, you pay a set share of your household income and the subsidy pays the rest. When household income reaches 400% of the poverty line, the subsidy ends abruptly (the ACA subsidy cliff)."
+      subtitle="On an ACA plan, you pay at most a set percentage of your household income as your monthly premium. When household income reaches 400% of the poverty line, the cap ends abruptly (the ACA subsidy cliff)."
       linkNotes={h.linkNotes}
       onDismissNotes={h.dismissNotes}
       skipTo={chartFor(chart).section}
