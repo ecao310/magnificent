@@ -28,14 +28,14 @@ describe('the cliff note', () => {
 
   it('prices the dollar over the line for a household the line bites', () => {
     const text = noteText(50_000, COUPLE);
-    expect(text).toContain('the subsidy pays the other $12,538');
+    expect(text).toContain('Under this value, you pay at most 10% of your income as your premium');
     expect(text).toContain('One dollar over, you pay the full $20,964');
     expect(text).toContain('Earning an extra $1 actually loses you $12,537');
   });
 
   it('leaves the dollar over it out where the share already covers the premium', () => {
     const text = noteText(50_000, YOUNG);
-    expect(text).not.toContain('pays the other $0');
+    expect(text).not.toContain('Under this value, you pay at most 10% of your income as your premium');
     expect(text).not.toContain('-$1');
   });
 
@@ -43,6 +43,6 @@ describe('the cliff note', () => {
     const text = noteText(50_000, COUPLE);
     expect(text).toContain('The cliff came back in 2026.');
     expect(text).toContain('capped at 8.5% of income');
-    expect(text).toContain('passed in the House but failed in the Senate');
+    expect(text).toContain('failed in the Senate largely along party lines');
   });
 });
